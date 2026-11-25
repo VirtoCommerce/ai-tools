@@ -1,0 +1,727 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CMP-GQL-001,saveProductsToCompareList → compareList → removeCompareListItems → clearCompareList round trip returns one list with the products grouped by category,GraphQL > Product Comparison,High,"BL-CAT-018, BL-CAT-019",,"Runner-native, no browser. Buyer token (USER2, a personal buyer without an organization). Products are discovered live. {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918. Value chain: save creates the list lazily → compareList reads categories → items → product in ONE call → remove and clear reverse the save.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-CAPTURE disc.data.products.items.2.id → P3]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P2}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P3}}"",""categoryId"":""AGENT-TEST-CMP-CAT-B""}]}}
+[GQL-EXEC save]
+[GQL-CAPTURE save.data.saveProductsToCompareList.items.0.id → ITEM1]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP remove]
+mutation($c: InputRemoveCompareListItemsType!) { removeCompareListItems(command: $c) { id itemsCount items { id productId } } }
+[GQL-VARS remove] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""itemIds"":[""{{ITEM1}}""]}}
+[GQL-EXEC remove]
+[GQL-OP after_remove]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS after_remove] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC after_remove]
+[GQL-OP clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC clear]
+[GQL-OP after_clear]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS after_clear] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC after_clear]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=save] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=save] data.saveProductsToCompareList.itemsCount = 3 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=save] data.saveProductsToCompareList.items.length = 3 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[ERRORS label=read] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=read] data.compareList.itemsCount = 3 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.categories.length = 2 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: products grouped by category, categories in the order first added)
+[DATA label=read] data.compareList.categories.0.id = AGENT-TEST-CMP-CAT-A {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.categories.0.items.length = 2 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=read] data.compareList.categories.0.items.0.product.id = {{P1}} {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; items by position; product read from the catalog)
+[ERRORS label=remove] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=remove] data.removeCompareListItems.itemsCount = 2 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=after_remove] data.compareList.itemsCount = 2 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[ERRORS label=clear] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=clear] data.clearCompareList.itemsCount = 0 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=after_clear] data.compareList.itemsCount = 0 {OBSERVED} (vcptcore 2026-11-20: a cleared list is still returned, with 0 items)",[ERRORS] every operation errors[] empty,"The save does not group by category, compareList returns null after a save, a removed item is still listed, Clear leaves items, an error where none is expected",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:SILENT · Technique:FLOW | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-002,A save that would exceed the per-category limit is refused as a whole with COMPARE_LIST_LIMIT_REACHED and saves nothing,GraphQL > Product Comparison,High,BL-CAT-013,,"Runner-native. Store setting ProductComparison.MaxItems = 5 (the default). The runner does not read the limit: before the run `npm run store:set -- --list` must show ProductComparison.MaxItems = 5 on {{STORE_ID}}; any other value (a settings case aborted before its restore) is a broken precondition — restore it and re-run, never file it as a bug. Five products fill category AGENT-TEST-CMP-CAT-A; the refused call carries one more product for that full category AND one for a free category — a refusal 'as a whole' leaves the free-category product unsaved too {SPEC} (README §Categories and limits). {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-CAPTURE disc.data.products.items.2.id → P3]
+[GQL-CAPTURE disc.data.products.items.3.id → P4]
+[GQL-CAPTURE disc.data.products.items.4.id → P5]
+[GQL-CAPTURE disc.data.products.items.5.id → P6]
+[GQL-CAPTURE disc.data.products.items.6.id → P7]
+[GQL-CAPTURE disc.data.products.items.7.id → P8]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP fill]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS fill] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P2}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P3}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P4}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P5}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC fill]
+[GQL-OP over]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS over] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P6}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P7}}"",""categoryId"":""AGENT-TEST-CMP-CAT-B""}]}}
+[GQL-EXEC over]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP exact]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS exact] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P7}}"",""categoryId"":""AGENT-TEST-CMP-CAT-B""}]}}
+[GQL-EXEC exact]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=fill] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=fill] data.saveProductsToCompareList.itemsCount = 5 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[ERRORS label=over] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=over] errors[0].extensions.code = COMPARE_LIST_LIMIT_REACHED {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README §Errors; observed vcptcore 2026-11-17/20)
+[DATA label=over] data.saveProductsToCompareList is null {OBSERVED}
+[DATA label=read] data.compareList.itemsCount = 5 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202 — the refused call saved nothing, the free-category product included)
+[COUNT label=read] data.compareList.categories.length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[ERRORS label=exact] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202 — the same free-category product alone is accepted, so the earlier refusal was the full category's)
+[DATA label=exact] data.saveProductsToCompareList.itemsCount = 6 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)",[ERRORS] the refusal is a GraphQL error whose extensions.code names the reason {SPEC},"The sixth product is saved, the free-category product of the refused call is saved, the refusal carries no code, the error code is a generic one",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-003,moveCompareListItem reorders within a category and renumbers from 0; out-of-range and malformed input behave as specified,GraphQL > Product Comparison,Medium,,,"Runner-native. Three products in one category. A move changes the position within the item's category and renumbers the category from 0 {SPEC} (README §Mutations). {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-CAPTURE disc.data.products.items.2.id → P3]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P2}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P3}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC save]
+[GQL-CAPTURE save.data.saveProductsToCompareList.items.0.id → IT1]
+[GQL-CAPTURE save.data.saveProductsToCompareList.items.2.id → IT3]
+[GQL-OP to_front]
+mutation($c: InputMoveCompareListItemType!) { moveCompareListItem(command: $c) { id itemsCount items { id productId categoryId position } } }
+[GQL-VARS to_front] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""itemId"":""{{IT3}}"",""position"":0}}
+[GQL-EXEC to_front]
+[GQL-OP to_end]
+mutation($c: InputMoveCompareListItemType!) { moveCompareListItem(command: $c) { id itemsCount items { id productId categoryId position } } }
+[GQL-VARS to_end] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""itemId"":""{{IT3}}"",""position"":99}}
+[GQL-EXEC to_end]
+[GQL-OP neg]
+mutation($c: InputMoveCompareListItemType!) { moveCompareListItem(command: $c) { id itemsCount items { id productId categoryId position } } }
+[GQL-VARS neg] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""itemId"":""{{IT1}}"",""position"":-1}}
+[GQL-EXEC neg]
+[GQL-OP empty_id]
+mutation($c: InputMoveCompareListItemType!) { moveCompareListItem(command: $c) { id itemsCount items { id productId categoryId position } } }
+[GQL-VARS empty_id] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""itemId"":"""",""position"":0}}
+[GQL-EXEC empty_id]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=to_front] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=to_front] data.moveCompareListItem.items[?id={{IT3}}].position = 0 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=to_front] data.moveCompareListItem.items[?id={{IT1}}].position = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; the others are renumbered)
+[ERRORS label=to_end] errors[] empty {OBSERVED} (checklist D4: 99 goes last)
+[DATA label=to_end] data.moveCompareListItem.items[?id={{IT3}}].position = 2 {OBSERVED}
+[ERRORS label=neg] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=neg] errors[0].extensions.code = VALIDATION {OBSERVED} (checklist D4)
+[ERRORS label=empty_id] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=empty_id] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README §Errors: an empty id is malformed input)
+[DATA label=read] data.compareList.items[?id={{IT3}}].position = 2 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202 — the refused moves changed nothing)",[ERRORS] the two refusals carry extensions.code VALIDATION,"Positions are not renumbered without gaps, a position past the end errors or duplicates, a negative or empty value is accepted, the refused moves change the order",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-004,saveProductsToCompareList rejects malformed input with VALIDATION and saves nothing,GraphQL > Product Comparison,Medium,,,"Runner-native. Each malformed shape is sent alone against an EMPTY list; the list must stay empty after all of them. Shapes (README §Errors): an empty product id, an over-long id (129 characters), a File configuration section, a section chosen twice for one product, text over 255 characters. {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP empty_id]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS empty_id] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":"""",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC empty_id]
+[GQL-OP long_id]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS long_id] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC long_id]
+[GQL-OP file_section]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS file_section] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A"",""configurationSections"":[{""sectionId"":""AGENT-TEST-SEC-1"",""type"":""File""}]}]}}
+[GQL-EXEC file_section]
+[GQL-OP dup_section]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS dup_section] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A"",""configurationSections"":[{""sectionId"":""AGENT-TEST-SEC-1"",""type"":""Text"",""customText"":""a""},{""sectionId"":""AGENT-TEST-SEC-1"",""type"":""Text"",""customText"":""b""}]}]}}
+[GQL-EXEC dup_section]
+[GQL-OP long_text]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS long_text] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A"",""configurationSections"":[{""sectionId"":""AGENT-TEST-SEC-1"",""type"":""Text"",""customText"":""tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt""}]}]}}
+[GQL-EXEC long_text]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=empty_id] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=empty_id] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: vcptcore 2026-11-20)
+[DATA label=empty_id] data.saveProductsToCompareList is null {OBSERVED}
+[ERRORS label=long_id] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=long_id] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: checklist D5)
+[ERRORS label=file_section] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=file_section] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: File sections can't be compared)
+[ERRORS label=dup_section] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=dup_section] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: checklist D5: a duplicate sectionId)
+[ERRORS label=long_text] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=long_text] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: text over 255 characters)
+[DATA label=read] data.compareList is null OR data.compareList.itemsCount = 0 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202 — nothing was saved by any of the five refusals)","[ERRORS] each refusal is a GraphQL error with extensions.code VALIDATION, not a 5xx or a code-less error","A malformed save is accepted, the error has no code, a 5xx, a partly saved list",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-005,A product with 30 configuration sections is accepted; 31 are refused with VALIDATION,GraphQL > Product Comparison,Medium,,,"Runner-native. The sections-per-product cap is 30: the developer confirmed it was lowered from 100 (Jira VCST-5918 comment 113250 item 1) and the README names 30 per product {SPEC}. Section ids are arbitrary strings (Text sections need no catalog section). The refused 31-section save must leave the list untouched. {SPEC} = module README at tag 3.1000.0 and Jira VCST-5918 comments 112644/113250; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918 and REG-2026-11-20-1202.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP s30]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS s30] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A"",""configurationSections"":[{""sectionId"":""AGENT-TEST-SEC-001"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-002"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-003"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-004"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-005"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-006"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-007"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-008"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-009"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-010"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-011"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-012"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-013"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-014"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-015"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-016"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-017"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-018"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-019"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-020"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-021"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-022"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-023"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-024"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-025"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-026"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-027"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-028"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-029"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-030"",""type"":""Text"",""customText"":""x""}]}]}}
+[GQL-EXEC s30]
+[GQL-OP clear_between]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS clear_between] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC clear_between]
+[GQL-OP s31]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS s31] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A"",""configurationSections"":[{""sectionId"":""AGENT-TEST-SEC-001"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-002"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-003"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-004"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-005"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-006"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-007"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-008"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-009"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-010"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-011"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-012"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-013"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-014"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-015"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-016"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-017"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-018"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-019"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-020"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-021"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-022"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-023"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-024"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-025"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-026"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-027"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-028"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-029"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-030"",""type"":""Text"",""customText"":""x""},{""sectionId"":""AGENT-TEST-SEC-031"",""type"":""Text"",""customText"":""x""}]}]}}
+[GQL-EXEC s31]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=s30] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[DATA label=s30] data.saveProductsToCompareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; Jira 113250 item 1; README: 30 configuration sections per product)
+[ERRORS label=s31] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[DATA label=s31] errors[0].extensions.code = VALIDATION {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; Jira 113250 item 1; README §Errors: more than 30 configuration sections for a product)
+[DATA label=read] data.compareList.itemsCount = 0 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516 — the refused 31-section save left nothing)","[ERRORS] a refusal is VALIDATION, not a 5xx","30 sections refused, 31 sections accepted, a refusal without a code, the refused save leaves an item behind",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created; a guest list the case leaves behind is removed by the daily cleanup job,"VCST-5918 · Archetype:BOUNDARY · Technique:BVA | Synced: VCST-5918 (2026-11-20, PO decisions) | Promoted: REG-2026-11-20-1516 (2026-11-22)",Automated
+CMP-GQL-006,Two compareList aliases in one request both resolve after a write — a request of this shape never errors,GraphQL > Product Comparison,High,,ECL-14.1,"Runner-native. KNOWN BUG CANDIDATE (checklist D6, vcptcore 2026-11-17: two compareList aliases right after a write failed 8/15 (full selection) and 14/15 (both simple) with INVALID_OPERATION and data.a/b null; 0/15 for a single alias, 0/80 without a preceding write). Aliasing a field is standard GraphQL and the schema declares no restriction {SPEC} (GraphQL spec §Field alias; README: compareList is an ordinary query field) — so every repetition must succeed. The request is repeated five times after one write so a single lucky run cannot hide the defect; an expected FAIL is reported as a bug and the expectation is never loosened. {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC save]
+[GQL-OP two_1]
+query($s: String!, $u: String!) { a: compareList(storeId: $s, userId: $u) { id itemsCount categories { id items { id product { id name } } } } b: compareList(storeId: $s, userId: $u) { id itemsCount } }
+[GQL-VARS two_1] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC two_1]
+[GQL-OP two_2]
+query($s: String!, $u: String!) { a: compareList(storeId: $s, userId: $u) { id itemsCount categories { id items { id product { id name } } } } b: compareList(storeId: $s, userId: $u) { id itemsCount } }
+[GQL-VARS two_2] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC two_2]
+[GQL-OP two_3]
+query($s: String!, $u: String!) { a: compareList(storeId: $s, userId: $u) { id itemsCount categories { id items { id product { id name } } } } b: compareList(storeId: $s, userId: $u) { id itemsCount } }
+[GQL-VARS two_3] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC two_3]
+[GQL-OP two_4]
+query($s: String!, $u: String!) { a: compareList(storeId: $s, userId: $u) { id itemsCount categories { id items { id product { id name } } } } b: compareList(storeId: $s, userId: $u) { id itemsCount } }
+[GQL-VARS two_4] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC two_4]
+[GQL-OP two_5]
+query($s: String!, $u: String!) { a: compareList(storeId: $s, userId: $u) { id itemsCount categories { id items { id product { id name } } } } b: compareList(storeId: $s, userId: $u) { id itemsCount } }
+[GQL-VARS two_5] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC two_5]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=save] errors[] empty {SPEC}
+[ERRORS label=two_1] errors[] empty {SPEC}
+[DATA label=two_1] data.a.itemsCount = 1 {SPEC}
+[DATA label=two_1] data.b.itemsCount = 1 {SPEC}
+[ERRORS label=two_2] errors[] empty {SPEC}
+[DATA label=two_2] data.a.itemsCount = 1 {SPEC}
+[DATA label=two_2] data.b.itemsCount = 1 {SPEC}
+[ERRORS label=two_3] errors[] empty {SPEC}
+[DATA label=two_3] data.a.itemsCount = 1 {SPEC}
+[DATA label=two_3] data.b.itemsCount = 1 {SPEC}
+[ERRORS label=two_4] errors[] empty {SPEC}
+[DATA label=two_4] data.a.itemsCount = 1 {SPEC}
+[DATA label=two_4] data.b.itemsCount = 1 {SPEC}
+[ERRORS label=two_5] errors[] empty {SPEC}
+[DATA label=two_5] data.a.itemsCount = 1 {SPEC}
+[DATA label=two_5] data.b.itemsCount = 1 {SPEC}",[ERRORS] none of the five requests returns errors[] or a null alias,"INVALID_OPERATION or ARGUMENT 'Error trying to resolve field a', data.a or data.b null, intermittently across the repetitions",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:RACE · Technique:EG | Deprecated: API-only multi-alias compareList read; the storefront never issues it; PO 2026-11-20: not a bug (2026-11-20),Deprecated
+CMP-GQL-007,Products saved without a categoryId share one null group and one per-category cap — a sixth is refused with COMPARE_LIST_LIMIT_REACHED,GraphQL > Product Comparison,Medium,BL-CAT-013,,"Runner-native. A product without a category goes to a group with a null id, and the per-category limit ProductComparison.MaxItems (5 by default) applies to that group like any other {SPEC} (module README §Categories and limits; PO decision 2026-11-20: that is the only way to split them). Six discovered products are saved WITHOUT categoryId: five fill the null group, the sixth is refused. The runner does not read the limit: before the run `npm run store:set -- --list` must show ProductComparison.MaxItems = 5 on {{STORE_ID}}; any other value (a settings case aborted before its restore) is a broken precondition — restore it and re-run, never file it as a bug. {SPEC} = module README at tag 3.1000.0 and Jira VCST-5918 comments 112644/113250; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918 and REG-2026-11-20-1202.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-CAPTURE disc.data.products.items.2.id → P3]
+[GQL-CAPTURE disc.data.products.items.3.id → P4]
+[GQL-CAPTURE disc.data.products.items.4.id → P5]
+[GQL-CAPTURE disc.data.products.items.5.id → P6]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP save5]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save5] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}""},{""productId"":""{{P2}}""},{""productId"":""{{P3}}""},{""productId"":""{{P4}}""},{""productId"":""{{P5}}""}]}}
+[GQL-EXEC save5]
+[GQL-OP save6]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save6] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P6}}""}]}}
+[GQL-EXEC save6]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=save5] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[DATA label=save5] data.saveProductsToCompareList.itemsCount = 5 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README §Categories and limits)
+[COUNT label=save5] data.saveProductsToCompareList.categories.length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516 — one group for all five)
+[DATA label=save5] data.saveProductsToCompareList.categories.0.id is null {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README: a product without a category goes to a group with a null id)
+[ERRORS label=save6] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[DATA label=save6] errors[0].extensions.code = COMPARE_LIST_LIMIT_REACHED {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README §Errors; observed vcptcore 2026-11-20)
+[DATA label=read] data.compareList.itemsCount = 5 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516 — the refused sixth product was not saved)",[ERRORS] the refusal is a GraphQL error whose extensions.code names the reason,"The sixth product without a categoryId is saved, the five are split into several groups, the refusal carries another code",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created; a guest list the case leaves behind is removed by the daily cleanup job,"VCST-5918 · Archetype:SILENT · Technique:EG | Synced: VCST-5918 (2026-11-20, PO decisions) | Promoted: REG-2026-11-20-1516 (2026-11-22)",Automated
+CMP-GQL-008,A buyer's token cannot read or change another buyer's compare list through any operation,GraphQL > Product Comparison,High,BL-CAT-014,,"Runner-native. Two registered buyers: the victim USER2 holds a one-product list; the actor ORG_USER sends the victim's user id with every operation — read, save, remove, move, clear category, clear, merge. Each must be refused with Forbidden at the server with the ACTOR's token, and the victim's list must stay identical {SPEC} (README §XAPI specification: a signed-in buyer passes their own user id) {OBSERVED} (checklist D1: all seven refused, 16 re-reads unchanged). {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → VID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP victim_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS victim_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC victim_save]
+[GQL-CAPTURE victim_save.data.saveProductsToCompareList.id → VLIST]
+[GQL-CAPTURE victim_save.data.saveProductsToCompareList.items.0.id → VITEM]
+[AUTH role=ORG_USER]
+[GQL-OP x_read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS x_read] {""s"":""{{STORE_ID}}"",""u"":""{{VID}}""}
+[GQL-EXEC x_read]
+[GQL-OP x_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS x_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}"",""products"":[{""productId"":""{{P2}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC x_save]
+[GQL-OP x_remove]
+mutation($c: InputRemoveCompareListItemsType!) { removeCompareListItems(command: $c) { id itemsCount items { id productId } } }
+[GQL-VARS x_remove] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}"",""itemIds"":[""{{VITEM}}""]}}
+[GQL-EXEC x_remove]
+[GQL-OP x_move]
+mutation($c: InputMoveCompareListItemType!) { moveCompareListItem(command: $c) { id itemsCount items { id productId categoryId position } } }
+[GQL-VARS x_move] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}"",""itemId"":""{{VITEM}}"",""position"":0}}
+[GQL-EXEC x_move]
+[GQL-OP x_clearcat]
+mutation($c: InputClearCompareListCategoryType!) { clearCompareListCategory(command: $c) { id itemsCount } }
+[GQL-VARS x_clearcat] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}}
+[GQL-EXEC x_clearcat]
+[GQL-OP x_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS x_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}""}}
+[GQL-EXEC x_clear]
+[GQL-OP me_actor]
+query { me { id } }
+[GQL-EXEC me_actor]
+[GQL-CAPTURE me_actor.data.me.id → AID]
+[GQL-OP x_merge]
+mutation($c: InputMergeCompareListType!) { mergeCompareList(command: $c) { id itemsCount items { id productId categoryId } } }
+[GQL-VARS x_merge] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{AID}}"",""secondListId"":""{{VLIST}}""}}
+[GQL-EXEC x_merge]
+[AUTH role=USER2]
+[GQL-OP victim_read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS victim_read] {""s"":""{{STORE_ID}}"",""u"":""{{VID}}""}
+[GQL-EXEC victim_read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{VID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=x_read] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_read] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=x_save] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_save] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=x_remove] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_remove] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=x_move] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_move] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=x_clearcat] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_clearcat] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=x_clear] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_clear] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=x_merge] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=x_merge] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20 — merging the victim's list into the actor's own list is refused too (README: only a guest list or one of the caller's own))
+[ERRORS label=victim_read] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=victim_read] data.compareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=victim_read] data.compareList.id = {{VLIST}} {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202 — the victim's list is the one that was saved, unchanged)","[ERRORS] the denials are GraphQL errors with extensions.code Forbidden, not Unauthorized and not a 5xx","Any of the seven operations succeeds for another user's id, the victim's list changes, an error without a code",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-009,"An anonymous caller reaches only guest lists: a registered user's id is Unauthorized, a guest's own id reads and writes",GraphQL > Product Comparison,Medium,BL-CAT-014,,"Runner-native. A guest passes the anonymous user id the storefront keeps and reaches only guest lists; an id that belongs to a registered user is refused {SPEC} (README §XAPI specification). The anonymous id is the guest's only credential, so a caller who holds it may read and write that list (by design, like guest carts) {SPEC} {OBSERVED} (checklist D2/X17). The guest id is a fixed AGENT-TEST- string: the case clears it first and last. {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → RID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[AUTH role=ANONYMOUS]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-ANON""}}
+[GQL-EXEC pre_clear]
+[GQL-OP anon_read_user]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS anon_read_user] {""s"":""{{STORE_ID}}"",""u"":""{{RID}}""}
+[GQL-EXEC anon_read_user]
+[GQL-OP anon_save_user]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS anon_save_user] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{RID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC anon_save_user]
+[GQL-OP guest_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS guest_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-ANON"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC guest_save]
+[GQL-OP guest_read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS guest_read] {""s"":""{{STORE_ID}}"",""u"":""AGENT-TEST-CMP-GUEST-ANON""}
+[GQL-EXEC guest_read]
+[AUTH role=ORG_USER]
+[GQL-OP signed_in_on_guest]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS signed_in_on_guest] {""s"":""{{STORE_ID}}"",""u"":""AGENT-TEST-CMP-GUEST-ANON""}
+[GQL-EXEC signed_in_on_guest]
+[AUTH role=ANONYMOUS]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-ANON""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=anon_read_user] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=anon_read_user] errors[0].extensions.code = Unauthorized {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: checklist D2)
+[ERRORS label=anon_save_user] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=anon_save_user] errors[0].extensions.code = Unauthorized {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed vcptcore 2026-11-17/20)
+[ERRORS label=guest_save] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=guest_save] data.saveProductsToCompareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[ERRORS label=guest_read] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=guest_read] data.compareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[ERRORS label=signed_in_on_guest] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=signed_in_on_guest] errors[0].extensions.code = Forbidden {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: checklist D2: a signed-in buyer on a guest's anonymous id is refused)","[ERRORS] the two refusals carry extensions.code (Unauthorized, Forbidden)","A registered user's list readable without a token, a guest cannot read or write its own list, a signed-in buyer reads a guest list through compareList",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-010,mergeCompareList moves the guest list into the account list — an overlapping product stays once and the guest list is deleted,GraphQL > Product Comparison,High,BL-CAT-015,,"Runner-native. Guest list {P1, P3}, account list {P1, P2} (overlap on P1). Rule: the guest's products come over, a product already in the account list stays once, the guest list is deleted afterwards {SPEC} (README §Lists, guests and sign-in) {OBSERVED} (checklist B1/B2: guest {A,C} + account {A,B} → {A,B,C}, A once; guest list null afterwards). {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-CAPTURE disc.data.products.items.2.id → P3]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[AUTH role=ANONYMOUS]
+[GQL-OP pre_clear_guest]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear_guest] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-MERGE""}}
+[GQL-EXEC pre_clear_guest]
+[GQL-OP guest_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS guest_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-MERGE"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P3}}"",""categoryId"":""AGENT-TEST-CMP-CAT-B""}]}}
+[GQL-EXEC guest_save]
+[GQL-CAPTURE guest_save.data.saveProductsToCompareList.id → GLIST]
+[AUTH role=USER2]
+[GQL-OP acct_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS acct_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P2}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC acct_save]
+[GQL-OP merge]
+mutation($c: InputMergeCompareListType!) { mergeCompareList(command: $c) { id itemsCount items { id productId categoryId } } }
+[GQL-VARS merge] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""secondListId"":""{{GLIST}}""}}
+[GQL-EXEC merge]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[AUTH role=ANONYMOUS]
+[GQL-OP guest_after]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS guest_after] {""s"":""{{STORE_ID}}"",""u"":""AGENT-TEST-CMP-GUEST-MERGE""}
+[GQL-EXEC guest_after]
+[AUTH role=USER2]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=merge] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=merge] data.mergeCompareList.itemsCount = 3 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=read] data.compareList.itemsCount = 3 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P1}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202 — the overlapping product is listed once)
+[COUNT label=read] data.compareList.items[*?productId={{P2}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P3}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=guest_after] data.compareList is null {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: checklist B1 — the guest list is deleted after the merge)",[ERRORS] merge and both reads errors[] empty,"P1 listed twice, a guest product missing from the account list, the guest list still readable after the merge, the merge refused for an ordinary buyer",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:LIFECYCLE · Technique:DT | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-011,mergeCompareList into a full category keeps the guest's newest and fills the rest with the account's newest,GraphQL > Product Comparison,High,BL-CAT-015,,"Runner-native. Store setting ProductComparison.MaxItems = 5. The account category holds P1..P5 (P1 oldest, added one call after another); the guest category holds P6, P7. After the merge the category holds the guest's P6, P7 and the account's three newest P3, P4, P5; P1 and P2 are dropped {SPEC} (README §Lists, guests and sign-in: per category the guest's newest come over first up to the limit, then the account's newest fill what is left) {OBSERVED} (checklist B3). {SPEC} = module README at tag 3.1000.0 (§XAPI specification, §Errors, §Categories and limits) and Jira VCST-5918 comments 112644/112696; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-CAPTURE disc.data.products.items.1.id → P2]
+[GQL-CAPTURE disc.data.products.items.2.id → P3]
+[GQL-CAPTURE disc.data.products.items.3.id → P4]
+[GQL-CAPTURE disc.data.products.items.4.id → P5]
+[GQL-CAPTURE disc.data.products.items.5.id → P6]
+[GQL-CAPTURE disc.data.products.items.6.id → P7]
+[GQL-CAPTURE disc.data.products.items.7.id → P8]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[AUTH role=ANONYMOUS]
+[GQL-OP pre_clear_guest]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear_guest] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-LIMIT""}}
+[GQL-EXEC pre_clear_guest]
+[GQL-OP guest_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS guest_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-LIMIT"",""products"":[{""productId"":""{{P6}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""},{""productId"":""{{P7}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC guest_save]
+[GQL-CAPTURE guest_save.data.saveProductsToCompareList.id → GLIST]
+[AUTH role=USER2]
+[GQL-OP acct_P1]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS acct_P1] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC acct_P1]
+[GQL-OP acct_P2]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS acct_P2] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P2}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC acct_P2]
+[GQL-OP acct_P3]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS acct_P3] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P3}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC acct_P3]
+[GQL-OP acct_P4]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS acct_P4] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P4}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC acct_P4]
+[GQL-OP acct_P5]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS acct_P5] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P5}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC acct_P5]
+[GQL-OP merge]
+mutation($c: InputMergeCompareListType!) { mergeCompareList(command: $c) { id itemsCount items { id productId categoryId } } }
+[GQL-VARS merge] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""secondListId"":""{{GLIST}}""}}
+[GQL-EXEC merge]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=merge] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[DATA label=merge] data.mergeCompareList.itemsCount = 5 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.categories.0.items.length = 5 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P6}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P7}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P3}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P4}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P5}}].length = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
+[COUNT label=read] data.compareList.items[*?productId={{P1}}].length = 0 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; observed: checklist B3: the account's oldest dropped)
+[COUNT label=read] data.compareList.items[*?productId={{P2}}].length = 0 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)","[ERRORS] the merge is not refused (the list stays at the limit, it does not exceed it)","The account's oldest products kept instead of the guest's, more than five in the category, the merge refused with COMPARE_LIST_LIMIT_REACHED",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created (the Cleanup column runs [AUTH]+[REST] only); a guest list the case leaves behind is removed by the daily cleanup job,VCST-5918 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+CMP-GQL-012,With product comparison off a save is refused with COMPARE_LIST_DISABLED and compareList returns null; the list returns when it is back on,GraphQL > Product Comparison,High,BL-CAT-016,,"NEEDS_WINDOW: flips store setting ProductComparison.Enabled false → true through the repo's safe path (npm run store:set — a full-body GET-merge-PUT of /api/stores; the platform tenant-values endpoint answered 404 here and a hand-rolled partial PUT nulls store fields), and no other suite may use the store meanwhile. The restore writes the DEFAULT value true (an override cannot be removed, checklist X23). Not runner-only: the [SETUP]/[TEARDOWN] lines are run by the executing agent, the GraphQL steps by the runner. settings are cached: the xAPI reads the new value only after the cache refreshes, so the case polls (the pattern of the other settings-flip cases, bounded at 60 s) instead of reading once; a poll timeout is a cache finding, not a verdict on the setting. {SPEC} = module README at tag 3.1000.0 and Jira VCST-5918 comments 112644/113250; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918 and REG-2026-11-20-1202. {OBSERVED} KB-BAAE4BE8.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP save_on]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save_on] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC save_on]
+[GQL-CAPTURE save_on.data.saveProductsToCompareList.id → LIST_ON]
+[SETUP] Run: npm run store:set -- --name ProductComparison.Enabled --value false (full-body GET-merge-PUT via scripts/seed-data/store/set-store-setting.mjs — never hand-roll PUT /api/stores)
+[GQL-OP read_off]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read_off] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read_off]
+[WAIT until=read_off timeout=60 interval=5] data.compareList is null
+[GQL-OP save_off]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save_off] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-B""}]}}
+[GQL-EXEC save_off]
+[TEARDOWN] MANDATORY — Run: npm run store:set -- --name ProductComparison.Enabled --value true (run even if an assertion below fails; every other compare case depends on this setting staying at its default)
+[GQL-OP read_on]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read_on] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read_on]
+[WAIT until=read_on timeout=60 interval=5] data.compareList.itemsCount = 1
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[STATE] store:set (disable) exits 0 and read-back confirms ProductComparison.Enabled = false on {{STORE_ID}} {OBSERVED}
+[DATA label=read_off] data.compareList is null {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README: compareList returns null when comparison is off for the store; observed vcptcore 2026-11-17)
+[ERRORS label=save_off] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[DATA label=save_off] errors[0].extensions.code = COMPARE_LIST_DISABLED {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README §Errors; observed vcptcore 2026-11-17, checklist C6)
+[STATE] store:set (restore) exits 0 and read-back confirms ProductComparison.Enabled = true on {{STORE_ID}} {OBSERVED}
+[DATA label=read_on] data.compareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; observed vcptcore 2026-11-17, checklist C7: the list is kept while off)
+[DATA label=read_on] data.compareList.id = {{LIST_ON}} {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516 — the same list returns, nothing was deleted)",[ERRORS] the refusal is a GraphQL error with extensions.code COMPARE_LIST_DISABLED,"The save succeeds while the setting is off, compareList returns the list while off, the list is gone after turning the setting on, the setting left false after a failure",Run: npm run store:set -- --name ProductComparison.Enabled --value true (idempotent no-op when already true; safety net for an aborted case),"VCST-5918 · Archetype:FALLBACK · Technique:DT | Synced: VCST-5918 (2026-11-20, PO decisions) | Promoted: REG-2026-11-20-1516 (2026-11-22)",Automated
+CMP-GQL-013,With guest comparison off a guest's save is refused with ANONYMOUS_COMPARE_LIST_DISABLED while a signed-in buyer still saves,GraphQL > Product Comparison,Medium,BL-CAT-017,,"NEEDS_WINDOW: flips store setting ProductComparison.AnonymousListEnabled false → true through npm run store:set (full-body GET-merge-PUT of /api/stores, never a hand-rolled PUT) and restores the DEFAULT value true. Not runner-only: the [SETUP]/[TEARDOWN] lines are run by the executing agent. settings are cached: the xAPI reads the new value only after the cache refreshes, so the case polls (the pattern of the other settings-flip cases, bounded at 60 s) instead of reading once; a poll timeout is a cache finding, not a verdict on the setting. {SPEC} = module README at tag 3.1000.0 and Jira VCST-5918 comments 112644/113250; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918 and REG-2026-11-20-1202. {OBSERVED} (checklist C8).",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP disc]
+query($s: String!) { products(storeId: $s, first: 12) { items { id name } } }
+[GQL-VARS disc] {""s"":""{{STORE_ID}}""}
+[GQL-EXEC disc]
+[GQL-CAPTURE disc.data.products.items.0.id → P1]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[SETUP] Run: npm run store:set -- --name ProductComparison.AnonymousListEnabled --value false (full-body GET-merge-PUT via scripts/seed-data/store/set-store-setting.mjs — never hand-roll PUT /api/stores)
+[AUTH role=ANONYMOUS]
+[GQL-OP guest_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS guest_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-OFF"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC guest_save]
+[WAIT until=guest_save timeout=60 interval=5] errors[0].extensions.code = ANONYMOUS_COMPARE_LIST_DISABLED
+[GQL-OP guest_read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS guest_read] {""s"":""{{STORE_ID}}"",""u"":""AGENT-TEST-CMP-GUEST-OFF""}
+[GQL-EXEC guest_read]
+[AUTH role=USER2]
+[GQL-OP buyer_save]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS buyer_save] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""{{P1}}"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC buyer_save]
+[TEARDOWN] MANDATORY — Run: npm run store:set -- --name ProductComparison.AnonymousListEnabled --value true (run even if an assertion below fails; every other compare case depends on this setting staying at its default)
+[AUTH role=USER2]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]
+[AUTH role=ANONYMOUS]
+[GQL-OP cleanup_guest]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_guest] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""AGENT-TEST-CMP-GUEST-OFF""}}
+[GQL-EXEC cleanup_guest]","[STATE] store:set (disable) exits 0 and read-back confirms ProductComparison.AnonymousListEnabled = false on {{STORE_ID}} {OBSERVED}
+[ERRORS label=guest_save] errors[] non-empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[DATA label=guest_save] errors[0].extensions.code = ANONYMOUS_COMPARE_LIST_DISABLED {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README §Errors; observed vcptcore 2026-11-17, checklist C8)
+[DATA label=guest_read] data.compareList is null {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516; README: compareList returns null for a guest list while guest comparison is off)
+[ERRORS label=buyer_save] errors[] empty {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516 — the switch concerns guests only)
+[DATA label=buyer_save] data.saveProductsToCompareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1516)
+[STATE] store:set (restore) exits 0 and read-back confirms ProductComparison.AnonymousListEnabled = true on {{STORE_ID}} {OBSERVED}",[ERRORS] the guest refusal carries extensions.code ANONYMOUS_COMPARE_LIST_DISABLED,"The guest save succeeds while the setting is off, the signed-in buyer is refused too, the setting left false after a failure",Run: npm run store:set -- --name ProductComparison.AnonymousListEnabled --value true (idempotent no-op when already true; safety net for an aborted case),"VCST-5918 · Archetype:FALLBACK · Technique:DT | Synced: VCST-5918 (2026-11-20, PO decisions) | Promoted: REG-2026-11-20-1516 (2026-11-22)",Automated
+CMP-GQL-014,A product id that is not in the catalog is accepted by a save and reads back with product null,GraphQL > Product Comparison,Medium,,,"Runner-native. Observed behaviour, recorded as such: saving a well-formed productId the catalog does not know is accepted, and on read that item's product is null (the README says a product that no longer exists comes back as null so the storefront can show 'no longer available') {OBSERVED} (vcptcore 2026-11-17 checklist D5 and 2026-11-20 REG-2026-11-20-1202). No written source says a save must refuse it. {SPEC} = module README at tag 3.1000.0 and Jira VCST-5918 comments 112644/113250; {OBSERVED} = vcptcore 2026-11-17/20, run VCST-5918 and REG-2026-11-20-1202.",storeId={{STORE_ID}},"[AUTH role=USER2]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → UID]
+[GQL-OP pre_clear]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS pre_clear] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC pre_clear]
+[GQL-OP save_unknown]
+mutation($c: InputSaveProductsToCompareListType!) { saveProductsToCompareList(command: $c) { id itemsCount items { id productId categoryId position } categories { id items { id productId position } } } }
+[GQL-VARS save_unknown] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}"",""products"":[{""productId"":""AGENT-TEST-NONEXISTENT-PRODUCT"",""categoryId"":""AGENT-TEST-CMP-CAT-A""}]}}
+[GQL-EXEC save_unknown]
+[GQL-OP read]
+query($s: String!, $u: String!) { compareList(storeId: $s, userId: $u) { id itemsCount items { id productId categoryId position } categories { id items { id productId position product { id name } } } } }
+[GQL-VARS read] {""s"":""{{STORE_ID}}"",""u"":""{{UID}}""}
+[GQL-EXEC read]
+[GQL-OP cleanup_post]
+mutation($c: InputClearCompareListType!) { clearCompareList(command: $c) { id itemsCount } }
+[GQL-VARS cleanup_post] {""c"":{""storeId"":""{{STORE_ID}}"",""userId"":""{{UID}}""}}
+[GQL-EXEC cleanup_post]","[ERRORS label=save_unknown] errors[] empty {OBSERVED}
+[DATA label=save_unknown] data.saveProductsToCompareList.itemsCount = 1 {OBSERVED} (vcptcore 2026-11-20)
+[DATA label=read] data.compareList.items.0.productId = AGENT-TEST-NONEXISTENT-PRODUCT {OBSERVED}
+[DATA label=read] data.compareList.categories.0.items.0.product is null {OBSERVED} (README: an item whose product does not exist comes back with product null)",[ERRORS] the save and the read return errors[] empty,"The unknown id is refused with an error, the item reads back with a product, the item is silently dropped, the unknown id is counted twice",none — runner-native: the inline cleanup step at the end of Steps clears the lists this case created; a guest list the case leaves behind is removed by the daily cleanup job,"VCST-5918 · Archetype:SILENT · Technique:EG | Synced: VCST-5918 (2026-11-20, PO decisions) | Promoted: REG-2026-11-20-1516 (2026-11-22)",Automated

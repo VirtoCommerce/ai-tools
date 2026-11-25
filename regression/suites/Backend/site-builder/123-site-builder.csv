@@ -1,0 +1,795 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+SB-001,"[JOURNEY] Page lifecycle — create in the Vue designer, Save, Publish, open the permalink, edit, Save, Publish again",Site Builder > Page lifecycle,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store (@td(STORE_PRIMARY.id)) with a reachable storefront URL; page data is created by the case (AGENT-TEST- prefix), no seeded page.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id), front_url={{FRONT_URL}}, page_name=AGENT-TEST-SB001-<unique>, permalink=/agent-test-sb001-<unique>","--- SCREEN: Pages list ---
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-draft
+[ACT] click 'Add'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the page name from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] fill the permalink from Test_Data
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the UI settles (no spinner, network idle)
+--- SCREEN: Designer ---
+[ACT] click 'Edit in designer'
+[WAIT] the preview iframe finishes loading (Add section is offered)
+[ACT] click 'Add section'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose a text section
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Add section'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose an image section
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save' in the designer
+[WAIT] the save settles
+[CAPTURE] the number of POST /api/site-builder/designer/save requests and of new History versions as SAVES_1
+[ACT] click 'Publish'
+[WAIT] the publish settles
+[CAPTURE] the requests sent by Publish as PUBLISH_1 (expect one POST /api/site-builder-pages/grouped/publishing/{groupId})
+--- SCREEN: Storefront ---
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] the rendered text of the first section as V1
+--- SCREEN: Designer ---
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-active
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Edit in designer'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] edit the text of the first section
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[CAPTURE] the designer/save requests of this Save as SAVES_2
+[ACT] click 'Publish'
+[WAIT] the publish settles
+--- SCREEN: Storefront ---
+[NAV] reload {{FRONT_URL}}<permalink>
+[CAPTURE] the rendered text of the first section as V2","[COUNT] SAVES_1 and SAVES_2 each contain exactly 1 POST /api/site-builder/designer/save {SPEC} (AC-4)
+[REL] PUBLISH_1 contains no POST /api/site-builder/theme/publish — a page publish does not publish the theme {SPEC} (AC-6; module README Theme publishing)
+[REL] the storefront shows V1 after the first Publish and V2 after the second, and V2 differs from V1 {SPEC} (AC-4, AC-5)
+[STATE] the page has exactly one Published version after each Publish {OBSERVED} (VCST-6571 checklist A1, vcst, 2026-11-19)","[NETWORK] no 4xx/5xx during the journey
+[CONSOLE] no uncaught exception in the designer
+[API] GET /api/site-builder-pages/grouped/{groupId} after the last Publish: hasChanges is false","two designer/save requests for one Save, theme/publish fired by a page Publish, storefront still shows V1 after the second Publish, preview never loads",Unpublish then archive the page created by this case by its groupId (POST /api/site-builder-pages/grouped/archive); never sweep by prefix.,VCST-6571 · checklist A1 · AC-4 AC-5 AC-6 · Technique:FLOW Archetype:LIFECYCLE,Draft
+SB-002,History — every Save adds exactly one version with author and time,Site Builder > History,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+A store with a connected GitHub App and GitContentEnabled=true — NOT available on vcst (fixture gap R21): BLOCKED there, never FAIL.
+The page is created by the case.","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id), page_name=AGENT-TEST-SB002-<unique>","[NAV] open a new database page in the designer on the git-enabled store
+[ACT] click 'Save' three times, changing one section text between saves
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] open the designer 'Version history'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the version list as VERSIONS
+[CAPTURE] the POST designer/save count as SAVES","[COUNT] the number of History versions created by the three Saves equals SAVES (one per Save, none merged, none duplicated) {SPEC} (AC-5)
+[COUNT] version rows with an empty author or an empty time equal 0 {SPEC} (AC-5)
+[REL] verify whether the newest version equals the current draft content and the list is newest first {HYPOTHESIS}",[API] GET /api/site-builder/history?item=page:{groupId} returns status ok and versions[] with one entry per Save,"history status setupRequired on a git-enabled store, two versions for one Save, missing author",Archive the page by its groupId.,"VCST-6571 · checklist A1 history clause (BLOCKED: R21 fixture gap, no GitHub App on vcst) · AC-5 · Technique:BVA Archetype:LIFECYCLE",Draft
+SB-003,Theme publish — themeSnapshot returns the new publication right after Publish theme,Site Builder > Theme publishing,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+Store B2B-store already has a theme publication (a themeSnapshot read of a store with none creates publication 1 — never do that on a shared store). Capture LAST_GOOD = current publication number before starting.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] GET {{BACK_URL}}/api/site-builder/theme/status?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] publication as P0
+[GQL] query themeSnapshot(storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""en-US"")
+[CAPTURE] publication number as S0
+[SETUP] save one valid header draft through the designer (header announcement text AGENT-TEST-SB003-<unique>)
+[HTTP] POST {{BACK_URL}}/api/site-builder/theme/publish for the store with the current catalogHash (GET /api/site-builder/catalog → hash)
+[CAPTURE] publication in the 200 body as P1
+[GQL] repeat the themeSnapshot query immediately
+[CAPTURE] publication as S1","[REL] P0 equals S0 before the publish (status and snapshot agree) {OBSERVED} (docs/contracts/theme-snapshot.md; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] P1 equals P0 + 1 and S1 equals P1 on the very next anonymous read {OBSERVED} (docs/contracts/theme-snapshot.md: the pointer is written last and the storefront sees the new theme at once; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] S1 was served without waiting for a cache TTL (read issued right after the 200) {OBSERVED} (KB-7D908FAE: 168 ms after the 200, vcst, 2026-11-19)
+[ERRORS] errors[] empty in both themeSnapshot responses {OBSERVED} (docs/contracts/theme-snapshot.md; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] theme/publish returns 200 exactly once,"snapshot still serves P0 after the 200, publication number not +1, errors[] non-empty",Publications are append-only: re-publish the last good theme (discard nothing else) so the live theme equals LAST_GOOD content; record the new publication number in the run notes.,VCST-6571 · checklist A3 · Technique:ST Archetype:STALE,Draft
+SB-004,themeSnapshot — unsupported cultureName serves the store default and says so; a supported one is served as asked,Site Builder > Theme snapshot,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store has a theme publication and en-US plus de-DE among its languages. Read-only case.",store_id=@td(STORE_PRIMARY.id),"[GQL] themeSnapshot(storeId: ""@td(STORE_PRIMARY.id)"", cultureName: ""xx-XX"") anonymously
+[CAPTURE] the served culture and publication as UNSUP
+[GQL] themeSnapshot(... cultureName: ""de-DE"")
+[CAPTURE] culture as DE
+[GQL] themeSnapshot(... cultureName: ""en-US"")
+[CAPTURE] culture as EN","[DATA] UNSUP names the store default language as the served culture, not xx-XX {OBSERVED} (VCST-6571 checklist A3: xx-XX -> en-US stated, vcst, 2026-11-19)
+[DATA] DE names de-DE and EN names en-US {OBSERVED} (VCST-6571 checklist A3)
+[REL] the three responses carry the same publication number {OBSERVED} (docs/contracts/theme-snapshot.md: one publication, one snapshot per language; vcst, 2026-11-19, REG-2026-11-19-2029)
+[ERRORS] errors[] empty in all three {OBSERVED} (docs/contracts/theme-snapshot.md; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 4xx/5xx,"xx-XX echoed back as the served culture, null snapshot for an unsupported culture, errors[] non-empty",none (read-only).,VCST-6571 · checklist A3 · Technique:EP Archetype:FALLBACK,Draft
+SB-005,Publish theme — a palette pair below AA is refused with the failing pair; the previous publication stays live,Site Builder > Theme publishing,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store with a preview that loads. Capture LAST_GOOD publication.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] POST /api/site-builder/theme/palette/check with the published palette and the storefront paletteTokens
+[CAPTURE] failures as BASE_FAIL
+[SETUP] through the designer Theme tab > Colors set Body text to #f2f2f2 on Body bg #ffffff and click 'Save' (a draft
+[SETUP] saving is allowed)
+[HTTP] POST /api/site-builder/theme/publish with the current catalogHash
+[CAPTURE] status and body
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] publication as P_AFTER
+[GQL] themeSnapshot(storeId, cultureName)
+[CAPTURE] publication as S_AFTER","[STATUS] publish answers 400 {SPEC} (AC-6, AC-10)
+[BODY] the body names the failing pair and both ratios: the measured ratio is below the required 4.5:1 {SPEC} (AC-10; WCAG 2.2 1.4.3)
+[REL] P_AFTER equals S_AFTER equals LAST_GOOD — nothing went live {SPEC} (AC-6; README: a failed validation leaves the previous publication live)
+[BODY] the colours above are measured by palette/check as Body text on Body bg 1.11:1, needs 4.5:1 {OBSERVED} (KB-1EE973A2, vcst, 2026-11-19)",[NETWORK] only the publish request fails; no 5xx,"publish 200 with a failing pair, publication number advances, 500 instead of 400",Discard the palette draft in the designer (Discard all changes → pick the palette draft) so no later Publish theme is blocked; verify theme/status lists no drafts.,VCST-6571 · checklist A4 · AC-6 AC-10 · Technique:BVA Archetype:BOUNDARY,Draft
+SB-006,Publish theme is all-or-nothing — an invalid palette beside a valid header draft publishes neither,Site Builder > Theme publishing,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Store B2B-store with a preview that loads. Capture LAST_GOOD publication and the live header announcement text.","store_id=@td(STORE_PRIMARY.id), header_text=AGENT-TEST-SB006-<unique>","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] designer: add/edit a header announcement bar text to header_text and a Body text colour #f2f2f2 on #ffffff
+[SETUP] click 'Save' (both are drafts of one store)
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] the draft list as DRAFTS
+[HTTP] POST /api/site-builder/theme/publish with the current catalogHash
+[CAPTURE] status
+[GQL] themeSnapshot(storeId, cultureName) anonymously
+[CAPTURE] publication and header text as S_AFTER
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] drafts as DRAFTS_AFTER","[REL] DRAFTS contains both the header file and the palette file {OBSERVED} (VCST-6571 checklist A4, vcst, 2026-11-19)
+[STATUS] publish answers 400 {SPEC} (AC-6)
+[REL] S_AFTER publication equals LAST_GOOD and the header text is not header_text — the valid draft did not go live either {SPEC} (AC-6: all or nothing) {OBSERVED} (KB-1EE973A2 second observation, KB-749030D5)
+[REL] DRAFTS_AFTER equals DRAFTS — both drafts are kept {SPEC} (docs/contracts/theme-snapshot.md: a failure leaves every draft)",[NETWORK] no 5xx,"header text visible in themeSnapshot after the 400, drafts dropped by the failed publish",Discard both drafts through the designer (Discard all changes) and confirm theme/status lists none.,VCST-6571 · checklist A4 A5 · AC-6 · Technique:DT Archetype:LIFECYCLE,Draft
+SB-007,"Publish theme with one bogus colour token among valid drafts — 400 names the file, section, field and value; nothing goes live",Site Builder > Theme publishing,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+Store B2B-store. SETUP DEPENDS ON DEFECT X4 (SB-043): the bad draft can only be planted through the legacy POST /api/site-builder/save, which skips the catalog check. If /save refuses the bad draft (defect fixed) the case is BLOCKED (setup), never FAIL.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] designer: save one valid footer draft (a footer menu link text AGENT-TEST-SB007-<unique>
+[SETUP] the announcement bar is the only colour-token section and sits in the header group, so the bad draft must not replace the valid one)
+[SETUP] POST /api/site-builder/save?draft=true with a theme section using a colour token the storefront palette lacks (files is a JSON string list, see Swagger)
+[HTTP] POST /api/site-builder/theme/publish with the current catalogHash
+[CAPTURE] status and body
+[GQL] themeSnapshot
+[CAPTURE] publication as S_AFTER","[STATUS] publish answers 400 {OBSERVED} (AC-6; vcst, 2026-11-19, REG-2026-11-19-2029)
+[BODY] the body names the file, the section, the field and the offending value {OBSERVED} (VCST-6571 checklist A5, vcst, 2026-11-19; KB-749030D5)
+[REL] S_AFTER equals the publication before the call and the valid footer draft is not live {OBSERVED} (AC-6; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"publish 200, valid draft went live, 500",Discard every draft through the designer so later Publish theme calls are not blocked by the bad one.,VCST-6571 · checklist A5 · AC-6 · KB-749030D5 · Technique:EG Archetype:SILENT,Draft
+SB-008,Legacy save — POST /api/site-builder/save with draft=false for a theme file is refused and nothing is written,Site Builder > Theme publishing,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Any store with the default theme. Refusal-only case: nothing is written when the product behaves.","store_id=@td(STORE_PRIMARY.id), theme=default, type=themes, path=default/templates/agent-test-sb008-<unique>.json, admin=the ADMIN test account","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] POST {{BACK_URL}}/api/site-builder/save?storeId=@td(STORE_PRIMARY.id)&theme=default&draft=false with files = JSON string of [{path, type:""themes"", content}]
+[CAPTURE] status and body as SAVE
+[HTTP] GET {{BACK_URL}}/api/site-builder/template?storeId=@td(STORE_PRIMARY.id)&theme=default&type=themes&path=<path>&draft=false
+[CAPTURE] status as LIVE
+[HTTP] GET {{BACK_URL}}/api/site-builder/template?storeId=@td(STORE_PRIMARY.id)&theme=default&type=themes&path=<path>&draft=true
+[CAPTURE] status as DRAFT
+[HTTP] GET {{BACK_URL}}/api/site-builder/theme/status?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] the draft list as DRAFTS","[STATUS] the save answers 400 {SPEC} (vc-module-site-builder#3: theme files are saved as drafts and published with theme/publish)
+[BODY] the error says theme files are saved as drafts and published with theme/publish {OBSERVED} (KB-3D1055D2; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] LIVE and DRAFT both answer 404 — nothing was written {OBSERVED} (KB-3D1055D2; the readback needs storeId, theme and type=themes: without them it answers 400 'The content type must be themes, pages or blogs.'; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] DRAFTS does not list the planted path {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"200 on draft=false, template readable afterwards",none (nothing written).,VCST-6571 · checklist A6 · Technique:EG Archetype:BOUNDARY,Draft
+SB-009,Unpublish a published page — the storefront answers 404,Site Builder > Page lifecycle,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Page created and published by the case on B2B-store; storefront URL reachable. (Admin list and storefront only; no designer needed.)","shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id), front_url={{FRONT_URL}}, permalink=/agent-test-sb009-<unique>","[SETUP] create a database page with the permalink, save a content section, publish it
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] HTTP status as LIVE
+[NAV] shell Active list > open the page > click 'Unpublish'
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] HTTP status as AFTER","[REL] the LIVE view contains the text of the section saved in Setup (the storefront is an SPA: HTTP 200 in every state, the verdict is on the rendered view) {OBSERVED} (test plan 19; vcst, 2026-11-19, REG-2026-11-19-2029)
+[DOM] AFTER renders the 404 'Page not found' view {SPEC} (test plan 19) {OBSERVED} (VCST-6571 checklist A8; KB-C5B6CE87: no confirmation, 404 view at once, vcst, 2026-11-19)
+[REL] the AFTER view does not contain the section text that LIVE rendered — the content is gone, not only the status {OBSERVED} (test plan 19; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATE] after Unpublish the page leaves the Active list and appears in the Draft list with the language chip 'en-US: Draft' {OBSERVED} (no confirmation dialog on Unpublish; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] unpublish request returns 2xx,"storefront still serves the page, 500 on unpublish",Archive the page by its groupId.,VCST-6571 · checklist A8 · Technique:ST Archetype:LIFECYCLE,Draft
+SB-010,Discard the draft of a published page — the designer shows the published copy and hasChanges is false,Site Builder > Page lifecycle,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Published page created by the case on B2B-store, then given a saved draft change.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[SETUP] create, save and publish a page with text TEXT_PUB
+[ACT] in the designer change the text to TEXT_DRAFT
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] hasChanges as HC_BEFORE
+[ACT] click 'Discard all changes' in the designer
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] tick the page draft
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Discard'
+[WAIT] the discard settles
+[CAPTURE] the section text shown in the designer as TEXT_AFTER
+[HTTP] GET /api/site-builder-pages/grouped/{groupId}
+[CAPTURE] hasChanges as HC_AFTER
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] rendered text as LIVE","[STATE] HC_BEFORE is true and HC_AFTER is false {SPEC} (test plan 19) {OBSERVED} (VCST-6571 checklist A8: hasChanges:false, vcst, 2026-11-19)
+[REL] TEXT_AFTER equals TEXT_PUB {SPEC} (test plan 19)
+[REL] LIVE equals TEXT_PUB throughout (the draft never reached the storefront) {SPEC} (the ticket description: publish is what puts a page live)",[NETWORK] discard returns 2xx,"draft text still in the designer after Discard, hasChanges stays true, draft text on the storefront",Unpublish and archive the page by its groupId.,VCST-6571 · checklist A8 · Technique:ST Archetype:LIFECYCLE,Draft
+SB-011,Shared component — an edit shows on every page that places it; usage lists them; delete is blocked while placed,Site Builder > Shared components,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Created by the case on B2B-store: one shared component and two published pages that place it.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder-shared-components,"[SETUP] POST /api/site-builder-shared-components to create a component with a text section
+[SETUP] create and publish two pages that place it
+[NAV] {{FRONT_URL}} both permalinks
+[CAPTURE] the component text as T0_A and T0_B
+[ACT] open the component in the Vue designer, change the text, click 'Save' (no page republish)
+[WAIT] the UI settles (no spinner, network idle)
+[NAV] both permalinks again
+[CAPTURE] text as T1_A and T1_B
+[NAV] shell Shared components > open the component
+[CAPTURE] the usage list as USAGE
+[ACT] try to delete the component
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the result as DEL","[REL] T1_A equals T1_B and differs from T0_A {SPEC} (test plan 14) {OBSERVED} (VCST-6571 checklist A9: both pages updated without republish, vcst, 2026-11-19)
+[REL] USAGE names exactly the two pages {SPEC} (test plan 14)
+[STATE] DEL is refused while the component is placed {SPEC} (test plan 14) {OBSERVED} (VCST-6571 checklist A9: delete disabled)",[NETWORK] no 4xx/5xx other than the refused delete,"only one page updated, usage list empty, delete succeeds while placed","Unpublish and archive both pages, then delete the shared component (allowed once unplaced) — each by id.",VCST-6571 · checklist A9 · Technique:FLOW Archetype:STALE,Draft
+SB-012,Migration — re-saving an old Page Builder page after a section change keeps its page header and Hide breadcrumbs,Site Builder > Migration,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Alias SB_LEGACY_HEADER_PAGE (seeded by `npm run seed:cms-pages -- --only SB_LEGACY_HEADER_PAGE`): a B2B-store page written the legacy way with page settings header @td(SB_LEGACY_HEADER_PAGE.header) and hideBreadcrumbs @td(SB_LEGACY_HEADER_PAGE.hide_breadcrumbs); permalink @td(SB_LEGACY_HEADER_PAGE.permalink). Not seeded on the stand ⇒ BLOCKED (fixture), never FAIL. The case edits the seeded page and restores its content in Cleanup.","store_id=@td(STORE_PRIMARY.id), front_url={{FRONT_URL}}, page_name=@td(SB_LEGACY_HEADER_PAGE.name), permalink=@td(SB_LEGACY_HEADER_PAGE.permalink), header=@td(SB_LEGACY_HEADER_PAGE.header), hide_breadcrumbs=@td(SB_LEGACY_HEADER_PAGE.hide_breadcrumbs)","[SETUP] find the page by permalink: POST {{BACK_URL}}/api/site-builder-pages/search with {storeId, keyword: page_name}
+[SETUP] capture its groupId
+[CAPTURE] the page-header setting and hideBreadcrumbs from GET /api/site-builder-pages/grouped/{groupId}/content?draft=true as H0 and B0, and the content eTag as ETAG0
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] the h1 and whether breadcrumbs show as S0
+[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder
+[ACT] open the page
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Edit in designer'
+[WAIT] the preview loads
+[ACT] change one section text
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the save settles
+[ACT] click 'Publish'
+[WAIT] the publish settles
+[CAPTURE] the page-header setting and hideBreadcrumbs of the saved content as H1 and B1
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] the h1 and whether breadcrumbs show as S1","[REL] H1 equals H0 and B1 equals B0 {SPEC} (AC-7)
+[REL] S1 equals S0: the same h1 (the seeded header) and no breadcrumbs while B0 is true {SPEC} (AC-7) {OBSERVED} (VCST-6571 checklist A17: clone of a legacy page, h1 NEW, no breadcrumbs, vcst, 2026-11-19)
+[STATE] S0 shows the seeded header as h1 and no breadcrumbs before the edit (the fixture is in the state the case assumes) {SPEC} (seed note SB_LEGACY_HEADER_PAGE; AC-7)",[NETWORK] one designer/save per Save,"header text empty after the save, breadcrumbs reappear, hideBreadcrumbs reset",Restore the section text changed by the case and re-save/republish so the page content equals what it was (compare against ETAG0 content); the seeded page is never archived (`npm run seed:cms-pages:teardown -- --only SB_LEGACY_HEADER_PAGE` owns that).,VCST-6571 · checklist A17 · AC-7 · Technique:ST Archetype:LIFECYCLE,Draft
+SB-013,Store-scoped editor — every read and write of another store answers 403,Site Builder > Access,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Alias SB_STORE_EDITOR (seeded by `npm run seed:site-builder -- --only SB_STORE_EDITOR`; verified by the seeder with probes that change nothing): Manager @td(SB_STORE_EDITOR.login) with builder:access, builder:read and builder:shared-components:read scoped to B2B-store (Only for selected stores) and builder:create/update/delete; no builder:theme, builder:templates or builder:publish. Password typed by its NAME DEFAULT_TEST_PASSWORD (the lane adds _VCST). The other store is @td(SB_STORE_EDITOR.other_store). Nothing is created by the case.","store_in=@td(STORE_PRIMARY.id), store_out=@td(SB_STORE_EDITOR.other_store), editor=@td(SB_STORE_EDITOR.login)","[AUTH] POST {{BACK_URL}}/connect/token as the editor from Test_Data (password NAME DEFAULT_TEST_PASSWORD)
+[AUTH] keep the editor token
+[HTTP] for store_out: POST {{BACK_URL}}/api/site-builder-pages/search with {storeId: store_out}
+[CAPTURE] status as R_SEARCH
+[HTTP] for store_out: GET {{BACK_URL}}/api/site-builder/catalog?storeId=<store_out>
+[CAPTURE] status as R_CATALOG
+[HTTP] for store_out: GET {{BACK_URL}}/api/site-builder/history/status?storeId=<store_out>
+[CAPTURE] status as R_HISTORY
+[HTTP] for store_out: POST {{BACK_URL}}/api/site-builder/designer/save?storeId=<store_out> with a page draft
+[CAPTURE] status as R_SAVE
+[HTTP] for store_out: POST {{BACK_URL}}/api/site-builder-pages/grouped with {storeId: store_out, name: AGENT-TEST-SB013-<unique>}
+[CAPTURE] status as R_GROUPED
+[HTTP] for store_out: POST {{BACK_URL}}/api/site-builder-pages/create-group-page with {storeId: store_out, name: AGENT-TEST-SB013-<unique>, content: {content: []}}
+[CAPTURE] status as R_CREATE
+[HTTP] for store_in: POST {{BACK_URL}}/api/site-builder-pages/search with {storeId: store_in}
+[CAPTURE] status and the stores of the returned pages as IN_SEARCH
+[HTTP] for store_in: GET {{BACK_URL}}/api/site-builder/catalog?storeId=<store_in>
+[CAPTURE] status as IN_CATALOG","[STATUS] R_SEARCH, R_CATALOG, R_HISTORY, R_SAVE, R_GROUPED and R_CREATE all answer 403 {SPEC} (AC-8; module README Store access: besides its own permission the user needs the read permission in that store) {OBSERVED} (KB-4FEABEDD; run: search, catalog, history/status, designer/save and grouped answered 403 for the scoped editor on QA-STORE; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATUS] IN_SEARCH and IN_CATALOG answer 200 and every returned page belongs to store_in {SPEC} (AC-8) {OBSERVED} (run: search 200 with B2B-store pages only, catalog 200; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] no store_out response body contains a page name or theme file of store_out {SPEC} (AC-8) {OBSERVED} (run: no store_out body carried a page name or theme file; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx on any refused call,"200 or 204 for any store_out call, page names of the other store in a body","none (alias fixture, nothing created). POST create-group-page/grouped for store_out is refused before any write; if a page was created anyway, archive it by groupId and report a FAIL.",VCST-6571 · checklist A18 · AC-8 · Technique:EP Archetype:SCOPE,Draft
+SB-014,"Store-scoped editor without builder:theme, builder:templates, builder:publish — those writes are 403, a page draft save is 200",Site Builder > Access,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Aliases SB_STORE_EDITOR (builder:access, builder:read scoped to B2B-store, builder:create/update/delete; NO builder:theme, builder:templates, builder:publish) and SB_THEME_EDITOR_NOPUBLISH (the same plus builder:theme and builder:templates, still NO builder:publish), both seeded by `npm run seed:site-builder`; passwords typed by NAME DEFAULT_TEST_PASSWORD (lane adds _VCST). A draft page on B2B-store created by the case as the ADMIN test account.","store_id=@td(STORE_PRIMARY.id), editor=@td(SB_STORE_EDITOR.login), theme_editor=@td(SB_THEME_EDITOR_NOPUBLISH.login)","[SETUP] as the ADMIN test account create a Draft page AGENT-TEST-SB014-<unique> on B2B-store
+[SETUP] capture its groupId
+[AUTH] POST {{BACK_URL}}/connect/token as editor (password NAME DEFAULT_TEST_PASSWORD)
+[HTTP] POST {{BACK_URL}}/api/site-builder/designer/save?storeId=@td(STORE_PRIMARY.id) with a draft of the page only
+[CAPTURE] status as PAGE
+[HTTP] POST {{BACK_URL}}/api/site-builder/designer/save?storeId=@td(STORE_PRIMARY.id) carrying a theme file
+[CAPTURE] status as THEME
+[HTTP] POST {{BACK_URL}}/api/site-builder/save?storeId=@td(STORE_PRIMARY.id) for template rules
+[CAPTURE] status as RULES
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/grouped/publishing/{groupId}?publish=true
+[CAPTURE] status as PUB_PAGE
+[HTTP] POST {{BACK_URL}}/api/site-builder/save?storeId=@td(STORE_PRIMARY.id)&theme=default&draft=false
+[CAPTURE] status as PUB_SAVE
+[HTTP] POST {{BACK_URL}}/api/site-builder/theme/publish?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] status as PUB_THEME
+[GQL] themeSnapshot(storeId: ""@td(STORE_PRIMARY.id)"")
+[CAPTURE] publication as S_AFTER
+[AUTH] POST {{BACK_URL}}/connect/token as theme_editor (password NAME DEFAULT_TEST_PASSWORD)
+[HTTP] POST {{BACK_URL}}/api/site-builder/theme/palette/check?storeId=@td(STORE_PRIMARY.id) with the published palette and the storefront paletteTokens
+[CAPTURE] status as T_PALETTE
+[HTTP] POST {{BACK_URL}}/api/site-builder/theme/publish?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] status as T_PUBLISH
+[HTTP] POST {{BACK_URL}}/api/site-builder-pages/grouped/publishing/{groupId}?publish=true
+[CAPTURE] status as T_PUB_PAGE","[STATUS] PAGE is 200 {SPEC} (AC-8) {OBSERVED} (KB-D1506F22; checklist A18: page draft 200; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATUS] THEME, RULES, PUB_PAGE, PUB_SAVE and PUB_THEME are all 403 {SPEC} (AC-8; permissions builder:theme / builder:templates / builder:publish) {OBSERVED} (checklist A18; vcst, 2026-11-19, REG-2026-11-19-2029)
+[REL] S_AFTER publication equals the publication before the case, and the page is still unpublished {SPEC} (AC-8) {OBSERVED} (run: publication unchanged; vcst, 2026-11-19, REG-2026-11-19-2029)
+[STATUS] T_PALETTE is 200 while T_PUBLISH and T_PUB_PAGE are 403 — builder:theme and builder:templates do not carry builder:publish {SPEC} (seed note SB_THEME_EDITOR_NOPUBLISH; AC-8)",[NETWORK] no 5xx,"200 on theme/rules/publish for the restricted user, page save refused",Archive the page created in Setup by its groupId (as the ADMIN test account). The editors are alias fixtures and stay.,VCST-6571 · checklist A18 · AC-8 · Technique:DT Archetype:SCOPE,Draft
+SB-015,Permalink conflict confirmation behaves the same from the page list and from the designer,Site Builder > Permalink conflicts,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Created by the case on B2B-store: page A published at /agent-test-sb015-<unique> (language en-US); page B (draft) at the same permalink and language. The conflict matrix itself is covered by the ported permalink-conflict suite (123e, later wave); this case pins entry-point parity only.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[ACT] open B from the Pages list
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the conflict dialog opens
+[CAPTURE] the dialog text and buttons as DLG_LIST
+[ACT] click 'Cancel' in the dialog
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] page A and B states as AFTER_NO_LIST
+[ACT] open B in the designer
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the conflict dialog opens
+[CAPTURE] the dialog as DLG_DESIGNER
+[ACT] click 'Cancel' in the dialog
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] states as AFTER_NO_DESIGNER
+[ACT] open B from the Pages list again
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the conflict dialog opens
+[ACT] confirm the dialog (Yes)
+[WAIT] the publish settles
+[CAPTURE] states as AFTER_YES","[REL] DLG_LIST and DLG_DESIGNER name page A and offer the same choices {SPEC} (test plan 7) {OBSERVED} (VCST-6571 checklist A20: dialog names A, vcst, 2026-11-19)
+[REL] AFTER_NO_LIST equals AFTER_NO_DESIGNER equals the state before: A published, B draft {SPEC} (test plan 7)
+[STATE] after Yes B is Published and A is Unpublished {SPEC} (test plan 7) {OBSERVED} (VCST-6571 checklist A20)","[NETWORK] one publish request after Yes, none after No","dialog missing from one entry point, No changes a page, both pages published after Yes",Unpublish and archive both pages by their groupIds.,VCST-6571 · checklist A20 · R15 · Technique:PW Archetype:PARITY,Draft
+SB-016,Template rules — the first enabled matching rule decides the PDP template; reorder and disable change it,Site Builder > Templates,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store; a product of the type used by the rules (live-discover one simple product and note its type X); two rule templates Y and Z are created by the case. Published templates cannot be deleted from the designer: the case records the residue.","store_id=@td(STORE_PRIMARY.id), front_url={{FRONT_URL}}","[SETUP] designer: create templates Y and Z (AGENT-TEST-SB016-<unique>), each with a distinguishable section text
+[ACT] add rule 1 (Product type = X → template Y)
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}} the product PDP
+[CAPTURE] the template marker as M1
+[ACT] add rule 2 (same product matched → template Z) below rule 1
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}} the PDP
+[CAPTURE] the marker as M2
+[ACT] move rule 2 above rule 1
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}} the PDP
+[CAPTURE] the marker as M3
+[ACT] disable the first rule in the order
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}} the PDP
+[CAPTURE] the marker as M4","[REL] M1 is Y, M2 is Y (the earlier rule wins), M3 is Z (reordered), M4 is the template of the next enabled matching rule {SPEC} (test plan 15) {OBSERVED} (VCST-6571 checklist B1: Y → Z → Y, vcst, 2026-11-19)
+[REL] the rule panel names the rule the previewed product matches {SPEC} (module README: the rule panel shows which rule a previewed product matches)",[NETWORK] each Publish theme returns 200,"a later rule wins over an earlier one, a disabled rule still applies, PDP unchanged after publish",Remove both rules and republish; the published templates stay (record their keys in the run notes); republish the last good theme.,VCST-6571 · checklist B1 · R12 · Technique:DT Archetype:LIFECYCLE,Draft
+SB-017,"Template rules — the product rule form offers category, product type, property, path, language, source and setting",Site Builder > Templates,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+B2B-store with a preview that loads; no write beyond opening the form (nothing is saved).
+Held for product decision (open question for the PO / plan author): the expectation stays the spec's.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] shell > open the designer on a Product template
+[ACT] open Template rules > 'Add rule'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the condition kinds offered by the rule form as CONDS","[REL] CONDS contains exactly: category, product type, property, path, language, source, setting {SPEC} (test plan 15)
+[COUNT] CONDS has 7 entries; the run saw 3 (In categories, Product type, Property) {OBSERVED} (VCST-6571 checklist B1, vcst, 2026-11-19)",[CONSOLE] no error while opening the form,"fewer than 7 condition kinds, a missing kind among path / language / source / setting",Close the rule form without saving (Cancel); nothing to restore.,"VCST-6571 · checklist B1 · Catches:VCST-6571 finding:B1 (rule form lists 3 of 7 conditions; possible vc-frontend handshake, VCST-6572) · held for product decision (plan scope open) · Technique:EP Archetype:CONFIG",Draft
+SB-018,Product page on a rule template — a simple product adds to the cart,Site Builder > Templates,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store; live-discover a simple product in stock; a rule template is created by the case; signed in on the storefront as {{ORG_USER_EMAIL}} (password NAME ORG_USER_PASSWORD).","front_url={{FRONT_URL}}, buyer={{ORG_USER_EMAIL}}","[SETUP] designer: create a product template with a rule for the discovered product and Publish theme
+[NAV] {{FRONT_URL}} the product page
+[CAPTURE] the cart count as C0
+[ACT] click 'Add to cart'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the cart count and the line as C1","[REL] C1 equals C0 + 1 and the cart line names the discovered product {SPEC} (F4: add to cart works on a rule template) {OBSERVED} (VCST-6571 checklist B2: simple product added, vcst, 2026-11-19)
+[REL] the cart count after the add equals the count before plus 1, and no error banner is shown on the product page {SPEC} (F4)",[NETWORK] addItem returns 200 and errors[] is empty,"Add to cart absent or disabled on the rule template, cart unchanged, errors[] non-empty",Remove the cart line; disable the rule and republish the last good theme; the template stays (residue noted).,VCST-6571 · checklist B2 · F4 · Technique:FLOW Archetype:CONFIG,Draft
+SB-019,"Product page on a ""Create template (copy of default)"" template — a product with variations shows its variations and adds to the cart",Site Builder > Templates,Critical,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store; live-discover a product WITH variations that is in stock; buyer {{ORG_USER_EMAIL}} signed in. The copy is created by the case. Expected FAIL until F-1 is fixed.","front_url={{FRONT_URL}}, buyer={{ORG_USER_EMAIL}}","[ACT] open designer > Product templates
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Create template (copy of default)'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] name the template AGENT-TEST-SB019-<unique>
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] add a rule routing the discovered product to it
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}} the product page
+[CAPTURE] whether a variations list and the Properties block render as VARS
+[ACT] select a variation
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Add to cart'
+[WAIT] the cart updates
+[CAPTURE] the cart line as LINE","[REL] VARS lists the variations of the discovered product and the Properties block is not empty {SPEC} (F4: variations can be bought) {OBSERVED} (VCST-6571 checklist B2: product-info blocks:[] — no variations list, no add to cart, vcst, 2026-11-19)
+[REL] LINE names the discovered product with the selected variation {SPEC} (F4)",[CONSOLE] no error on the product page,"no variations list, Add to cart missing, product-info rendered with no blocks",Remove the rule and republish; the published template stays (the designer cannot delete templates — residue noted by key); empty the cart.,VCST-6571 · checklist B2 · F-1 · Catches:VCST-6571 finding:F-1 · Technique:FLOW Archetype:SILENT,Draft
+SB-020,"Create template (copy of default) keeps the default product template's blocks — draft only, then Discard",Site Builder > Templates,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+B2B-store with a preview that loads. Nothing is published: the copy is a draft that the case discards. Expected FAIL until F-1 is fixed.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] designer > Product templates > open the default product template
+[CAPTURE] its main section blocks as DEFAULT_BLOCKS
+[ACT] click 'Create template (copy of default)'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] name the copy AGENT-TEST-SB020-<unique> (do not publish it)
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the copy's main section blocks as COPY_BLOCKS
+[HTTP] GET /api/site-builder/designer/theme-file for the copy draft
+[CAPTURE] product-info blocks as COPY_JSON","[REL] COPY_BLOCKS equals DEFAULT_BLOCKS and COPY_JSON product-info blocks is non-empty {SPEC} (F4; a copy of the default carries the default's content) {OBSERVED} (VCST-6571 checklist B2: copy saved with blocks:[], vcst, 2026-11-19)
+[COUNT] COPY_JSON product-info blocks has the same number of entries as DEFAULT_BLOCKS {SPEC} (F4)",[NETWORK] no 4xx/5xx,"COPY_BLOCKS empty, product-info with blocks:[]",designer 'Discard all changes' > the copy draft; confirm theme/status lists no draft.,VCST-6571 · checklist B2 · F-1 · Catches:VCST-6571 finding:F-1 · Technique:ST Archetype:SILENT,Draft
+SB-021,"Page Layout full / minimal / blank — header and footer, reduced header only, neither",Site Builder > Storefront render,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Content page created by the case on B2B-store.","front_url={{FRONT_URL}}, shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)","[SETUP] create and publish a page with one text section
+[ACT] open designer > Page settings
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] set Page Layout = full
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] header and footer presence as FULL
+[ACT] set Page Layout = minimal
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] header and footer presence as MIN
+[ACT] set Page Layout = blank
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Save'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the publish settles
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] header and footer presence as BLANK","[REL] FULL shows header and footer; MIN shows a reduced header and no footer; BLANK shows neither {SPEC} (test plan 15) {OBSERVED} (VCST-6571 checklist B3: minimal = logo-only header, no footer, vcst, 2026-11-19)
+[REL] the page body text is identical in all three {SPEC} (the layout changes chrome, not content)",[NETWORK] no 4xx/5xx on the storefront page,"footer present on minimal or blank, header present on blank",Unpublish and archive the page by its groupId.,VCST-6571 · checklist B3 · R12 · Technique:EP Archetype:CONFIG,Draft
+SB-022,Theme tab — a hand-set low-contrast colour lists the failing pair and Publish theme refuses,Site Builder > Theme publishing,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store with a preview that loads; capture LAST_GOOD publication.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] designer > Theme > Colors
+[ACT] set Body text to #f2f2f2 over Body bg #ffffff
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the 'Contrast (WCAG AA)' list as FAILS
+[ACT] click 'Save'
+[WAIT] the save settles
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[CAPTURE] the refusal message as REFUSAL and theme/status publication as P_AFTER","[REL] FAILS names Body text on Body bg with a measured ratio below the required one {SPEC} (AC-10) {OBSERVED} (VCST-6571 checklist B6: 1.11:1, needs 4.5:1, vcst, 2026-11-19)
+[STATE] Publish theme is refused and REFUSAL names the same pair {SPEC} (AC-10)
+[REL] P_AFTER equals LAST_GOOD {SPEC} (AC-6)",[CONSOLE] no uncaught exception,"publish accepted, failing pair not listed, publication advances",Discard the palette draft (Discard all changes); confirm theme/status lists no drafts.,VCST-6571 · checklist B6 · AC-10 · Technique:BVA Archetype:BOUNDARY,Draft
+SB-023,"Designer sections — add, move, copy, paste, hide and remove follow in the preview; the main section can be neither hidden nor removed",Site Builder > Designer,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Product template (has a main section) and a content page, both on B2B-store; nothing is published.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] open a database page in the designer
+[ACT] click 'Add section'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] choose a text section
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Move down' on it
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] open 'More actions' > Duplicate
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] open 'More actions' > Copy
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] open 'More actions' > Paste
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Hide'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Remove'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the section list and the preview section order after each action as STATE_n
+[NAV] designer > open the Product template
+[CAPTURE] the Hide and Remove controls of the main section as MAIN
+[ACT] multi-select the main section
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Delete'
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] confirm the dialog
+[WAIT] the list settles
+[CAPTURE] the section list as AFTER_DELETE","[REL] after every action the preview shows the same sections in the same order as the section list {SPEC} (ticket description: Designer) {OBSERVED} (VCST-6571 checklist C1, vcst, 2026-11-19)
+[STATE] MAIN: Hide and Remove are disabled for the main section {SPEC} (description: the main section cannot be removed or hidden) {OBSERVED} (KB-255E2DDB)
+[REL] AFTER_DELETE still contains the main section {SPEC} (description) — the silent no-op feedback is a UX heuristic and is not asserted","[CONSOLE] no uncaught exception
+[NETWORK] no save request until 'Save' is clicked","preview diverges from the list, main section removed or hidden",designer 'Discard all changes' for the page and template drafts; archive the page by its groupId.,VCST-6571 · checklist C1 · R17 · Technique:ST Archetype:LIFECYCLE,Draft
+SB-024,"Inline editing — typing in a preview title changes it, Undo restores it, hover outlines and click selects the row",Site Builder > Designer,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Page with a text/title section created by the case on B2B-store; nothing is published.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] open the page in the designer
+[ACT] hover a section in the preview
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the outline as HOVER
+[ACT] click that section in the preview
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the selected row as SEL
+[ACT] click the section title text in the preview
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] type AGENT-TEST-SB024
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the title in the section panel as T1
+[ACT] click 'Undo'
+[WAIT] the undo settles
+[CAPTURE] the title as T2","[REL] SEL is the row of the section that was clicked and HOVER outlines the section that was hovered {SPEC} (description: Inline editing) {OBSERVED} (VCST-6571 checklist C2, vcst, 2026-11-19)
+[REL] T1 equals the typed text and T2 equals the title before typing (one-step Undo) {SPEC} (description) {OBSERVED} (VCST-6571 checklist C2)",[CONSOLE] no uncaught exception,"typed text not reflected in the panel, Undo does not restore, click does not select",Discard the draft (Discard all changes); archive the page by its groupId.,VCST-6571 · checklist C2 · R17 · Technique:ST Archetype:LIFECYCLE,Draft
+SB-025,"A store whose storefront URL does not load — no preview, theme save is refused, theme/publish answers 400 naming the catalog",Site Builder > Theme publishing,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+live-discover a store whose Store URL does not answer (on vcst QA-STORE); the designer can be opened but cannot preview. Refusals only — nothing is written.",store_id=live-discover (store with an unreachable Store URL),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[NAV] open the designer for that store
+[CAPTURE] the preview area and the Save result of a theme field edit as PREVIEW and SAVE_UI
+[HTTP] GET /api/site-builder/designer/storefront for the store
+[CAPTURE] the returned url
+[HTTP] POST /api/site-builder/theme/publish for the store without a catalogHash
+[CAPTURE] status and body as PUB
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] drafts as DRAFTS","[STATE] no preview is shown for the store {OBSERVED} (KB-620E2625, vcst, 2026-11-19)
+[STATUS] PUB is 400 and its body says it names no schema catalog / the storefront must be previewed first {OBSERVED} (KB-620E2625)
+[REL] DRAFTS is empty: the refused theme save wrote no draft {OBSERVED} (KB-620E2625)",[NETWORK] only the preview host request fails; no 5xx from the platform,"publish 200 without a catalog, a draft written for an unreachable store",none (refusals only).,VCST-6571 · exploratory 1 · KB-620E2625 · Technique:EG Archetype:CONFIG,Draft
+SB-026,themeSnapshot — repeated anonymous reads of a store that has a publication are stable and create no publication,Site Builder > Theme snapshot,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Store B2B-store has a publication. Read-only case; a store with none is never read here.",store_id=@td(STORE_PRIMARY.id),"[GQL] themeSnapshot(storeId: ""@td(STORE_PRIMARY.id)"") anonymously
+[CAPTURE] publication as R1
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] publication as P1
+[GQL] repeat the read three times
+[CAPTURE] publications as R2..R4
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] publication as P2","[REL] R1 equals R2 equals R3 equals R4 equals P1 equals P2 {SPEC} (docs/contracts/theme-snapshot.md: a read serves the current publication; only a publication advances it) {OBSERVED} (KB-5748288B: repeat read stable, vcst, 2026-11-19)
+[ERRORS] errors[] empty {OBSERVED} (vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 4xx/5xx,"publication advances between reads, errors[] non-empty",none (read-only).,VCST-6571 · exploratory 2 · KB-5748288B · Technique:ST Archetype:STALE,Draft
+SB-027,themeSnapshot — the first read of a store with no publication publishes publication 1 from the live theme files,Site Builder > Theme snapshot,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+A disposable store created by the case (AGENT-TEST- prefix) with a default theme and NO publication — never a shared store. Needs the store-creation fixture (pending test-data-engineer): BLOCKED without it.",store_id=<created-by-case>,"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] POST /api/stores to create the disposable store
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] publication as P0
+[GQL] themeSnapshot(storeId: <store>) anonymously
+[CAPTURE] publication and publishedDate as R1
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] publication as P1
+[GQL] repeat the read
+[CAPTURE] publication as R2","[REL] P0 is empty or 0, R1 is 1 and P1 is 1 {SPEC} (docs/contracts/theme-snapshot.md: the first read of a store publishes a first snapshot from the theme's live files) {OBSERVED} (KB-5748288B: Electronics and QA-STORE got publication 1, vcst, 2026-11-19)
+[REL] R2 equals R1 — a second read does not publish again {OBSERVED} (KB-5748288B)",[NETWORK] no 5xx,"null snapshot with no error, publication number other than 1, a second publication on the second read",DELETE the disposable store by id; verify GET returns 404.,VCST-6571 · exploratory 2 · KB-5748288B · Technique:ST Archetype:LIFECYCLE,Draft
+SB-028,"themeSnapshot store resolution — storeId beats domain and is case-insensitive; no arguments, empty or unknown storeId give null",Site Builder > Theme snapshot,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Two stores that both have a publication (B2B-store and one other, live-discovered). Read-only. Whether an unknown domain resolves to the default store is an open question and is NOT asserted.","store_a=@td(STORE_PRIMARY.id), store_b=live-discover (another store with a publication)","[GQL] themeSnapshot(storeId: store_a, domain: <store_b domain>)
+[CAPTURE] the store served as R_ID_WINS
+[GQL] themeSnapshot(storeId: <store_a in other case>)
+[CAPTURE] as R_CASE
+[GQL] themeSnapshot() with no arguments, with storeId """" and with an unknown storeId
+[CAPTURE] each result as R_NONE, R_EMPTY, R_UNKNOWN","[REL] R_ID_WINS is the snapshot of store_a, not store_b {OBSERVED} (KB-DBE2B1D9, vcst, 2026-11-19)
+[REL] R_CASE equals the snapshot served for store_a in the exact case {OBSERVED} (VCST-6571 exploratory 3)
+[NULL] R_NONE, R_EMPTY and R_UNKNOWN are null {OBSERVED} (VCST-6571 exploratory 3)
+[ERRORS] errors[] empty in all calls {OBSERVED} (docs/contracts/theme-snapshot.md; vcst, 2026-11-19, REG-2026-11-19-2029)",[NETWORK] no 5xx,"domain wins over storeId, unknown storeId returns another store's snapshot, errors[] non-empty",none (read-only).,VCST-6571 · exploratory 3 · KB-DBE2B1D9 · Technique:EP Archetype:SCOPE,Draft
+SB-029,"builderPage id contract — a file-page id returns published content with a null permalink; a path, GUID-like or text id answers a FORMAT error",Site Builder > Page documents,Low,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+B2B-store with one published file page (live-discover; none ⇒ BLOCKED) and one file page that has only a draft. Read-only.",store_id=@td(STORE_PRIMARY.id),"[GQL] builderPage(storeId, pageId: <published file-page id>) anonymously
+[CAPTURE] permalink and content as FILE_PUB
+[GQL] builderPage(... <draft-only file-page id>)
+[CAPTURE] as FILE_DRAFT
+[GQL] builderPage(... pageId: ""/pages/x.page"") and ""abc""
+[CAPTURE] errors[] as FMT_1 and FMT_2","[DATA] FILE_PUB has non-empty content and permalink null {OBSERVED} (VCST-6571 exploratory 7, vcst, 2026-11-19)
+[NULL] FILE_DRAFT returns permalink null and content null {OBSERVED} (VCST-6571 exploratory 7)
+[ERRORS] FMT_1 and FMT_2 each return errors[] with a FORMAT code and no stack trace {OBSERVED} (VCST-6571 exploratory 7)",[NETWORK] HTTP 200 for GraphQL responses; no 5xx,"draft content of a file page served, a 500 or stack trace for a malformed id",none (read-only).,VCST-6571 · exploratory 7 · Technique:EP Archetype:BOUNDARY,Draft
+SB-030,Anonymous builderPage returns no content for a never-published or unpublished database page,Site Builder > Page documents,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Pages created by the case on B2B-store: P_NEVER (saved draft, never published) and P_UNPUB (published, then unpublished). Expected FAIL until VCST-6942 is fixed.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create P_NEVER with draft content AGENT-TEST-SB030-DRAFT
+[SETUP] create P_UNPUB, publish, unpublish
+[GQL] anonymous builderPage(storeId, pageId: <P_NEVER group id>)
+[CAPTURE] as R_NEVER
+[GQL] anonymous builderPage(storeId, pageId: <P_UNPUB group id>)
+[CAPTURE] as R_UNPUB","[REL] R_NEVER and R_UNPUB equal the response for a group id that does not exist {SPEC} (VCST-6942)
+[NULL] R_NEVER content and permalink are null {SPEC} (ticket description: publish is what puts a page live; VCST-6942)
+[NULL] R_UNPUB content and permalink are null {SPEC} (VCST-6942) {OBSERVED} (KB-1DF2F565 — a KNOWN DEFECT observation that the draft is served; never the expectation)","[ERRORS] errors[] shape consistent with a missing page, no draft text in any response","AGENT-TEST-SB030-DRAFT visible to the anonymous caller, unexpected 4xx/5xx or console error on the request under test",Archive both pages by groupId.,VCST-6571 · checklist X2 · VCST-6942 · Catches:VCST-6942 · Technique:EG Archetype:SCOPE,Draft
+SB-031,"Anonymous builderPage for a live page with a pending draft serves the published copy, not the draft",Site Builder > Page documents,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Page created by the case: published with text TEXT_PUB, then a saved draft TEXT_DRAFT. Expected FAIL until VCST-6942 is fixed.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create, publish with TEXT_PUB, then save a draft change to TEXT_DRAFT (no publish)
+[GQL] anonymous builderPage(storeId, pageId: <group id>)
+[CAPTURE] the content text as SERVED
+[NAV] {{FRONT_URL}}<permalink>
+[CAPTURE] rendered text as LIVE","[REL] SERVED equals TEXT_PUB and does not contain TEXT_DRAFT {SPEC} (description: publish is what puts a page live; VCST-6942)
+[REL] LIVE equals TEXT_PUB {SPEC}
+[REL] SERVED equals LIVE {SPEC}",[ERRORS] errors[] empty,"TEXT_DRAFT served to the anonymous caller, unexpected 4xx/5xx or console error on the request under test",Unpublish and archive the page by groupId.,VCST-6571 · checklist X2 · VCST-6942 · Catches:VCST-6942 · KB-717756D0 · Technique:ST Archetype:STALE,Draft
+SB-032,Anonymous builderPage returns nothing for an archived page or an audience-restricted page,Site Builder > Page documents,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Pages created by the case: P_ARCH (published then archived) and P_RESTR (published for a user group or an organization). Expected FAIL until VCST-6942 is fixed.","store_id=@td(STORE_PRIMARY.id), group=live-discover (a user group)","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create P_ARCH, publish, archive
+[SETUP] create P_RESTR with a user-group restriction and publish
+[GQL] anonymous builderPage for P_ARCH
+[CAPTURE] as R_ARCH
+[GQL] anonymous builderPage for P_RESTR
+[CAPTURE] as R_RESTR
+[GQL] builderPage for P_RESTR as a buyer outside the group
+[CAPTURE] as R_OUTSIDE","[REL] R_ARCH, R_RESTR and R_OUTSIDE equal the response for a group id that does not exist {SPEC} (VCST-6942)
+[NULL] R_ARCH content is null {SPEC} (VCST-6942; archived pages are not served)
+[NULL] R_RESTR and R_OUTSIDE content are null {SPEC} (VCST-6942; audience restriction on Personalization & Access control) {OBSERVED} (VCST-6571 triage X2: archived and restricted pages served anonymously — a defect, not the expectation)",[ERRORS] no content in any response,"archived or restricted content returned to a caller outside the audience, unexpected 4xx/5xx or console error on the request under test",Archive remaining pages by groupId.,VCST-6571 · checklist X2 · VCST-6942 · Catches:VCST-6942 · Technique:EP Archetype:SCOPE,Draft
+SB-033,"GitContentEnabled=true without a GitHub App — a save fails clearly or reports setupRequired, never a silent blob save; setting restored",Site Builder > Git settings,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: a store whose GitContentEnabled setting this case flips (QA-STORE on vcst); no GitHub App connected. Expected FAIL on the current build.
+Held for product decision (open question for the PO / plan author): the expectation stays the spec's.",store_id=live-discover (store with no GitHub App; QA-STORE on vcst),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[CAPTURE] the store's GitContentEnabled setting as ORIG
+[HTTP] PUT /api/stores/{id} setting SiteBuilder.Store.GitContentEnabled = true
+[HTTP] POST /api/site-builder/designer/save for a page draft
+[CAPTURE] status, body and where the content was written (GET /api/site-builder-pages/grouped/{id}/content?draft=true) as SAVE
+[HTTP] GET /api/site-builder/history/status
+[CAPTURE] as HIST","[STATUS] SAVE is an error status with an explanatory body, or the response reports that setup is required; it is not a plain 200 that silently stores the draft in blob storage {SPEC} (ticket description update: a clear error or setupRequired, never a silent blob save) {OBSERVED} (VCST-6571 checklist A11: 200, written to blob, no warning, vcst, 2026-11-19 — the defect, not the expectation)
+[REL] if SET is refused the stored GitContentRepository equals ORIG after the call {SPEC} (ticket description update)
+[BODY] HIST reports setupRequired {OBSERVED} (KB-C5B6CE87)",[NETWORK] no 5xx,"200 with the draft stored in blob storage and no warning, unexpected 4xx/5xx or console error on the request under test",[TEARDOWN] restore the setting to ORIG in the same case (explicit false when it was unset is acceptable); delete the page the case created by groupId.,VCST-6571 · checklist A11 · Catches:VCST-6571 finding:A11 · held for product decision (intent of git-enabled-but-unusable is an open PO question; triage P3) · Technique:EG Archetype:SILENT,Draft
+SB-034,A GitContentRepository outside the shared Repository and AllowedRepositories is refused with an error naming the repository; setting restored,Site Builder > Git settings,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: a store whose GitContentRepository setting this case flips. A GitHub connection must exist (AllowedRepositories is checked only then, KB-50846709): BLOCKED on vcst (no GitHub App), never FAIL.
+Held for product decision (open question for the PO / plan author): the expectation stays the spec's.","store_id=live-discover (store of a GitHub-connected platform), repo=AGENT-TEST-not-allowed/<unique>","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[CAPTURE] GitContentRepository as ORIG
+[HTTP] PUT /api/stores/{id} setting SiteBuilder.Store.GitContentRepository = repo
+[CAPTURE] status and body as SET
+[HTTP] POST /api/site-builder/designer/save for a page draft
+[CAPTURE] status and body as SAVE","[STATUS] SET or SAVE is refused and the error names the repository {SPEC} (ticket description update: a repository that is not the shared Repository and not in AllowedRepositories is refused) {OBSERVED} (VCST-6571 checklist A12: store PUT 204 and saves 200, vcst, 2026-11-19 — the defect, not the expectation)
+[BODY] the refusal body contains the repository name from Test_Data {SPEC} (ticket description update: an error naming the repository)",[NETWORK] no 5xx,"store PUT 204 and saves 200 for a disallowed repository, unexpected 4xx/5xx or console error on the request under test",[TEARDOWN] restore GitContentRepository to ORIG (empty) in the same case; archive the page by groupId.,VCST-6571 · checklist A12 · Catches:VCST-6571 finding:A12 · held for product decision (needs a GitHub connection; scope open) · Technique:EG Archetype:CONFIG,Draft
+SB-035,"Theme history — restore an older theme version, it becomes the draft, Publish theme, themeSnapshot returns it",Site Builder > History,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+A store with a connected GitHub App and at least two theme publications — NOT available on vcst (fixture gap R21): BLOCKED there, never FAIL.",store_id=<git-enabled store>,"[NAV] designer > Version history > Theme
+[CAPTURE] the version list as VERS
+[ACT] click 'Restore' on the second-newest version
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] confirm the dialog
+[WAIT] the restore settles
+[CAPTURE] the theme draft as DRAFT_FILE
+[ACT] click 'Publish theme'
+[WAIT] the publish settles
+[GQL] themeSnapshot
+[CAPTURE] the restored content as SNAP","[REL] DRAFT_FILE equals the restored version's content {SPEC} (test plan 20; docs/contracts/history-api.md)
+[REL] SNAP equals the restored content after Publish theme and the publication number is +1 {SPEC} (test plan 20; docs/contracts/theme-snapshot.md: to go back to an earlier theme, restore its version and publish it)","[NETWORK] restore 200, publish 200","restore leaves the current draft, snapshot still the newer content",Re-publish the last good theme; discard any leftover draft.,VCST-6571 · checklist A7 (BLOCKED: R21 fixture gap) · Technique:ST Archetype:LIFECYCLE,Draft
+SB-036,History — a version opened in the preview renders for both a page and a theme file,Site Builder > History,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+A git-enabled store with a connected GitHub App and at least two versions of a page — NOT available on vcst (fixture gap R21): BLOCKED there, never FAIL.",store_id=<git-enabled store>,"[NAV] designer > Version history
+[ACT] click 'Preview' on an older page version
+[WAIT] the preview loads
+[CAPTURE] the preview content and the 'Viewing version' banner as PREV
+[ACT] click 'Back to draft'
+[WAIT] the draft returns
+[ACT] click 'Preview' on an older theme version
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Back to draft'
+[WAIT] the UI settles (no spinner, network idle)","[REL] PREV shows the older version's content and the banner names that version and date {SPEC} (AC-11; docs/contracts/preview-protocol.md)
+[STATE] 'Back to draft' returns the current draft {SPEC} (AC-11)",[CONSOLE] no error while previewing a version,"preview shows the current draft, preview does not load, banner missing",none (no write).,VCST-6571 · checklist D1 (BLOCKED: R21 fixture gap) · AC-11 · Technique:ST Archetype:PARITY,Draft
+SB-037,"Theme > Colors — Generate from one brand colour, then from two: both palettes list no failing pair",Site Builder > Theme,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store with a preview that loads; nothing is published (drafts discarded at the end).",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] designer > Theme > Colors > Generate from colors
+[ACT] enter Primary color
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Generate'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the 'Contrast (WCAG AA)' result for light and dark as ONE
+[ACT] enter a Second color too
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Generate'
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the result as TWO","[REL] ONE and TWO both read 'Every pair checked is readable' and list no failing pair for light and dark {SPEC} (AC-10; README: every text and background pair at WCAG 2.2 AA contrast) {OBSERVED} (VCST-6571 checklist B5, vcst, 2026-11-19)
+[REL] POST /api/site-builder/theme/palette/check on each generated palette returns failures [] {OBSERVED} (KB-1EE973A2)",[NETWORK] palette generate returns 200,"a failing pair after Generate, Generate error",designer 'Discard all changes' for the generated palette drafts; theme/status lists none.,VCST-6571 · checklist B5 · AC-10 · Technique:EP Archetype:BOUNDARY,Draft
+SB-038,Palette on the storefront — after Publish theme the light palette applies under :root:not(.dark) and the dark palette under html.dark,Site Builder > Theme,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+A store WITHOUT store-level white-labeling (B2B-store has it and its preset overrides the published palette, KB-DA29CC8B) — none available on vcst: BLOCKED there, never FAIL. Capture LAST_GOOD publication.",front_url={{FRONT_URL}},"[SETUP] Generate a palette from one brand colour
+[SETUP] Save
+[SETUP] Publish theme
+[NAV] {{FRONT_URL}} in the light scheme
+[CAPTURE] the computed colour of a palette token (e.g. body text) as LIGHT
+[ACT] switch to the dark scheme
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the same token as DARK
+[GQL] themeSnapshot
+[CAPTURE] the palette values as SNAP","[REL] LIGHT equals the light palette value of that token in SNAP and DARK equals the dark one {SPEC} (AC-10; the storefront applies light under :root:not(.dark) and dark under html.dark)
+[REL] LIGHT differs from DARK {SPEC} (AC-10)",[CONSOLE] no CSS or script error on the storefront,"palette not applied, dark palette missing under html.dark",Re-publish the last good theme.,VCST-6571 · checklist B5 storefront half (BLOCKED: store-level white-labeling) · AC-10 · Technique:ST Archetype:PARITY,Draft
+SB-039,Org white-labeling — overridden fields are marked in the Theme tab; the storefront keeps the org's logo and colours over the theme,Site Builder > White-labeling,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Alias SB_WL_ORG_BUYER (reused live fixture, nothing created): organization @td(WL_ELECTRONICS.name) with its OWN white-labeling (logo, secondary logo, favicon, menus, theme preset) and its buyer @td(WL_USER_ELECTRONICS.email), a Customer of B2B-store in that org (provisioned by `npm run seed:white-labeling`; password typed by the NAME in the alias password column). Org-level white-labeling takes precedence over the theme for that buyer; the anonymous visitor is the theme/store look.","front_url={{FRONT_URL}}, org=@td(WL_ELECTRONICS.name), buyer=@td(WL_USER_ELECTRONICS.email), org_logo=@td(WL_ELECTRONICS.logo)","[NAV] {{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/site-builder
+[ACT] open a page in the designer
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] open the Theme tab
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] open the 'Colors' section
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the fields marked as overridden as MARKED
+[NAV] {{FRONT_URL}} signed in as the buyer from Test_Data
+[CAPTURE] the header logo src and a palette token colour as ORG_LOOK
+[NAV] {{FRONT_URL}} as an anonymous visitor
+[CAPTURE] the header logo src and the same token colour as THEME_LOOK","[REL] MARKED lists exactly the fields the org record overrides (logo, secondary logo, favicon, preset) {SPEC} (AC-12)
+[REL] ORG_LOOK logo src is the org logo (@td(WL_ELECTRONICS.logo)) and differs from THEME_LOOK {SPEC} (AC-12)
+[REL] ORG_LOOK colour differs from THEME_LOOK colour for the org preset {SPEC} (AC-12)",[NETWORK] no 4xx/5xx,"theme logo shown to the org buyer, no field marked as overridden",Sign the buyer out of the storefront (account menu > Logout); nothing was written.,VCST-6571 · checklist B8 (BLOCKED: no org with white-labeling) · AC-12 · Technique:DT Archetype:SCOPE,Draft
+SB-040,A buyer without org white-labeling sees the theme's logo and palette,Site Builder > White-labeling,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window on B2B-store: the case switches the store-level white-labeling OFF and restores it in Cleanup. Alias SB_PERSONAL_BUYER (reused): personal buyer @td(PERSONAL_NON_ORG_USER.email) of B2B-store with no organization (password typed by the NAME DEFAULT_TEST_PASSWORD). B2B-store's own store-level white-labeling otherwise applies to this buyer and hides the theme (KB-DA29CC8B).","front_url={{FRONT_URL}}, buyer=@td(PERSONAL_NON_ORG_USER.email), store_id=@td(STORE_PRIMARY.id)","[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD)
+[HTTP] read the store-level white-labeling configuration of B2B-store (white-labeling module route per Swagger)
+[CAPTURE] its isEnabled as WL_ORIG
+[HTTP] set isEnabled to false for B2B-store
+[CAPTURE] status as DISABLED
+[NAV] {{FRONT_URL}} signed in as the buyer from Test_Data
+[CAPTURE] the header logo src and a palette token colour as BUYER_LOOK
+[GQL] themeSnapshot(storeId: ""@td(STORE_PRIMARY.id)"")
+[CAPTURE] the theme brand logo and the same token colour (light scheme) as THEME_LOOK","[REL] BUYER_LOOK logo equals THEME_LOOK logo {SPEC} (AC-12: a buyer without org white-labeling sees the theme logo)
+[REL] BUYER_LOOK palette token colour equals the same token in the light palette of themeSnapshot {SPEC} (AC-12)",[NETWORK] no 4xx/5xx,"a logo or colour that is neither the theme's nor the org's, unexpected 4xx/5xx or console error on the request under test",[TEARDOWN] restore the store-level white-labeling isEnabled to WL_ORIG in the same case and read it back; sign the buyer out.,VCST-6571 · checklist B9 (BLOCKED: store-level white-labeling) · AC-12 · Technique:EP Archetype:FALLBACK,Draft
+SB-041,"designer/save without a catalogHash refuses a data: link, removes script and onerror from rich text and refuses an unknown section type",Site Builder > Content safety,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Page created by the case on B2B-store; nothing is published. Expected FAIL until F-2 is fixed (KB-8C872A8F, KB-9BD474C4 and KB-9BCD8C34 record the current behaviour as SUSPECTED DEFECTS and are never the expectation).",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create a database page
+[HTTP] GET /api/site-builder-pages/grouped/{id}/content?draft=true
+[CAPTURE] ETag
+[HTTP] POST /api/site-builder/designer/save WITHOUT catalogHash with a slider slide url data:text/html;base64,…
+[CAPTURE] status as R_DATA
+[HTTP] POST designer/save WITHOUT catalogHash with a text value holding <script>alert(1)</script> and <img src=x onerror=alert(1)>
+[CAPTURE] status and the stored value as R_SCRIPT
+[HTTP] POST designer/save WITHOUT catalogHash with a section of type agent-test-unknown
+[CAPTURE] status as R_TYPE","[REL] the draft read back after the three calls equals the draft before them when each is refused (no partial write) {SPEC} (VCST-6570 rules)
+[STATUS] R_DATA is 400 and names a data: URL {SPEC} (VCST-6570 rules: javascript:, vbscript: and data: links are refused) {OBSERVED} (VCST-6571 F-2: 200, stored as sent, vcst, 2026-11-19 — the defect)
+[BODY] the stored R_SCRIPT value holds neither a script element nor an onerror attribute {SPEC} (VCST-6570 rules: script is stripped on save)
+[STATUS] R_TYPE is refused {SPEC} (VCST-6570 rules: unknown section types are refused)",[NETWORK] no 5xx,"any of the three stored as sent with 200, unexpected 4xx/5xx or console error on the request under test",Archive the page by its groupId (drafts of the page die with it).,VCST-6571 · F-2 · checklist X1 A19 · Catches:VCST-6571 finding:F-2 · Technique:EG Archetype:SILENT,Draft
+SB-042,"The same safety rules hold on content-json, the legacy /save and shared-component content saves",Site Builder > Content safety,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Page and shared component created by the case on B2B-store; expected FAIL until F-2 is fixed (KB-054E5214 is a SUSPECTED DEFECT record, not the expectation).",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create a page and a shared component
+[HTTP] POST /api/site-builder-pages/grouped/{id}/content-json with {content, eTag} holding a data: link and an unknown section type
+[CAPTURE] status as R_JSON
+[HTTP] POST /api/site-builder/save?draft=true with the same content
+[CAPTURE] status as R_LEGACY
+[HTTP] PUT /api/site-builder-shared-components/{id}/content with the same content
+[CAPTURE] status as R_SHARED","[STATUS] R_JSON, R_LEGACY and R_SHARED each answer 400 {SPEC} (VCST-6570 rules apply to every save path; F-2)
+[REL] a javascript: link on the same three paths is also refused {SPEC} (VCST-6570 rules) {OBSERVED} (KB-054E5214: javascript: refused, data: stored — vcst, 2026-11-19)",[NETWORK] no 5xx,"any save path stores a data: link or an unregistered section type, unexpected 4xx/5xx or console error on the request under test",Archive the page and delete the shared component by id.,VCST-6571 · F-2 · Catches:VCST-6571 finding:F-2 · Technique:EG Archetype:PARITY,Draft
+SB-043,"Legacy POST /save with draft=true refuses a theme section using a colour token the storefront lacks, like designer/save",Site Builder > Theme publishing,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store; a bad draft stored by this case blocks every later Publish theme until discarded. Expected FAIL on the current build. The PR test calls the legacy behaviour deliberate: decision pending.
+Held for product decision (open question for the PO / plan author): the expectation stays the spec's.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] POST /api/site-builder/designer/save with the same bad colour token (control)
+[CAPTURE] status as CTRL
+[HTTP] POST /api/site-builder/save?draft=true with a theme section using a colour token absent from the storefront palette
+[CAPTURE] status as LEGACY
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] drafts as DRAFTS","[STATUS] CTRL is 400 {OBSERVED} (KB-749030D5: designer/save refuses the whole batch, vcst, 2026-11-19)
+[STATUS] LEGACY is 400 as well {SPEC} (description: drafts are validated against the schema catalog) {OBSERVED} (KB-AEDC697F: legacy save stored it with 200 — the defect)
+[REL] DRAFTS does not list the bad file {SPEC}",[NETWORK] no 5xx,"legacy save stores a bad draft and every later publish is refused, unexpected 4xx/5xx or console error on the request under test",Discard every draft through the designer so later Publish theme calls are not blocked; confirm theme/status lists none.,VCST-6571 · X4 · KB-AEDC697F · Catches:VCST-6571 finding:X4 · held for product decision (PR test calls it deliberate) · Technique:EG Archetype:PARITY,Draft
+SB-044,A cloned page carries its own name and permalink in its content envelope,Site Builder > Page lifecycle,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Page created by the case on B2B-store. Expected FAIL until fixed (the clone keeps the source name/permalink until the details blade is saved).",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create page SRC with name AGENT-TEST-SB044-<unique> and a permalink
+[SETUP] save a section
+[ACT] click 'Clone' on SRC
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the clone's groupId
+[HTTP] GET /api/site-builder-pages/grouped/{cloneId}
+[CAPTURE] name and permalink as META
+[HTTP] GET /api/site-builder-pages/grouped/{cloneId}/content?draft=true
+[CAPTURE] settings.name and settings.permalink as ENVELOPE","[REL] META name and permalink differ from SRC's and carry the copy suffix {SPEC} (test plan 5: copy = new draft, own name)
+[REL] ENVELOPE name and permalink equal META's, not SRC's {SPEC} (test plan 5) {OBSERVED} (VCST-6571 checklist X10: clone kept source name/permalink until the details blade was saved, vcst, 2026-11-19 — the defect)",[NETWORK] no 4xx/5xx,"ENVELOPE carries the source name or permalink, unexpected 4xx/5xx or console error on the request under test",Archive SRC and the clone by groupId.,VCST-6571 · checklist X10 · Catches:VCST-6571 finding:X10 · Technique:ST Archetype:STALE,Draft
+SB-045,Template rule form — the selected Template option has an accessible name,Site Builder > Accessibility,Low,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Product template open in the designer on B2B-store with at least one rule.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[NAV] designer > a Product template > Template rules > edit a rule
+[ACT] focus the 'Template' select in the rule form
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the accessible name of the control and of its selected option from the accessibility snapshot as NAMES","[REL] the Template dropdown and its selected option expose a non-empty accessible name {BL} (BL-A11Y-002) {OBSERVED} (VCST-6571 checklist X19: the selected option had no accessible name, vcst, 2026-11-19 — the defect)
+[COUNT] controls in the rule form without an accessible name equal 0 {BL} (BL-A11Y-002)",[CONSOLE] no a11y warning,"empty accessible name for the control or its selected option, unexpected 4xx/5xx or console error on the request under test",Close the rule form without saving.,VCST-6571 · checklist X19 · BL-A11Y-002 · Catches:VCST-6571 finding:X19 · Technique:EG Archetype:SILENT,Draft
+SB-046,Page Builder routes after the switch — /api/site-builder/templates and /sections are 404; GET /api/pagebuilder/search equals /api/site-builder/search; anonymous is 401,Site Builder > API surface,Medium,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+B2B-store. Read-only. Replaces the Page Builder case that asserted /api/pagebuilder/templates and /sections return 200 (not ported: opposite behaviour).",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] GET {{BACK_URL}}/api/site-builder/templates?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] status as T
+[HTTP] GET {{BACK_URL}}/api/site-builder/sections?storeId=@td(STORE_PRIMARY.id)
+[CAPTURE] status as S
+[HTTP] GET {{BACK_URL}}/api/pagebuilder/search?storeId=@td(STORE_PRIMARY.id)&type=pages
+[CAPTURE] body as ALIAS
+[HTTP] GET {{BACK_URL}}/api/site-builder/search with the same query
+[CAPTURE] body as NEW
+[HTTP] GET /api/pagebuilder/search WITHOUT Authorization
+[CAPTURE] status as ANON","[STATUS] T and S are 404 {SPEC} (vc-module-site-builder#1/#3: the templates and sections routes are removed) {OBSERVED} (KB-3D1055D2, vcst, 2026-11-19)
+[REL] ALIAS is byte-identical to NEW {SPEC} (the /api/pagebuilder/search alias is kept) {OBSERVED} (KB-3D1055D2)
+[STATUS] ANON is 401 {OBSERVED} (KB-3D1055D2)",[NETWORK] no 5xx,"200 on the removed routes, alias body differs, alias reachable without a token",none (read-only).,VCST-6571 · checklist A22 · R20 · Technique:EP Archetype:CONFIG,Draft
+SB-047,"Content safety through the designer path — javascript: and vbscript: links and a bad palette colour are refused, script is stripped, mailto/tel/anchor/image are kept",Site Builder > Content safety,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Page created by the case on B2B-store; the designer path sends a catalogHash (the safe path). Expected to PASS today; the bypass is SB-041/042.",store_id=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[HTTP] GET /api/site-builder/catalog
+[CAPTURE] hash
+[HTTP] POST /api/site-builder/designer/save?catalogHash=<hash> with a link javascript:alert(1)
+[CAPTURE] status as R_JS
+[HTTP] the same with vbscript:
+[CAPTURE] status as R_VB
+[HTTP] the same with a palette colour #zzzzzz
+[CAPTURE] status as R_COL
+[HTTP] the same with rich text holding <script> and mailto:, tel:, #anchor and an https image
+[CAPTURE] the stored value as R_KEEP","[STATUS] R_JS, R_VB and R_COL are 400 {SPEC} (VCST-6570 rules) {OBSERVED} (VCST-6571 checklist A19: javascript: 400, invalid palette colour 400 'is not a CSS color', vcst, 2026-11-19)
+[COUNT] 3 of 3 refused requests answer 400 and the draft read back after them equals the draft before them {OBSERVED} (VCST-6570 rules; vcst, 2026-11-19, REG-2026-11-19-2029)
+[BODY] R_KEEP has no script element and keeps mailto:, tel:, the #anchor link and the image {SPEC} (VCST-6570 rules) {OBSERVED} (VCST-6571 checklist A19)",[NETWORK] no 5xx,"a refused value accepted, a safe link stripped",Archive the page by groupId.,VCST-6571 · checklist A19 · R7 · Technique:EP Archetype:BOUNDARY,Draft
+SB-048,Store without GitHub — save and publish work; History reports setupRequired without an error,Site Builder > Git settings,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+B2B-store with GitContentEnabled unset or false and no GitHub App; page created by the case.",shell_url={{BACK_URL}}/apps/site-builder-shell/?storeId=@td(STORE_PRIMARY.id),"[AUTH] POST {{BACK_URL}}/connect/token as the ADMIN test account (password NAME ADMIN_PASSWORD, never a literal)
+[AUTH] keep the bearer token
+[SETUP] create a page
+[ACT] save a section in the designer
+[WAIT] the UI settles (no spinner, network idle)
+[ACT] click 'Publish'
+[WAIT] the UI settles (no spinner, network idle)
+[HTTP] GET /api/site-builder/history/status
+[CAPTURE] as H1
+[HTTP] GET /api/site-builder/history?item=page:{groupId}
+[CAPTURE] as H2
+[NAV] shell History entry
+[CAPTURE] the message as H3","[STATE] save and publish succeed and the page is published {SPEC} (AC-9)
+[BODY] H1 and H2 report setupRequired with HTTP 200 and no error {SPEC} (AC-9) {OBSERVED} (KB-C5B6CE87, vcst, 2026-11-19)
+[DOM] H3 says the store is not connected, not an error {OBSERVED} (KB-C5B6CE87: 'Not connected' with an explanation)","[NETWORK] no 4xx/5xx other than none expected
+[CONSOLE] no error","an error toast on History, a failed save without GitHub",Unpublish and archive the page by groupId.,VCST-6571 · checklist A10 · AC-9 · Technique:EP Archetype:CONFIG,Draft
+SB-049,Publishing a page does not publish pending header and footer drafts; themeSnapshot is unchanged,Site Builder > Page lifecycle,High,,,"Module VirtoCommerce.SiteBuilder installed (3.1000.0-pr-1-28d0 or later); back office signed in as the ADMIN test account (password typed by its NAME ADMIN_PASSWORD).
+Designer/preview steps need the storefront on the flag-on build (vc-frontend with theme snapshot + preview protocol 2, e.g. 2.63.0-pr-2676); vcst runs the flag-off build (2.63.0-pr-2630) as of 2026-11-19, where they are BLOCKED, not FAIL.
+Shared-state window: no other session writes the B2B-store theme drafts or publications meanwhile (theme publications are append-only; the designer cannot delete a published template).
+B2B-store with a preview that loads; capture LAST_GOOD publication.",store_id=@td(STORE_PRIMARY.id),"[SETUP] designer: add an announcement bar to the Header group and a menu block to the Footer group and a Text section to a new page
+[SETUP] click 'Save'
+[HTTP] GET /api/site-builder/theme/status
+[CAPTURE] drafts as DRAFTS
+[ACT] click 'Publish' for the page only
+[WAIT] the UI settles (no spinner, network idle)
+[CAPTURE] the requests as REQ
+[GQL] themeSnapshot
+[CAPTURE] publication and header as S_AFTER
+[HTTP] GET theme/status
+[CAPTURE] drafts as DRAFTS_AFTER","[REL] DRAFTS lists the header and footer files {OBSERVED} (KB-7D908FAE, vcst, 2026-11-19)
+[REL] REQ contains one grouped/publishing request and no theme/publish {SPEC} (ticket description: publishing a page does not publish header and footer)
+[REL] S_AFTER publication equals LAST_GOOD and DRAFTS_AFTER equals DRAFTS {SPEC} (docs/contracts/theme-snapshot.md: publishing a page does not publish the theme)",[NETWORK] no 4xx/5xx,"publication advances on a page publish, header or footer draft live after it",designer 'Discard all changes' for the header and footer drafts; unpublish and archive the page by groupId.,VCST-6571 · checklist A2 · R1 · Technique:ST Archetype:LIFECYCLE,Draft

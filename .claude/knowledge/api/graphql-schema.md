@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-11-05)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-11-19)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (127 queries, derived at refresh):
+    message to notice. Measured on this schema (130 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
-    | `cultureName` | 68 (54%) | 3 | 65 |
-    | `storeId` | 76 (60%) | 39 | 37 |
+    | `cultureName` | 71 (55%) | 3 | 68 |
+    | `storeId` | 79 (61%) | 40 | 39 |
     | `userId` | 31 (24%) | 2 | 29 |
     | `organizationId` | 19 (15%) | 4 | 15 |
 
-    **96 of 127 queries (76%) accept at least one; 83 (65%) accept one OPTIONALLY** —
+    **99 of 130 queries (76%) accept at least one; 86 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -98,6 +98,7 @@ getSavedForLater(storeId: String!, userId: String!, organizationId: String, curr
 pickupLocations(after: String, first: Int, keyword: String, sort: String, storeId: String)
 carts(after: String, first: Int, sort: String, storeId: String, userId: String, currencyCode: String, cultureName: String, cartType: String, filter: String)
 salesRepCartFilterRules(storeId: String, cultureName: String)
+salesRepCoupons(after: String, first: Int, storeId: String!, cultureName: String)
 salesRepCustomerCartStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 ```
 
@@ -149,6 +150,7 @@ paymentStatuses(cultureName: String)
 orders(after: String, first: Int, sort: String, facet: String, filter: String, cultureName: String, userId: String)
 organizationOrders(after: String, first: Int, sort: String, facet: String, filter: String, cultureName: String, organizationId: String)
 shipmentStatuses(cultureName: String)
+orderStatistics(storeId: String, currencyCode: String, cultureName: String)
 salesRepCustomerOrder(id: String!, cultureName: String)
 salesRepCustomerOrders(after: String, first: Int, organizationId: String, storeId: String, cultureName: String, filter: String, facet: String, sort: String)
 salesRepOrderFilterRules(storeId: String, cultureName: String, organizationId: String, period: SalesRepStatisticsPeriodInput)
@@ -174,6 +176,7 @@ newsArticleTags(languageCode: String!)
 fcmSettings()
 pushMessages(after: String, first: Int, keyword: String, sort: String, unreadOnly: Boolean, withHidden: Boolean, cultureName: String)
 tasks(after: String, first: Int, keyword: String, sort: String, responsibleId: String, storeId: String, startDueDate: DateTime, endDueDate: DateTime, isActive: Boolean, completed: Boolean)
+themeSnapshot(domain: String, storeId: String, cultureName: String, permalink: String)
 skyflowCards(storeId: String)
 evaluateDynamicContent(storeId: String, placeName: String, categoryId: String, productId: String, cultureName: String, toDate: DateTime, tags: [String], userGroups: [String])
 backInStockSubscriptions(after: String, first: Int, keyword: String, sort: String, storeId: String, productIds: [String], isActive: Boolean)
@@ -195,6 +198,7 @@ returnStatuses(cultureName: String)
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
 customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 signInMethods()
+layout(scope: String!, storeId: String)
 passkeyCreationOptions()
 passkeyRequestOptions()
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
@@ -205,7 +209,6 @@ salesRepCustomerInsights(organizationId: String, storeId: String, period: SalesR
 salesRepCustomer(organizationId: String!)
 salesRepCustomerSortRules(storeId: String, cultureName: String)
 salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, filter: String, cultureName: String)
-salesRepLayout(scope: String!, storeId: String)
 salesRepTaskFilterRules(storeId: String, cultureName: String)
 salesRepTask(id: String!)
 salesRepTaskSortRules(storeId: String, cultureName: String)
@@ -388,10 +391,10 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `createReturn` | `CreateReturnCommandType` |
 | `submitReturn` | `SubmitReturnCommandType` |
 | `updateReturn` | `UpdateReturnCommandType` |
+| `saveLayout` | `InputLayout` |
 | `deleteSignInKey` | `InputDeleteSignInKeyType` |
 | `renameSignInKey` | `InputRenameSignInKeyType` |
 | `createPasskey` | `InputCreatePasskeyType` |
-| `saveSalesRepLayout` | `InputSalesRepLayout` |
 | `sendCustomerCommunication` | `InputSendCustomerCommunicationType` |
 
 ### Payment
@@ -478,7 +481,7 @@ Fields: `id`, `name`, `status`, `storeId`, `channelId`, `hasPhysicalProducts`, `
 
 ### LineItemType
 
-Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validationErrors`, `catalogId`, `categoryId`, `createdDate`, `height`, `id`, `imageUrl`, `isGift`, `isReadOnly`, `isReccuring`, `selectedForCheckout`, `languageCode`, `length`, `measureUnit`, `name`, `productOuterId`, `note`, `objectType`, `productId`, `productType`, `quantity`, `requiredShipping`, `shipmentMethodCode`, `sku`, `taxPercentRate`, `taxType`, `thumbnailImageUrl`, `volumetricWeight`, `weight`, `weightUnit`, `width`, `fulfillmentCenterId`, `fulfillmentCenterName`, `currencyCode`, `discounts`, `taxDetails`, `discountAmount`, `discountAmountWithTax`, `discountTotal`, `discountTotalWithTax`, `extendedPrice`, `extendedPriceWithTax`, `listPrice`, `listPriceWithTax`, `listTotal`, `listTotalWithTax`, `showPlacedPrice`, `placedPrice`, `placedPriceWithTax`, `salePrice`, `salePriceWithTax`, `taxTotal`, `dynamicProperties`, `vendor`, `configurationItems`, `loyaltyPoints`
+Fields: `product`, `inStockQuantity`, `warehouseLocation`, `isValid`, `validationErrors`, `catalogId`, `categoryId`, `createdDate`, `height`, `id`, `imageUrl`, `isGift`, `isReadOnly`, `isReccuring`, `selectedForCheckout`, `languageCode`, `length`, `measureUnit`, `name`, `productOuterId`, `note`, `objectType`, `productId`, `productType`, `quantity`, `requiredShipping`, `shipmentMethodCode`, `sku`, `taxPercentRate`, `taxType`, `thumbnailImageUrl`, `volumetricWeight`, `weight`, `weightUnit`, `width`, `fulfillmentCenterId`, `fulfillmentCenterName`, `purchaseOrderLineNumber`, `currencyCode`, `discounts`, `taxDetails`, `discountAmount`, `discountAmountWithTax`, `discountTotal`, `discountTotalWithTax`, `extendedPrice`, `extendedPriceWithTax`, `listPrice`, `listPriceWithTax`, `listTotal`, `listTotalWithTax`, `showPlacedPrice`, `placedPrice`, `placedPriceWithTax`, `salePrice`, `salePriceWithTax`, `taxTotal`, `dynamicProperties`, `vendor`, `configurationItems`, `loyaltyPoints`
 
 ### CustomerOrderType
 

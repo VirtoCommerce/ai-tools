@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as m from "../vc-secrets.mjs";
+import "../test-support.mjs";   // makes the real keystores unreachable for this file's process
 
 test("oauthStatusFrom: a cache verdict becomes a bare status, never the object holding the token", () => {
     // The one place a token could reach the report: cacheStatus returns the access token beside its

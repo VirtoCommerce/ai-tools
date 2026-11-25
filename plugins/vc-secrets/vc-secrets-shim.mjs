@@ -16,7 +16,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SHIM_CONTRACT = 2;
 const PLUGIN_KEY = "vc-secrets@ai-tools";
@@ -33,13 +33,66 @@ const [PLUGIN_NAME, MARKETPLACE] = PLUGIN_KEY.split("@");
 // would hand it the launch -- and every resolved secret -- the moment its version number was higher.
 // Such an install is reported when nothing of ours is found, and never imported.
 //
-// Cursor has no entry yet. That is deliberate: an unmeasured root would be a guess, and a wrong one
-// resolves to nothing in exactly the same way as an absent one while implying it was checked. When
-// its layout is established it becomes one more line here.
-const CACHE_ROOTS = [
-    path.join(os.homedir(), ".claude", "plugins", "cache"),
-    path.join(os.homedir(), ".codex", "plugins", "cache"),
-];
+// Cursor's root was measured with cursor-agent 2026.11.19: a marketplace install lands in
+// ~/.cursor/plugins/cache/<marketplace>/<plugin>/<commit sha>/, and no registry is kept on disk -- the
+// install is held by the account. A root is added only once it is measured: a wrong one resolves to nothing
+// in exactly the same way as an absent one while implying it was checked.
+//
+// The table is written twice, here and as CLIENT_HOME_DIRS in scripts/shim-path.mjs, because this file is
+// copied to a data directory alone and cannot import; a test holds the two equal.
+const CLIENT_HOMES = { claude: ".claude", codex: ".codex", cursor: ".cursor" };
+const cacheRootOf = (client) => path.join(os.homedir(), CLIENT_HOMES[client], "plugins", "cache");
+const CACHE_ROOTS = Object.keys(CLIENT_HOMES).map(cacheRootOf);
+
+// The client this copy belongs to, read from where it sits: the install skill puts it in
+// <client home>/plugins/data/. A Codex or Cursor launch that took Claude Code's install ran a version that
+// client never installed, and broke the day Claude Code uninstalled it -- so a copy's own client comes first.
+// A shim anywhere else (a --data-dir of the developer's choosing, this repository's copy) belongs to no client
+// and keeps the order below. Both spellings of the home are tried: import.meta.url is the resolved path, and
+// a home reached through a link (macOS's /var -> /private/var) differs from it by exactly that link.
+const SELF = fileURLToPath(import.meta.url);
+const HOMES = [os.homedir()];
+try {
+    HOMES.push(fs.realpathSync(os.homedir()));
+} catch {
+    // An unreadable home leaves the spelling the environment gave; the comparison below still runs.
+}
+const OWN_CLIENT = Object.keys(CLIENT_HOMES).find((client) => HOMES.some(
+    (home) => SELF.startsWith(path.join(home, CLIENT_HOMES[client], "plugins", "data") + path.sep))) ?? null;
+
+// A version directory is normally named for its version. Cursor names it for the commit it installed
+// (measured: .../vc-secrets/1290acf240898c4d0f67da50f6575d166b8d1982/), which ranks as no version at all, so
+// two of them were ordered by chance; there the plugin's own manifest says which version it is. The
+// directory's mtime rides along as lastUpdated, the tie-break `newer` already reads for registry records, so
+// two installs of one version prefer the one written last. Only a string version is taken from a manifest:
+// the file is in a cache, and an odd shape must rank as absent rather than throw.
+const NUMBERED_DIR_RE = /^\d+(\.\d+)*(-.*)?$/;
+function manifestVersion(installPath) {
+    for (const dir of [".claude-plugin", ".cursor-plugin", ".codex-plugin"]) {
+        try {
+            const version = JSON.parse(fs.readFileSync(path.join(installPath, dir, "plugin.json"), "utf8"))?.version;
+            if (typeof version === "string" && version !== "") {
+                return version;
+            }
+        } catch {
+            // Absent or unreadable: the next manifest, then the directory name.
+        }
+    }
+
+    return null;
+}
+
+function cacheRecord(dirName, installPath) {
+    const declared = NUMBERED_DIR_RE.test(dirName) ? null : manifestVersion(installPath);
+    let lastUpdated;
+    try {
+        lastUpdated = fs.statSync(installPath).mtime.toISOString();
+    } catch {
+        lastUpdated = undefined;
+    }
+
+    return { version: declared ?? dirName, installPath, lastUpdated };
+}
 
 // readdirSync does not follow links, so Dirent.isDirectory() is FALSE for a symlink to a directory —
 // measured. Filtering on it alone silently skips a linked install, which either picks an older real
@@ -50,10 +103,10 @@ const isDirLike = (entry) => entry.isDirectory() || entry.isSymbolicLink();
 
 // `own` are the installs under this plugin's marketplace; `foreign` the same-named plugin under any
 // other, which exists only so the failure can name it.
-function installsInCaches() {
+function installsInCaches(roots = CACHE_ROOTS) {
     const own = [];
     const foreign = [];
-    for (const root of CACHE_ROOTS) {
+    for (const root of roots) {
         let marketplaces;
         try {
             marketplaces = fs.readdirSync(root, { withFileTypes: true });
@@ -91,7 +144,7 @@ function installsInCaches() {
                 // it would hand the newest slot to a directory whose launch then fails on a missing
                 // file, naming a path nobody chose.
                 if (fs.existsSync(path.join(installPath, LAUNCHER))) {
-                    (marketplace.name === MARKETPLACE ? own : foreign).push({ version: version.name, installPath });
+                    (marketplace.name === MARKETPLACE ? own : foreign).push(cacheRecord(version.name, installPath));
                 }
             }
         }
@@ -237,13 +290,17 @@ const launcherIn = (r) => {
 const usable = candidates.filter(launcherIn);
 const fromRegistry = usable.length > 0 ? usable : records.filter(launcherIn);
 
-let record;
-if (fromRegistry.length > 0) {
+// A Codex or Cursor copy resolves its own client's installs first (see OWN_CLIENT). Claude Code's own copy
+// keeps the registry first: only the registry knows per-project installs.
+const ownSearched = OWN_CLIENT !== null && OWN_CLIENT !== "claude";
+const ownInstalls = ownSearched ? installsInCaches([cacheRootOf(OWN_CLIENT)]).own : [];
+let record = ownInstalls.length > 0 ? pick(ownInstalls) : undefined;
+if (record === undefined && fromRegistry.length > 0) {
     record = pick(fromRegistry);
     if (byProject.length === 0 && records.length > 1) {
         fs.writeSync(2, `vc-secrets: this directory belongs to none of the ${records.length} installs; using version ${registryField(record.version, "string", "unknown")} from ${registryField(record.projectPath, "string", "user scope")}\n`);
     }
-} else {
+} else if (record === undefined) {
     // Either the registry knew nothing — ordinary on a client that does not maintain one — or every
     // record it holds points at a directory with no launcher in it. installsInCaches returns only
     // directories that DO hold one, so anything it finds is usable by construction.
@@ -252,8 +309,15 @@ if (fromRegistry.length > 0) {
         // Not imported, not ranked, not offered as a fallback. Naming the paths is what makes this
         // actionable: the developer either installed the wrong marketplace's plugin or has a
         // lookalike, and neither is something this shim can decide for them.
+        // ai-tools was named vc-tools until 2026-09-30, and a repository's committed settings can still
+        // register it under the old key. The refusal stands -- a key is not an identity -- but "install it"
+        // reads as nonsense to someone who can see it installed, so the likely cause is named.
+        const oldKey = foreign.some((x) => path.basename(path.dirname(path.dirname(x.installPath))) === "vc-tools")
+            ? " vc-tools is this marketplace's name before its 2026-09-30 rename to ai-tools: uninstall the @vc-tools copy first, "
+                + "then add the marketplace as ai-tools and install from it (CHANGELOG.md, catalog 0.10.0)."
+            : "";
         fail(`no install of ${PLUGIN_KEY} was found in the plugin cache, but a plugin named ${PLUGIN_NAME} from another marketplace is installed: `
-            + `${foreign.map((x) => x.installPath).join(", ")}. It is not used -- the same name is not the same plugin. `
+            + `${foreign.map((x) => x.installPath).join(", ")}. It is not used -- the same name is not the same plugin.${oldKey} `
             + "Install it from the marketplace, then run the vc-secrets install skill");
     }
     if (cached.length === 0 && records.length > 0) {
@@ -276,6 +340,10 @@ if (fromRegistry.length > 0) {
     if (records.length > 0) {
         fs.writeSync(2, `vc-secrets: no record in ${registryPath} points at a usable install; using version ${record.version ?? "unknown"} from the plugin cache\n`);
     }
+}
+
+if (ownSearched && ownInstalls.length === 0) {
+    fs.writeSync(2, `vc-secrets: no usable install of ${PLUGIN_KEY} in ${cacheRootOf(OWN_CLIENT)}; using ${record.installPath}\n`);
 }
 
 const launcher = launcherIn(record);

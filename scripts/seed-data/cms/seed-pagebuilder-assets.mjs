@@ -24,6 +24,7 @@
  *   delete  DELETE /api/assets?urls=<folder url> — recursive; the parent listing lags a few seconds
  *   content GET …/grouped/{id}/content?includeVersion=true → {content,eTag}; POST with If-Match
  */
+import "../../lib/sync-stdio.mjs";
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, STORE_ID, BACK_URL, ADMIN, ADMIN_PASSWORD,
   uploadAsset, writeEnvAliasOverride, verifyRemoved,
@@ -33,6 +34,10 @@ import {
   storeAssetRoot, fixtureRoot, allFolderSpecs, uploadOrder, expectedCounts, totalFiles,
   pageName, pagePermalink, pageRefCounts, createGroupedBody, buildPageContent, buildScBody, fileBytes,
 } from './pagebuilder-assets-specs.mjs';
+import { routesFor, resolveBuilderRoutes } from './builder-routes.mjs';
+
+// Route family (Site Builder or Page Builder) — read from /api/platform/modules right after auth.
+let R = routesFor('page-builder');
 
 const VERIFY_ONLY = process.argv.includes('--verify');
 const ROOT = fixtureRoot(STORE_ID);
@@ -45,7 +50,7 @@ async function listFolder(url) {
   return r?.results || [];
 }
 async function pbSearch(url, extra = {}) {
-  return api('POST', '/api/page-builder-assets/search', { folderUrl: url, skip: 0, take: 20, ...extra }, { expectStatus: [200] });
+  return api('POST', `${R.assets}/search`, { folderUrl: url, skip: 0, take: 20, ...extra }, { expectStatus: [200] });
 }
 async function ensureEmptyFolder(parentUrl, name) {
   const kids = await listFolder(parentUrl).catch(() => []);
@@ -90,7 +95,7 @@ async function rawToken() {
   _tok = (await r.json()).access_token; return _tok;
 }
 async function getContentVersioned(groupId) {
-  const r = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content?draft=true&includeVersion=true`, { headers: { Authorization: `Bearer ${await rawToken()}` } });
+  const r = await fetch(`${BACK_URL}${R.pages}/grouped/${groupId}/content?draft=true&includeVersion=true`, { headers: { Authorization: `Bearer ${await rawToken()}` } });
   const t = await r.text();
   try { const j = JSON.parse(t); return { doc: typeof j.content === 'string' ? JSON.parse(j.content || '{}') : (j.content || j), eTag: j.eTag || null }; }
   catch { return { doc: {}, eTag: null }; }
@@ -99,17 +104,17 @@ async function saveContent(groupId, body) {
   const { eTag } = await getContentVersioned(groupId);
   const headers = { Authorization: `Bearer ${await rawToken()}`, 'Content-Type': 'application/json' };
   if (eTag) headers['If-Match'] = eTag;
-  const r = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content?includeVersion=true`, { method: 'POST', headers, body: JSON.stringify(body) });
+  const r = await fetch(`${BACK_URL}${R.pages}/grouped/${groupId}/content?includeVersion=true`, { method: 'POST', headers, body: JSON.stringify(body) });
   if (![200, 201, 204].includes(r.status)) throw new Error(`save content ${groupId} → ${r.status}: ${(await r.text()).slice(0, 200)}`);
 }
 
 // ── pages / shared component ─────────────────────────────────────────────────
 async function searchPages() {
-  const r = await api('POST', '/api/page-builder-pages/search', { storeId: STORE_ID, keyword: PAGE_PREFIX, take: 200 }, { expectStatus: [200] });
+  const r = await api('POST', `${R.pages}/search`, { storeId: STORE_ID, keyword: PAGE_PREFIX, take: 200 }, { expectStatus: [200] });
   return (r?.results || []).filter((p) => String(p.name || '').startsWith(PAGE_PREFIX));
 }
 async function searchSc() {
-  const r = await api('POST', '/api/page-builder-shared-components/search', { storeId: STORE_ID, take: 500 }, { expectStatus: [200, 201] });
+  const r = await api('POST', `${R.shared}/search`, { storeId: STORE_ID, take: 500 }, { expectStatus: [200, 201] });
   return (r?.results || []).filter((c) => String(c.name || '').startsWith(SC_PREFIX));
 }
 
@@ -144,7 +149,7 @@ async function seed() {
   for (const p of REF_PAGES) {
     let page = existing.find((x) => x.name === pageName(p.n));
     if (!page) {
-      const resp = await api('POST', '/api/page-builder-pages/grouped', createGroupedBody(p.n, { storeId: STORE_ID }), { expectStatus: [200, 201, 204] });
+      const resp = await api('POST', `${R.pages}/grouped`, createGroupedBody(p.n, { storeId: STORE_ID }), { expectStatus: [200, 201, 204] });
       page = { id: resp?.id || (await searchPages()).find((x) => x.name === pageName(p.n))?.id };
       if (!page.id) throw new Error(`could not create ${pageName(p.n)}`);
     }
@@ -159,10 +164,10 @@ async function seed() {
     const body = buildScBody(sc.n, STORE_ID, urlOf);
     let id = existingSc.find((c) => c.name === scName(sc.n))?.id || null;
     if (!id) {
-      const resp = await api('POST', '/api/page-builder-shared-components', body, { expectStatus: [200, 201] });
+      const resp = await api('POST', `${R.shared}`, body, { expectStatus: [200, 201] });
       id = resp?.id || (await searchSc()).find((c) => c.name === scName(sc.n))?.id || null;
     } else {
-      await api('POST', `/api/page-builder-shared-components/${encodeURIComponent(id)}/content`, body.content, { expectStatus: [200, 201, 204] });
+      await api('POST', `${R.shared}/${encodeURIComponent(id)}/content`, body.content, { expectStatus: [200, 201, 204] });
     }
     scIds[sc.n] = id;
     log(`  shared component ${scName(sc.n)}: ${id ? 'ok' : 'NOT CREATED'}`);
@@ -195,7 +200,7 @@ async function readBack(ctx = {}) {
     distinctCreated: new Set(p500.map((k) => k.createdDate)).size };
   // references
   const assetUrls = REF_ASSETS.map((a) => ctx.urlByRel?.[a.rel] || `${folderUrl(a.rel.split('/').slice(0, -1).join('/'))}/${a.rel.split('/').pop()}`);
-  const refs = await api('POST', '/api/page-builder-assets/references', { storeId: STORE_ID, assetUrls, includePages: true }, { expectStatus: [200] }).catch((e) => ({ err: e.message }));
+  const refs = await api('POST', `${R.assets}/references`, { storeId: STORE_ID, assetUrls, includePages: true }, { expectStatus: [200] }).catch((e) => ({ err: e.message }));
   const derived = pageRefCounts(); const derivedSc = scRefCounts();
   out.refs = REF_ASSETS.map((a, i) => {
     const r = refs.results?.[i] || {};
@@ -205,7 +210,7 @@ async function readBack(ctx = {}) {
     return row;
   });
   // folder-level lookup from deep/ (folder-delete usage)
-  const deepRef = await api('POST', '/api/page-builder-assets/references', { storeId: STORE_ID, folderUrl: folderUrl('deep'), assetUrls: [], includePages: true }, { expectStatus: [200] }).catch((e) => ({ err: e.message }));
+  const deepRef = await api('POST', `${R.assets}/references`, { storeId: STORE_ID, folderUrl: folderUrl('deep'), assetUrls: [], includePages: true }, { expectStatus: [200] }).catch((e) => ({ err: e.message }));
   out.deepFolderRefs = { pages: deepRef.results?.[0]?.pageReferencesCount, sc: deepRef.results?.[0]?.sharedComponentReferencesCount, names: (deepRef.results?.[0]?.pages || []).map((p) => p.name) };
   if (out.deepFolderRefs.pages !== 1) out.problems.push(`folder refs deep/: expected 1 page, platform says ${out.deepFolderRefs.pages}`);
   return out;
@@ -255,8 +260,8 @@ async function deleteTree(rootUrl) {
 
 async function teardown() {
   const pages = await searchPages();
-  for (const p of pages) { if (!DRY_RUN) await api('DELETE', `/api/page-builder-pages/grouped/${p.id}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ page ${p.name}`); }
-  for (const c of await searchSc()) { if (!DRY_RUN) await api('DELETE', `/api/page-builder-shared-components/${encodeURIComponent(c.id)}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ shared component ${c.name}`); }
+  for (const p of pages) { if (!DRY_RUN) await api('DELETE', `${R.pages}/grouped/${p.id}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ page ${p.name}`); }
+  for (const c of await searchSc()) { if (!DRY_RUN) await api('DELETE', `${R.shared}/${encodeURIComponent(c.id)}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ shared component ${c.name}`); }
   const parent = await listFolder(storeAssetRoot(STORE_ID));
   const me = parent.find((k) => k.type === 'folder' && k.name === ROOT_NAME);
   if (me && !DRY_RUN) { await deleteTree(me.url); log(`  ✗ folder tree ${ROOT}`); }
@@ -276,6 +281,8 @@ async function teardown() {
 async function main() {
   assertSafeTarget();
   await auth();
+  R = await resolveBuilderRoutes(api);
+  console.log(`  builder: ${R.moduleId} (${R.pages})`);
   if (TEARDOWN) { await teardown(); return; }
   const ctx = VERIFY_ONLY ? {} : await seed();
   if (DRY_RUN) { log('DRY RUN complete.'); return; }

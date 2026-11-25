@@ -1,6 +1,6 @@
 ---
 name: install
-description: "Put the vc-secrets shim at a stable path and print the settings entry plus the literal commands that use it. Run once per machine. NOT needed after an ordinary plugin update — the shim resolves the plugin's current location by itself."
+description: "Put the vc-secrets shim at a stable path in the data directory of the client that installed the plugin, and print what that client's config needs plus the literal commands that use it. Run once per machine. NOT needed after an ordinary plugin update — the shim resolves the plugin's current location by itself."
 disable-model-invocation: true
 allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/scripts/install-shim.mjs" *)
 ---
@@ -39,15 +39,19 @@ placeholder is not substituted the line is an ordinary shell line, so the shell 
 inherited environment instead, and an argument and an expansion are indistinguishable by the time the
 script reads them. That is why the check exists rather than the trust.
 
-With `--data-dir` absent or empty the script installs into the documented default under
-`~/.claude/plugins/data/`. On a machine with no Claude Code that creates the directory anyway, which is
-deliberate: the path is only a stable place to put the pointer, and one shared location keeps a
-generated config entry identical whichever client reads it. What the shim *resolves to* is not tied to
-that path — it reads an install registry where a client keeps one, and the client's plugin cache
-otherwise.
+With `--data-dir` absent or empty the script installs into the data directory of the client it was
+installed by, read from where the script itself sits: `~/.claude/plugins/data/` for Claude Code,
+`~/.codex/plugins/data/` for Codex, `~/.cursor/plugins/data/` for Cursor. Each client's copy is its own,
+so uninstalling the plugin in one client never takes another client's shim with it. A plugin loaded from
+`~/.cursor/plugins/local` gets no shim at all: that directory is updated in place and its path carries no
+version, so the script names the launcher there directly. What the shim *resolves to* is not tied to its
+path: a Codex or Cursor copy tries its own client's plugin cache first, then the install registry Claude
+Code keeps, then the other clients' caches; Claude Code's copy reads that registry first, as before, since
+only the registry knows per-project installs.
 
-The script does the three exact things — resolve the stable directory, copy the shim, print the settings
-entry and the commands that use it — so they come out the same on every machine and are covered by tests.
+The script does the three exact things — resolve the stable directory, copy the shim (a Cursor local copy gets none, and its launcher is named
+instead), print what to paste
+for this client and the commands that use it — so they come out the same on every machine and are covered by tests.
 It is idempotent: a second run reports `already up to date`.
 
 It deliberately **prints** rather than writes. `~/.claude/settings.json` belongs to the developer, and a
@@ -64,8 +68,9 @@ node "${CLAUDE_PLUGIN_ROOT}/vc-secrets.mjs" doctor
 node ../../vc-secrets.mjs doctor
 ```
 
-1. **Relay its output verbatim.** The `settings.json` entry is what a wrapped MCP server reads, and it
-   picks the variable up only after a restart — say so. The commands below it are what a human runs by
+1. **Relay its output verbatim.** What to paste depends on the client — a `settings.json` entry for
+   Claude Code, the `emit-config` output for Codex, an exported `VC_SECRETS` plus the `emit-config`
+   output for Cursor — and a wrapped MCP server picks it up only after a restart — say so. The commands below it are what a human runs by
    hand; they need nothing added to a shell.
 2. **Run the `doctor` command the script prints** and report its output. On a machine with no declaration
    file yet the whole output is `FAIL no declaration file found` — expected at this point, not a bug
@@ -77,7 +82,7 @@ node ../../vc-secrets.mjs doctor
 
 ## Report
 
-The shim's path, whether it was installed / replaced / already current, the `settings.json` entry to add,
+The shim's path, whether it was installed / replaced / already current, what to paste for this client,
 the literal commands, and the `doctor` output. The path is printed with how the directory was chosen: anything other than `--data-dir`
 means the placeholder did not reach the script, and the warning naming the ignored directory has to be
 passed on too. The shim works either way, but a substitution that never happens is worth knowing about

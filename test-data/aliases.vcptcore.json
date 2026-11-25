@@ -1639,7 +1639,7 @@
     "platform_id": "83d6380d-c0c4-45e1-8b89-f7e24110a624",
     "primary_contact_id": "36f463e3-4250-417c-bdf6-747c4d7c43ad",
     "contact_V6C": "36f463e3-4250-417c-bdf6-747c4d7c43ad",
-    "default_href": "tel:+1555040506045"
+    "default_href": "tel:+15550405060,45"
   },
   "ORG_SR_CALL_ADDR": {
     "id": "1ccced7b-3058-4da9-be67-2432fae8e20a",
@@ -1716,5 +1716,120 @@
     "user_id": "d6df699b-e2dd-4ce2-bf6b-6d16340a44d9",
     "role_id": "AGENT-TEST-Return-Agent-NoAuthorize",
     "userName": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com"
+  },
+  "CFG_LAPTOP": {
+    "id": "2561372d-b6c8-49f9-aa2b-3b086d43b990"
+  },
+  "CFG_FILE_UPLOAD": {
+    "id": "e3a70fff-b3c0-42a1-8759-b8f0d4c0aeb3"
+  },
+  "CFG_RING": {
+    "id": "c99b2749-6982-457b-a796-3ffc2d40dc79"
+  },
+  "CFG_GIFTBOX": {
+    "id": "2f38b614-6556-4331-a63b-34cf1f4cb907"
+  },
+  "CFG_CONDITIONAL_BIKE": {
+    "id": "49b5f013-4137-4281-a0c1-ae70ec63c60a"
+  },
+  "CFG_BIKE": {
+    "id": "933fcf58-6033-4cd1-9239-0fe333f641a2",
+    "configuration_id": "e59d6d40-6c10-4aaa-9149-288edf179c6e"
+  },
+  "CFG_CONDITIONAL": {
+    "id": "49b5f013-4137-4281-a0c1-ae70ec63c60a"
+  },
+  "CFG_WEDDING_CAKE_CONDITIONAL": {
+    "id": "86ff207b-805d-431b-9573-54fd10c3a0f6"
+  },
+  "CFG_TEXT_DRIVEN_COND": {
+    "id": "7e23966b-3a34-480c-a2d9-48b5a70d56c2"
+  },
+  "CFG_FILE_DRIVEN_COND": {
+    "id": "12708f28-4c1c-4d8c-9d6f-fdfe32c0610e"
+  },
+  "CFG_REQUIRED_FILE_CHILD": {
+    "id": "305f4cfb-5bf2-4967-aeb7-645a1426fa57"
+  },
+  "CFG_TWO_REQ_SIBLINGS": {
+    "id": "01deabfc-efda-4d99-8a11-3d8fa67d1f0b"
+  },
+  "CFG_DEEP_CHAIN": {
+    "id": "d70c6dbc-41f3-4ac0-a599-eef5c21447f4"
+  },
+  "CFG_REQ_CHILD_OPT_PARENT": {
+    "id": "d90eb567-0f71-4196-8b30-ffa9a1e943e2"
+  },
+  "CFG_FILE_HOODIE": {
+    "productId": "e3a70fff-b3c0-42a1-8759-b8f0d4c0aeb3",
+    "fileSectionId": "c344ed3a-9332-430d-80e8-13d065b4f49e"
+  },
+  "CFG_WITH_DEFAULT": {
+    "id": "78c0d3b4-e9b4-454f-ad43-c00e8da06b29",
+    "configuration_id": "80dd4a96-60e2-49d1-b9a1-c4ad61758ec4",
+    "default_section_id": "84ba7070-caeb-468d-88e4-8e161c0430f7",
+    "default_option_id": "9ac40b87-d250-4a7c-8370-5876f0d14738"
+  },
+  "CFG_WITH_DEFAULT_COND": {
+    "id": "eb0ee933-9a57-4362-a9ed-b25359b1297b",
+    "configuration_id": "0bd6329b-be40-469e-a831-f2b474386d50",
+    "default_section_id": "a8d711a6-ddb8-4085-b3b2-a2489fbb0219",
+    "default_option_id": "c955d5ad-f172-4794-86cb-736abc378a05",
+    "parent_section_id": "a8d711a6-ddb8-4085-b3b2-a2489fbb0219",
+    "parent_default_option_id": "c955d5ad-f172-4794-86cb-736abc378a05",
+    "dependent_section_id": "5c9a4c94-82c9-4851-b31e-8a7f66e12894",
+    "dependent_default_option_id": "0977ce07-f761-4c4c-96fb-07d2aa224a87"
+  },
+  "PROD_CMP_A": {
+    "id": "5a4bb889-151b-4058-b001-3bab3faf8777"
+  },
+  "PROD_CMP_B": {
+    "id": "3a3c257b-26a0-4e87-baf8-2f66d558a972"
+  },
+  "PROD_PROP_PRICE": {
+    "id": "37a32ba1-62fd-455f-9146-8a32d695f049"
+  },
+  "PROD_LONGNAME": {
+    "id": "cb811d3d-5aea-435e-ae90-b4a8180eb4be"
+  },
+  "PROD_CMP_FILL_1": {
+    "id": "76044f37-e0af-43a7-b111-08e2abdea5d0"
+  },
+  "PROD_CMP_FILL_2": {
+    "id": "6581d4f5-f8cf-4e5f-9b47-35a36e486b04"
+  },
+  "PROD_MOQ": {
+    "id": "f107dea8-45b5-4fab-9550-531477fe1338"
+  },
+  "PROD_PACK": {
+    "id": "fdc8612d-52d7-4e5a-8010-8c8b132bf1cb"
+  },
+  "PROD_CMP_C": {
+    "id": "ef99cc4f-55f2-4215-8cd5-4bb755673bc3"
+  },
+  "PROD_CMP_PARENT": {
+    "id": "73cf0902-584a-4ec0-b252-1a00793043d5"
+  },
+  "PROD_CMP_CHILD": {
+    "id": "d7121047-3f51-41b2-b467-237e0c8cba48"
+  },
+  "PROD_CMP_NOCAT": {
+    "id": "485d0df6-b851-461d-b2d0-875897da9de2"
+  },
+  "PROD_CMP_VARIATIONS": {
+    "id": "b945a8d4-b7dd-4303-bd8f-d373bd895e25"
+  },
+  "PROD_VAR_ONE_ENTRY": {
+    "id": "bd30f9e6-7244-4617-94a4-4e0f761151d2"
+  },
+  "CFG_DUPLABEL": {
+    "id": "9a95fc6f-d66e-4761-bd61-3f56452b1bd9"
+  },
+  "ORG_SR_CALL_EXTONLY": {
+    "id": "71383ae6-ce94-4b66-9395-0688f22a1908",
+    "platform_id": "71383ae6-ce94-4b66-9395-0688f22a1908",
+    "primary_contact_id": "c77dd250-ceeb-481a-982d-5f0e9368a47e",
+    "contact_V12C": "c77dd250-ceeb-481a-982d-5f0e9368a47e",
+    "default_href": ""
   }
 }
