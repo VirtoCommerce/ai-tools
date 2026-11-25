@@ -200,5 +200,16 @@
       "runner": "same",
       "reached": "Film"
     }
-  ]
+  ],
+  "demo_data": {
+    "vcptcore_qa1": {
+      "ledger": "test-results/docs/Sprint26-23/demo-data/vcptcore_qa1.json",
+      "left_in_place": true
+    },
+    "vcst": {
+      "ledger": "test-results/docs/Sprint26-23/demo-data/vcst.json",
+      "left_in_place": true,
+      "note": "126 historical orders re-attributed to the demo customers; each old value is in the ledger"
+    }
+  }
 }
