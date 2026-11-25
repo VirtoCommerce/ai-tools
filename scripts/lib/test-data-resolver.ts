@@ -16,6 +16,7 @@
 
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
+import { activeSet, assertSet, loadPersonaSets, mapAlias } from "./persona-sets.mjs";
 
 /**
  * Why an `@td()` reference did not resolve on the current env (see `explainMiss`).
@@ -118,9 +119,14 @@ export class TestDataResolver {
   private csvCache: Map<string, CSVRow[]> = new Map();
   private jsonCache: Map<string, Record<string, unknown>> = new Map();
   private warnings: string[] = [];
+  /** The run's persona set (QA_PERSONA_SET): a shared persona's alias resolves to its clone. */
+  private personaSet: string | null = null;
+  private personaDefs: { personas: string[]; sets: string[] } = { personas: [], sets: [] };
 
   constructor(testDataDir: string, testEnv?: string) {
     this.testDataDir = testDataDir;
+    this.personaSet = activeSet();
+    if (this.personaSet) { this.personaDefs = loadPersonaSets(join(testDataDir, "..")); assertSet(this.personaSet, this.personaDefs); }
 
     // Load base aliases (shared across all environments)
     const basePath = join(testDataDir, "aliases.json");
@@ -241,7 +247,7 @@ export class TestDataResolver {
     const aliasDotMatch = inner.match(/^([A-Z][A-Z0-9_]+)((?:\.\w+)+)$/);
     if (aliasDotMatch) {
       const fieldPath = aliasDotMatch[2].slice(1); // strip leading "."
-      return this.resolveAlias(aliasDotMatch[1], fieldPath);
+      return this.resolveAlias(mapAlias(aliasDotMatch[1], this.personaSet, this.personaDefs), fieldPath);
     }
 
     // Direct form: file, filter, column

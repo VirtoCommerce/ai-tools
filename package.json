@@ -173,6 +173,8 @@
     "td:reconcile": "node scripts/seed-data/reconcile-test-data.mjs",
     "td:reconcile:store": "node scripts/seed-data/store/check-store-defaults.mjs",
     "td:validate:b2b": "node scripts/seed-data/b2b/validate-b2b-data.mjs",
+    "td:validate:wave-personas": "node scripts/seed-data/b2b/wave-personas.mjs",
+    "td:gen:wave-personas": "node scripts/seed-data/b2b/wave-personas.mjs --write",
     "td:validate:membership-lock": "node scripts/seed-data/b2b/validate-membership-lock-data.mjs",
     "td:validate:otp-signin": "node scripts/seed-data/auth/validate-otp-signin-data.mjs",
     "td:validate:passkey": "node scripts/seed-data/auth/validate-passkey-data.mjs",

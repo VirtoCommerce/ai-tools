@@ -32,6 +32,7 @@ import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
 import { TestDataResolver } from "../lib/test-data-resolver.ts";
+import { activeSet, loadPersonaSets, mapAlias } from "../lib/persona-sets.mjs";
 import { type EnvCoords } from "../deploy/lib/env.ts";
 import { probeCoords } from "../lib/env-facts.ts";
 import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
@@ -128,6 +129,10 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
   const outputs = GENERATORS.flatMap((g) => g.outputs.map((rel) => ({ rel, base: rel.split("/").pop()! })));
   const add = (m: Map<string, Set<string>>, k: string, c: string) => (m.get(k) ?? m.set(k, new Set()).get(k)!).add(c);
   const unreadable: string[] = [];
+  // The run's persona set: the pre-flight checks the clones this wave will sign in as, not the shared accounts.
+  const set = activeSet();
+  const defs = set ? loadPersonaSets(root) : { personas: [], sets: [] };
+  const mapRef = (ref: string) => { const i = ref.indexOf("."); return mapAlias(ref.slice(0, i), set, defs) + ref.slice(i); };
   for (const s of suites) {
     const path = join(root, s.file);
     if (!existsSync(path)) { unreadable.push(s.id); continue; }
@@ -140,8 +145,8 @@ export function collectCaseNeeds(root: string, suites: SuiteFile[]) {
       if (!id) continue;
       const text = Object.values(r).join("\n");
       const key = `${s.id}/${id}`;
-      for (const m of text.matchAll(PERSONA)) add(personas, m[1], key);
-      for (const m of text.matchAll(TD_REF)) add(refs, m[1], key);
+      for (const m of text.matchAll(PERSONA)) add(personas, mapAlias(m[1], set, defs), key);
+      for (const m of text.matchAll(TD_REF)) add(refs, mapRef(m[1]), key);
       // Steps only: a Preconditions list can name a fixture the case never uploads.
       const steps = r.Steps ?? text;
       for (const o of outputs) if (steps.includes(o.base)) add(generated, o.rel, key);

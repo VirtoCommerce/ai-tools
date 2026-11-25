@@ -207,12 +207,23 @@ make that true; the planner designs for them and every owner follows them.
 ### 7.1 Every owner signs in as their own users
 
 Carts, wishlists, orders, addresses and loyalty balances belong to a user (or an organization). Two
-people testing as the same persona destroy each other's preconditions. Each owner points the persona
-variables in **their own** `.env.local` at accounts nobody else uses this release, and writes which in
-`state.json` `personas`. Resolve them through `config.js`, never off a single `.env` layer
-([`../../rules/test-data.md`](../../rules/test-data.md) §Resolving a variable). A pooled state (an
-organization-wide loyalty balance) needs its own organization, not just its own user
-([`../../rules/test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4).
+people testing as the same persona destroy each other's preconditions — Sprint 26-22: USER_DEFAULT was in five of
+six waves, W6 waited for W3, and a W2 sign-in failed after another operator reset a shared password.
+
+**Each wave has its own persona set.** `release.json` gives every wave that may run beside another a different
+`personaSet` (`S1`…`S6`, [`test-data/personas/sets.json`](../../../test-data/personas/sets.json)); `release:check`
+fails two parallel waves with one set. The wave's run plans with `regression:plan --persona-set <set>`, and every
+shared persona its cases name (`[PRE:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH:X]`, `[AUTH role=X]`, `@td(X.…)`) becomes
+its clone `<X>_<set>`: same organization, role and password token, its own login. The browser CSV, the machine
+lane, the resolver and the pre-flight all apply it, so the pre-flight checks the clones the wave will sign in as.
+Clones are generated from their originals (`npm run td:gen:wave-personas`, gated by `td:validate:wave-personas`)
+and created on a stand by the persona's own seeder before W0. A persona not in the sets (a wave's own fixture
+account) needs nothing. Write the set in `state.json` `personas`.
+
+**Same organization, so organization-level state is still shared:** a clone isolates its carts and sign-ins, not
+its organization's orders, addresses or pooled balance. A case that changes those creates its own organization in
+the case, or carries `[EXCLUSIVE:…]` (§7.2)
+([`../../rules/test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4, §FIFTH RULE).
 
 ### 7.2 Environment-wide changes run alone, at the end
 
