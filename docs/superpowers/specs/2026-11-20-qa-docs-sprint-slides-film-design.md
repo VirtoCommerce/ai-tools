@@ -220,6 +220,11 @@ ticket film.
 
 ## 5. Corporate style
 
+> **Superseded (2026-11-25):** the **VC Brand System** Claude Design system now exists (introduced for the
+> ticket film in VCST-6571) and is the first value of `style.designSystem`. The paragraphs below record
+> the state on 2026-11-20 and the decision then; creating a second "Virto" design system is no longer
+> needed.
+
 No Virto brand book or presentation template is known to this repo (searched 2026-11-20: repo,
 artifacts, virtocommerce.com). The only official source found is the logo,
 `https://virtocommerce.com/images/logo-bold.svg`: `#EC3A35` red, `#FF9A3B` orange, `#262626` charcoal,

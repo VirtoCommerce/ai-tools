@@ -2,7 +2,7 @@
   "$schema": "./qa-docs.schema.json",
   "language": "en",
   "style": {
-    "designSystem": ""
+    "designSystem": "https://claude.ai/artifact/95bwWQ2jrnd9aBmG78qqvR"
   },
   "film": {
     "maxSeconds": 90,
