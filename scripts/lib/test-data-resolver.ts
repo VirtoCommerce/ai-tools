@@ -152,6 +152,16 @@ export class TestDataResolver {
           `[test-data-resolver] Layered ${overrideCount} env override(s) from aliases.${envName}.json`
         );
       }
+      // A wave's persona set: the fixtures seeded for its clones (aliases.<env>.<set>.json) win, field by field.
+      const setPath = this.persona ? join(testDataDir, `aliases.${envName}.${this.persona.set}.json`) : null;
+      if (setPath && existsSync(setPath)) {
+        const own = JSON.parse(readFileSync(setPath, "utf-8")) as AliasRegistry;
+        for (const [k, v] of Object.entries(own)) {
+          if (k === "_meta" || !v || typeof v !== "object") continue;
+          const base = this.envOverrides[k];
+          this.envOverrides[k] = { ...(base && typeof base === "object" ? base : {}), ...(v as object) } as AliasRegistry[string];
+        }
+      }
     }
   }
 

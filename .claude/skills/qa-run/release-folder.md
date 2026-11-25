@@ -218,8 +218,10 @@ in as its clone: the env loader gives `{{USER_EMAIL}}`, `{{ORG_USER_EMAIL}}`… 
 `@td(USER_DEFAULT.email)` and the other listed aliases theirs, and a runner's `SIGNIN_AS` takes its login from
 `npm run persona:login`. No case is rewritten. A clone belongs to the account (two names for one account share it),
 has its original's password, organizations and org roles, and is created on the stand once, before W0, by
-`npm run seed:wave-personas` (it reads the originals off the stand and never writes to them). Fixtures seeded for an
-original (orders keyed on `USER_EMAIL`) are seeded for the clones by running that seeder with the set bound.
+`npm run seed:wave-personas -- --fixtures` (it reads the originals off the stand and never writes to them; `--fixtures`
+also gives each set's clones their own orders and returns — `AGENT-TEST-ORD-<key>-<set>`, read through
+`test-data/aliases.<env>.<set>.json`, so `@td(COMPLETED_ORDER.number)` is the clone's order in that wave). A seeder
+that is not set-aware refuses to run while a set is bound, so nothing re-owns an original's fixtures.
 `npm run persona:use -- --clear` after the wave. Write the set in `state.json` `personas`.
 
 **Same organization, so organization-level state is still shared:** a clone isolates its carts and sign-ins, not

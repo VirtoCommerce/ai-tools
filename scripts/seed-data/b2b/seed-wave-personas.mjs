@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scripts/seed-data/b2b/seed-wave-personas.mjs — create the per-wave clones of the shared accounts on a stand.
 //
-//   npm run seed:wave-personas [-- --set S3] [--dry-run]
+//   npm run seed:wave-personas [-- --set S3] [--fixtures] [--dry-run]   (--fixtures: also each set's orders and returns)
 //
 // For every account test-data/personas/sets.json lists (store names and aliases) and every set: read the ORIGINAL on
 // the stand — its contact, organizations and org roles — and create the clone (scripts/lib/persona-sets.mjs
@@ -89,3 +89,20 @@ for (const name of defs.accounts) {
   }
 }
 console.log(`seed:wave-personas on ${up.TEST_ENV}: ${created} created, ${reused} already there${dry ? ' (dry run)' : ''}`);
+
+// --fixtures: the set-aware seeders, once per set, so each set's clones own their own orders and returns
+// (AGENT-TEST-ORD-<key>-<set>, aliases.<env>.<set>.json). The originals' fixtures are never touched.
+if (args.includes('--fixtures')) {
+  const { spawnSync } = await import('node:child_process');
+  const { SET_AWARE_SEEDERS } = await import('../../lib/persona-sets.mjs');
+  const scripts = { 'seed-order-states.mjs': 'seed:orders', 'seed-return-orders.mjs': 'seed:returns' };
+  let failed = 0;
+  for (const set of sets) for (const file of SET_AWARE_SEEDERS) {
+    console.log(`\n── ${scripts[file]} for ${set}`);
+    const r = spawnSync('npm', ['run', '-s', scripts[file], '--', ...(dry ? ['--dry-run'] : [])], {
+      stdio: 'inherit', shell: true, env: { ...process.env, QA_PERSONA_SET: set, TEST_ENV: up.TEST_ENV },
+    });
+    if (r.status !== 0) { failed++; console.error(`   ${scripts[file]} for ${set} exited ${r.status}`); }
+  }
+  if (failed) process.exit(1);
+}

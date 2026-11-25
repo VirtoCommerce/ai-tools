@@ -22,6 +22,7 @@ import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose it
 import { loadEnv } from './load-env.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { fixtureTag, SET_AWARE_SEEDERS } from './persona-sets.mjs';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import { makePng } from './png.mjs';
@@ -77,6 +78,18 @@ async function warnIfPresetUnresolvable(name, where) {
 // inline override and auth fails with invalid_grant), the env's QA_ENV_PATH files, and on a PASSWORDS=master
 // stand the master password for every test account.
 const { testEnv: _TEST_ENV, promoted, master: _MASTER } = loadEnv();
+// A bound persona set turns USER_EMAIL & co. into a wave's clones. Only a seeder that keeps a clone's fixtures apart
+// from its original's (numbers suffixed, aliases in aliases.<env>.<set>.json) may run under one; any other would
+// re-own or double the originals' fixtures (scripts/lib/persona-sets.mjs).
+{
+  const tag = fixtureTag();
+  const script = String(process.argv[1] ?? '').split(/[\\/]/).pop();
+  if (tag && !SET_AWARE_SEEDERS.includes(script)) {
+    console.error(`${script}: refusing to run with persona set ${tag.slice(1)} bound — it is not set-aware. ` +
+      `Run \`npm run persona:use -- --clear\` (or QA_PERSONA_SET=none) first; set-aware: ${SET_AWARE_SEEDERS.join(', ')}.`);
+    process.exit(2);
+  }
+}
 /** The env the layered loader resolved (TEST_ENV → session binding → .env.test-env → vcst). Read it, never re-derive it. */
 export const TEST_ENV = _TEST_ENV;
 /**
@@ -689,7 +702,9 @@ const PRIMARY_ENV = 'vcst';
 export function writeEnvAliasOverride(updates) {
   const env = _TEST_ENV || PRIMARY_ENV;
   if (DRY_RUN || !updates || Object.keys(updates).length === 0) return;
-  const p = join(ROOT, `test-data/aliases.${env}.json`);
+  // A wave's persona set writes its own overlay (aliases.<env>.<set>.json), so its fixtures never replace the originals'.
+  const tag = fixtureTag().slice(1);
+  const p = join(ROOT, `test-data/aliases.${env}${tag ? `.${tag}` : ''}.json`);
   let cur = {};
   try { if (existsSync(p)) cur = JSON.parse(readFileSync(p, 'utf8')); } catch { cur = {}; }
   const merged = { ...cur };

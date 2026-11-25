@@ -17,6 +17,9 @@ import { join } from 'node:path';
 import { accountVars, envView } from './test-accounts.mjs';
 
 export const SETS_FILE = 'test-data/personas/sets.json';
+/** Seeders that keep a clone's fixtures apart from the original's (fixtureTag + aliases.<env>.<set>.json). Every other
+ *  seeder refuses to run while a set is bound (seed-common.mjs). */
+export const SET_AWARE_SEEDERS = ['seed-order-states.mjs', 'seed-return-orders.mjs'];
 const SESSION_DIR = ['.vc-fix', 'session-persona'];
 
 /** `{ accounts, sets }` from test-data/personas/sets.json; empty when the project has none. */
@@ -54,6 +57,15 @@ export function bindPersonaSet(root, set, meta = {}) {
 export function clearPersonaSet(root) {
   const file = sessionSetFile(root);
   if (file && existsSync(file)) rmSync(file);
+}
+
+/**
+ * The suffix a seeder adds to the numbers and names of the fixtures it builds for the active set's clones
+ * (AGENT-TEST-ORD-COMPLETED-S3), so a clone's order never takes over its original's; '' without a set.
+ */
+export function fixtureTag(opts = {}) {
+  const a = activePersonaSet(opts);
+  return a ? `-${a.set}` : '';
 }
 
 /** The clone of `login` in `set`: one per account, the same in every env. */
