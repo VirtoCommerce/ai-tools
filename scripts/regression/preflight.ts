@@ -15,6 +15,8 @@ import { MASTER_NAME, usesMaster } from "../lib/env-layers.mjs";
 import { envSuffix } from "../lib/resolve-test-env.js";
 import { requirementChecks } from "./requirements.ts";
 import { loadManifest } from "../../ci/lib/suite-manifest.js";
+import { buildFingerprint, DELIVERY_FILE, standPlatform, storedDeliveryChecks } from "../preflight/delivery.ts";
+import { readFileSync } from "node:fs";
 
 export type BuildFor = "regression" | "smoke";
 
@@ -273,6 +275,8 @@ export async function runRegressionPreflight(o: {
   skipBlocked?: boolean;
   /** The release's exclusive wave (WX): `[EXCLUSIVE:…]` cases run instead of being recorded BLOCKED. */
   exclusive?: boolean;
+  /** A wave of this release: its stored delivery result must describe the stand now (scripts/preflight/delivery.ts). */
+  release?: string;
 }): Promise<RegressionPreflight> {
   const now = o.now ?? new Date();
   const required = [...new Set(o.suites.flatMap((s) => (s.requiresModules ?? []).map((e) => resolveRequiredModule(e).pascal)))];
@@ -301,6 +305,14 @@ export async function runRegressionPreflight(o: {
     try { files = new Map(loadManifest().suites.map((s) => [s.id, s.file])); } catch { /* manifest problems are reported above */ }
     const run = o.suites.filter((s) => !gated.has(s.id) && files.has(s.id)).map((s) => ({ id: s.id, file: files.get(s.id)! }));
     checks.push(...await requirementChecks({ root: o.root, env: facts.env, suites: run, exclusive: o.exclusive === true }));
+  }
+  if (o.release) {
+    const file = join(o.root, "regression", "releases", o.release, DELIVERY_FILE);
+    let stored = null;
+    try { stored = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : null; } catch { stored = null; }
+    const fp = isUnknown(facts.declared) || isUnknown(facts.deployed) ? null
+      : buildFingerprint(facts.declared.theme, standPlatform(facts.declared.platform, isUnknown(facts.deployed.platform) ? null : facts.deployed.platform), facts.deployed.modules);
+    checks.push(...storedDeliveryChecks(stored, fp, o.release, (o.accept ?? []).filter((a) => a.startsWith("delivery:"))));
   }
   const absent = notDeployedMap(checks);
   const nAbsent = Object.values(absent).reduce((n, m) => n + Object.keys(m).length, 0);

@@ -218,6 +218,7 @@
     "regression:shadow": "npx tsx scripts/regression/shadow-select.ts",
     "regression:recalibrate": "npx tsx scripts/regression/recalibrate-estimates.ts",
     "release:diagram": "node scripts/regression/release-flow-diagram.mjs",
+    "release:delivery": "npx tsx scripts/regression/release-delivery.ts",
     "release:diff": "npx tsx scripts/regression/release-diff.ts",
     "release:report": "npx tsx scripts/regression/release-report.ts",
     "release:split": "npx tsx scripts/regression/release-split.ts",
