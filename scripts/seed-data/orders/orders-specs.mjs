@@ -598,6 +598,8 @@ export function judgeExistingOrder(spec, fixtureObj, live, productsById, { owner
  */
 export function finalizeOrderBody(spec, fixtureObj, ctx = {}) {
   const body = structuredClone(fixtureObj);
+  // The spec's number, never the template's (see finalizeReturnOrderBody): under a persona set it carries the suffix.
+  body.number = orderNumber(spec.key);
   body.status = spec.orderStatus;
   if (ctx.customerId) body.customerId = ctx.customerId;
   if (ctx.customerName) body.customerName = ctx.customerName;

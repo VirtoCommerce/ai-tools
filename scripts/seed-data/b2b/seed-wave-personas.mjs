@@ -1,49 +1,142 @@
 #!/usr/bin/env node
-// scripts/seed-data/b2b/seed-wave-personas.mjs — create the per-wave clones of the shared accounts on a stand.
+// scripts/seed-data/b2b/seed-wave-personas.mjs — create (or remove) the per-wave clones of the shared accounts.
 //
-//   npm run seed:wave-personas [-- --set S3] [--fixtures] [--dry-run]   (--fixtures: also each set's orders and returns)
+//   npm run seed:wave-personas [-- --set S3] [--fixtures] [--dry-run]
+//   npm run seed:wave-personas -- --teardown [--set S3] [--dry-run]
 //
-// For every account test-data/personas/sets.json lists (store names and aliases) and every set: read the ORIGINAL on
-// the stand — its contact, organizations and org roles — and create the clone (scripts/lib/persona-sets.mjs
-// `cloneLogin`) with the same organizations and roles and the original's password, then record it in
-// test-accounts.local.json under the original's password name, so a browser lane types the same NAME. A clone that
-// exists is left as it is: this never writes to an original or to an existing account.
+// For every account test-data/personas/sets.json lists and every set, read the ORIGINAL on the stand and create its
+// clone (persona-sets.mjs `cloneLogin`) with the original's password and org roles. An original's ORGANIZATIONS are
+// cloned too, once per set (`<name>-<set>`, same groups — so the same price lists and contracts — and the same
+// addresses): a set's orders, addresses and members then live in its own copy, and the originals' — which a wave on
+// the original accounts reads, e.g. the Sales Rep hub's served organizations — never move. The org aliases that name
+// a cloned organization (ORG_ACME…) point at the copy inside the set (aliases.<env>.<set>.json). The clone is
+// recorded in test-accounts.local.json under the original's password name, so a browser lane types the same NAME.
+// Nothing here writes to an original or to an existing account.
 //
-// Fixtures seeded FOR an original (orders, dashboards keyed on USER_EMAIL) are not copied: run that seeder with the
-// set bound (`npm run persona:use -- <set>`), or list the account only once its seeder supports clones.
+// --fixtures: then each set's orders and returns (the set-aware seeders, persona-sets.mjs SET_AWARE_SEEDERS).
+// --teardown: removes a set's clones, their organizations, their fixture orders (AGENT-TEST-ORD-…-<set>) and the
+// set's alias file — the originals and every other set stay.
 process.env.QA_PERSONA_SET = 'none'; // the originals, whatever this session is bound to
-const { loadPersonaSets, cloneLogin } = await import('../../lib/persona-sets.mjs');
+const { loadPersonaSets, cloneLogin, SET_AWARE_SEEDERS } = await import('../../lib/persona-sets.mjs');
 const up = await import('../../lib/user-provision.mjs');
 const { TestDataResolver } = await import('../../lib/test-data-resolver.ts');
 const { readStore, envView, accountVars } = await import('../../lib/test-accounts.mjs');
 const { join } = await import('node:path');
+const { existsSync, readFileSync, rmSync, writeFileSync } = await import('node:fs');
 
 const args = process.argv.slice(2);
 const only = args.includes('--set') ? args[args.indexOf('--set') + 1] : null;
 const dry = args.includes('--dry-run');
 up.setFlags({ dryRun: dry, verbose: args.includes('--verbose') });
+const api = (...a) => up.getApi()(...a);
 const defs = loadPersonaSets(up.ROOT);
 const sets = only ? [only] : defs.sets;
 if (only && !defs.sets.includes(only)) { console.error(`unknown set ${only} — ${defs.sets.join(', ')}`); process.exit(1); }
+const quietResolver = () => { const l = console.log; console.log = () => {}; try { return new TestDataResolver(join(up.ROOT, 'test-data'), up.TEST_ENV); } finally { console.log = l; } };
+const resolver = quietResolver();
+const cloneOrgName = (name, set) => `${name}-${set}`;
+const setAliasFile = (set) => join(up.ROOT, 'test-data', `aliases.${up.TEST_ENV}.${set}.json`);
 
 /** The original's login and password NAME, for a store name or an alias. */
 function original(name) {
-  const view = envView(readStore(up.ROOT), up.TEST_ENV);
-  const a = view.accounts[name];
+  const a = envView(readStore(up.ROOT), up.TEST_ENV).accounts[name];
   if (a?.login) {
     const { passwordVar } = accountVars(name, a);
     return { login: a.login, passwordName: typeof a.password === 'string' ? passwordVar : a.password?.use };
   }
-  const r = new TestDataResolver(join(up.ROOT, 'test-data'), up.TEST_ENV);
-  const login = r.resolve(`@td(${name}.email)`);
-  const cell = r.resolve(`@td(${name}.password)`);
+  const login = resolver.resolve(`@td(${name}.email)`);
   if (!login || login.startsWith('@td(')) throw new Error(`${name}: neither a store account nor an alias with an email`);
-  return { login, passwordName: up.passwordVarOfCell(cell) };
+  return { login, passwordName: up.passwordVarOfCell(resolver.resolve(`@td(${name}.password)`)) };
+}
+
+/** Org aliases (aliases.json, any alias with a platform_id field) by the platform id they resolve to. */
+function orgAliasesById() {
+  const base = JSON.parse(readFileSync(join(up.ROOT, 'test-data', 'aliases.json'), 'utf8'));
+  const out = new Map();
+  for (const [k, v] of Object.entries(base)) {
+    if (!v?.fields?.platform_id || !/organizations/.test(String(v.file ?? ''))) continue;
+    const id = resolver.resolve(`@td(${k}.platform_id)`);
+    if (id && !id.startsWith('@td(')) out.set(id, [...(out.get(id) ?? []), k]);
+  }
+  return out;
+}
+
+function mergeSetAliases(set, updates) {
+  if (dry || !Object.keys(updates).length) return;
+  const p = setAliasFile(set);
+  const cur = existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {};
+  for (const [k, v] of Object.entries(updates)) cur[k] = { ...(cur[k] ?? {}), ...v };
+  cur._meta = { ...(cur._meta ?? {}), env: up.TEST_ENV, set, note: `Auto-generated: persona set ${set}'s organizations and fixtures on ${up.TEST_ENV} (npm run seed:wave-personas).` };
+  writeFileSync(p, `${JSON.stringify(cur, null, 2)}\n`);
+}
+
+/** The set's copy of an organization: found by name, else created with the original's groups and addresses. */
+async function cloneOrg(orgId, set) {
+  const o = await api('GET', `/api/members/${orgId}`, null, { expectStatus: [200, 404] });
+  if (!o?.id) throw new Error(`organization ${orgId} not found`);
+  const name = cloneOrgName(o.name, set);
+  const found = await up.findOrgByName(name);
+  if (found?.id) return { id: found.id, name, created: false };
+  const strip = (a) => { const { id, key, ...rest } = a ?? {}; return rest; };
+  const body = {
+    memberType: 'Organization', name, description: o.description, businessCategory: o.businessCategory,
+    groups: o.groups ?? [], phones: o.phones ?? [], emails: o.emails ?? [], addresses: (o.addresses ?? []).map(strip),
+  };
+  if (dry) return { id: `dry-org-${name}`, name, created: true };
+  const res = await api('POST', '/api/members', body, { expectStatus: [200, 201, 204] });
+  let id = res?.id;
+  for (let i = 0; !id && i < 10; i++) { await new Promise((r) => setTimeout(r, 3000)); id = (await up.findOrgByName(name))?.id; }
+  if (!id) throw new Error(`${name}: created but not found after 30 s`);
+  return { id, name, created: true };
 }
 
 await up.authenticate();
+
+if (args.includes('--teardown')) {
+  for (const set of sets) {
+    let users = 0, orders = 0, orgs = 0;
+    for (const name of defs.accounts) {
+      const login = cloneLogin(original(name).login, set);
+      const u = await up.findUserByEmail(login);
+      const c = u?.memberId ?? (await up.findContactByEmail(login))?.id;
+      if (dry) { if (u?.id || c) users++; continue; }
+      if (u?.id) await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(u.userName)}`, null, { expectStatus: [200, 204] });
+      if (c) await api('DELETE', `/api/members?ids=${encodeURIComponent(c)}`, null, { expectStatus: [200, 204] });
+      if (u?.id || c) users++;
+    }
+    // Every page first, then delete: deleting while paging shifts the pages under the cursor.
+    const suffix = new RegExp(`-${set}$`);
+    const mine = [];
+    for (let skip = 0; ; skip += 100) {
+      const r = await api('POST', '/api/order/customerOrders/search', { keyword: 'AGENT-TEST-ORD', take: 100, skip });
+      const page = r?.results ?? [];
+      mine.push(...page.filter((o) => suffix.test(o.number)));
+      if (page.length < 100) break;
+    }
+    for (const o of mine) {
+      orders++;
+      if (dry) continue;
+      const rets = await api('POST', '/api/return/search', { orderId: o.id, take: 100 }).catch(() => null);
+      const ids = (rets?.results ?? []).filter((x) => x.orderId === o.id).map((x) => `ids=${encodeURIComponent(x.id)}`);
+      if (ids.length) await api('DELETE', `/api/return?${ids.join('&')}`, null, { expectStatus: [200, 204] });
+      await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
+    }
+    for (const id of orgAliasesById().keys()) {
+      const o = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
+      const copy = o?.name ? await up.findOrgByName(cloneOrgName(o.name, set)) : null;
+      if (!copy?.id) continue;
+      orgs++;
+      if (!dry) await api('DELETE', `/api/members?ids=${encodeURIComponent(copy.id)}`, null, { expectStatus: [200, 204] });
+    }
+    if (!dry && existsSync(setAliasFile(set))) rmSync(setAliasFile(set));
+    console.log(`teardown ${set}: ${users} clone(s), ${orders} fixture order(s), ${orgs} organization(s)${dry ? ' (dry run)' : ''}`);
+  }
+  process.exit(0);
+}
+
 let created = 0, reused = 0;
 const seen = new Set();
+const orgAliases = orgAliasesById();
 for (const name of defs.accounts) {
   const o = original(name);
   if (!o.passwordName) throw new Error(`${name}: no password name — a clone would need a password nobody declared`);
@@ -53,6 +146,7 @@ for (const name of defs.accounts) {
   if (!orig?.id) throw new Error(`${name}: ${o.login} does not exist on ${up.TEST_ENV} — seed the original first`);
   // The search hit carries memberId; the GET-by-id is cache-flaky (user-provision.mjs findUserByEmail), so it only adds.
   const full = { ...orig, ...((await up.getUserById(orig.id)) ?? {}) };
+  if ((full.roles ?? []).length) console.warn(`  ⚠ ${name}: ${o.login} has ${full.roles.length} global role(s) — a clone gets its org roles only`);
   const contact = await up.findContactById(full.memberId);
   if (!contact) throw new Error(`${name}: ${o.login} has no contact (memberId ${full.memberId ?? 'none'})`);
   const memberships = await up.searchMemberships(orig.id);
@@ -60,18 +154,27 @@ for (const name of defs.accounts) {
     const login = cloneLogin(o.login, set);
     if (seen.has(login)) continue; // two names for one account share one clone
     seen.add(login);
+    const orgMap = new Map();
+    for (const id of new Set([...(contact.organizations ?? []), ...memberships.map((m) => m.organizationId)])) {
+      const c = await cloneOrg(id, set);
+      orgMap.set(id, c);
+      if (c.created) console.log(`  ✓ organization ${c.name}`);
+      const names = orgAliases.get(id) ?? [];
+      mergeSetAliases(set, Object.fromEntries(names.map((a) => [a, { platform_id: c.id, name: c.name }])));
+    }
     if ((await up.findUserByEmail(login))?.id) { reused++; console.log(`  ↻ ${name} ${set}: ${login} exists — left as it is`); continue; }
     const body = {
       memberType: 'Contact', firstName: contact.firstName, lastName: `${contact.lastName ?? ''} ${set}`.trim(),
       fullName: `${contact.fullName ?? `${contact.firstName} ${contact.lastName}`} ${set}`, emails: [login],
-      organizations: contact.organizations ?? [], defaultLanguage: contact.defaultLanguage, currencyCode: contact.currencyCode,
+      organizations: (contact.organizations ?? []).map((id) => orgMap.get(id)?.id ?? id),
+      defaultLanguage: contact.defaultLanguage, currencyCode: contact.currencyCode,
     };
     body.name = body.fullName;
     // A contact from an earlier, interrupted run is reused; a new one is taken from the create response, because the
     // member search reads the index and lags the write.
     let cloneContact = dry ? { id: `dry-contact-${login}` } : await up.findContactByEmail(login);
     if (!cloneContact?.id) {
-      const res = await up.getApi()('POST', '/api/members', body, { expectStatus: [200, 201, 204] });
+      const res = await api('POST', '/api/members', body, { expectStatus: [200, 201, 204] });
       cloneContact = res?.id ? res : null;
       for (let i = 0; !cloneContact?.id && i < 10; i++) { await new Promise((r) => setTimeout(r, 3000)); cloneContact = await up.findContactByEmail(login); }
     }
@@ -80,21 +183,19 @@ for (const name of defs.accounts) {
     const existing = await up.searchMemberships(userId);
     for (const m of memberships) {
       const roleId = (m.roles ?? [])[0]?.roleId ?? (m.roles ?? [])[0]?.id;
-      if (!roleId) continue;
-      await up.ensureOrgMembership(userId, m.organizationId, m.organizationName, roleId, existing, false, login, m.status ?? null);
+      const c = orgMap.get(m.organizationId);
+      if (!roleId || !c) continue;
+      await up.ensureOrgMembership(userId, c.id, c.name, roleId, existing, false, login, m.status ?? null);
     }
     up.accountSet(login, password, o.passwordName);
     created++;
-    console.log(`  ✓ ${name} ${set}: ${login} — ${(contact.organizations ?? []).length} org(s), ${memberships.length} membership(s)`);
+    console.log(`  ✓ ${name} ${set}: ${login} — ${orgMap.size} own organization(s), ${memberships.length} membership(s)`);
   }
 }
 console.log(`seed:wave-personas on ${up.TEST_ENV}: ${created} created, ${reused} already there${dry ? ' (dry run)' : ''}`);
 
-// --fixtures: the set-aware seeders, once per set, so each set's clones own their own orders and returns
-// (AGENT-TEST-ORD-<key>-<set>, aliases.<env>.<set>.json). The originals' fixtures are never touched.
 if (args.includes('--fixtures')) {
   const { spawnSync } = await import('node:child_process');
-  const { SET_AWARE_SEEDERS } = await import('../../lib/persona-sets.mjs');
   const scripts = { 'seed-order-states.mjs': 'seed:orders', 'seed-return-orders.mjs': 'seed:returns' };
   let failed = 0;
   for (const set of sets) for (const file of SET_AWARE_SEEDERS) {

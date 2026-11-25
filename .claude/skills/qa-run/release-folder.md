@@ -217,17 +217,24 @@ fails two parallel waves with one set. The owner binds the session before the ru
 in as its clone: the env loader gives `{{USER_EMAIL}}`, `{{ORG_USER_EMAIL}}`… the clone's login, the resolver gives
 `@td(USER_DEFAULT.email)` and the other listed aliases theirs, and a runner's `SIGNIN_AS` takes its login from
 `npm run persona:login`. No case is rewritten. A clone belongs to the account (two names for one account share it),
-has its original's password, organizations and org roles, and is created on the stand once, before W0, by
+has its original's password and org roles, and **its own copy of each of its organizations per set**
+(`<name>-<set>`, same customer groups — so the same price lists and contracts — and the same addresses); the org
+aliases naming those organizations (`ORG_ACME`…) point at the copies inside the set. It is created on the stand once,
+before W0, by
 `npm run seed:wave-personas -- --fixtures` (it reads the originals off the stand and never writes to them; `--fixtures`
 also gives each set's clones their own orders and returns — `AGENT-TEST-ORD-<key>-<set>`, read through
 `test-data/aliases.<env>.<set>.json`, so `@td(COMPLETED_ORDER.number)` is the clone's order in that wave). A seeder
 that is not set-aware refuses to run while a set is bound, so nothing re-owns an original's fixtures.
 `npm run persona:use -- --clear` after the wave. Write the set in `state.json` `personas`.
 
-**Same organization, so organization-level state is still shared:** a clone isolates its carts and sign-ins, not
-its organization's orders, addresses or pooled balance. A case that changes those creates its own organization in
-the case, or carries `[EXCLUSIVE:…]` (§7.2)
-([`../../rules/test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4, §FIFTH RULE).
+**Which waves run without a set.** A wave whose cases read or ARE the shared organizations runs on the originals:
+the Sales Rep hub (its rep serves ACME, TechFlow, BuildRight — a copy is served by nobody) and the organization
+domain (its members, roles and membership locks are the originals'). Give them no `personaSet`. Every other wave
+takes a set, so it writes orders, addresses and members only into its own copies and the originals stay as those two
+waves read them. What those two still share — a case of either that writes an original organization's orders, roster
+or addresses another one of them reads — carries `[EXCLUSIVE:…]` (§7.2). A pooled state beyond that needs its own
+organization created in the case ([`../../rules/test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4,
+§FIFTH RULE).
 
 ### 7.2 Environment-wide changes run alone, at the end
 
