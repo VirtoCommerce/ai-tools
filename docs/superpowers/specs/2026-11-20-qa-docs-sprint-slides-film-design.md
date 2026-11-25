@@ -201,9 +201,9 @@ tells them so; it does not produce a `.pptx` itself.
 ### 4.3 Film (when chosen)
 
 A Motion artifact built the way `media.md` §Film builds a ticket film (assets, shared kit, `scenes.json`),
-with: a title card; one scene per story, 6–8 s, its key frames, one caption chip per step; an end card.
+with: a title card; one scene per story, 6–8 s, its key frames, one ringed area and one caption per beat, no camera moves; an end card.
 **≤ 90 s and ≤ 10 stories**: more approved stories ⇒ the skill asks which 10 go into the film (the
-slides keep all). No status badges in frames or chips. The MP4 is exported by the person, as for a
+slides keep all). No status badges in frames or captions. The MP4 is exported by the person, as for a
 ticket film.
 
 ### 4.4 Records

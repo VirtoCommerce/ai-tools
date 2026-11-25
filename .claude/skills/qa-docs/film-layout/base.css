@@ -5,7 +5,9 @@
 .words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
 .film-key { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:28px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent) }
 .film-name { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:46px; line-height:1.05; color:var(--second) }
-.film-chip { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:36px; line-height:1.15; color:#FFFFFF; background:#050A40; padding:16px 30px; border-radius:12px; border:2px solid rgba(255,255,255,.28); box-shadow:0 14px 40px rgba(0,0,0,.35) }
+.film-cap { display:flex; flex-direction:row; align-items:center; gap:20px; font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:42px; line-height:1.15; color:#FFFFFF }
+.film-sq { display:block; flex:0 0 auto; width:14px; height:46px; border-radius:4px; background:#FF7E13 }
+.film-hl { position:absolute; box-sizing:border-box; border:4px solid #FF7E13; border-radius:10px; box-shadow:0 0 0 4000px rgba(5,10,64,.62); opacity:0 }
 .film-dot { display:block; width:12px; height:12px; border-radius:50%; background:#808AFF }
 .t-eyebrow { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:34px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent) }
 .t-display { font-size:200px; line-height:1; letter-spacing:-.02em }

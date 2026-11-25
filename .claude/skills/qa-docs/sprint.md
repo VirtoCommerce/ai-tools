@@ -231,15 +231,18 @@ a ticket film (assets, shared kit, `scenes.json`), from full frames only (`disk`
 these differences:
 
 - a title card ("Sprint <NN-NN>", "What’s new"; no story count); one scene per story, 6–8 s, its key frames
-  in a browser window with a camera push per frame, at most one caption chip per step; an end card. Copy
+  in one still browser window; each beat dims the screen except one ringed area and carries ONE caption
+  under the window — no camera moves, no plates, nothing else to look at; the ticket key and name are plain
+  text on the ground; an end card. Copy
   [`film-layout/`](film-layout/shared.js) (`film-layout/shared.js`, `film-layout/base.css`, `film-layout/scene.js`): the helper `W.film` builds a
-  scene from a list of beats, and the design system's fonts and logo are uploaded as assets;
+  scene from a list of beats `{ t, frame, x, y, w, h, cap }` (the area is measured on the frame in its own
+  pixels), and the design system's fonts and logo are uploaded as assets;
 - **total ≤ `film.maxSeconds`, stories ≤ `film.maxStories`** (§Approval picks them); when both cannot
   hold, the seconds win and scenes shorten toward 6 s, then the person is asked to cut a story;
 - the look comes from `style.designSystem` — installed if the Motion type takes a design system, else
   its tokens read at run time and passed to the shared kit; §Film step 2 does not apply here at all —
   neither its look nor its "≤30 s" answer to the type's Length question: the length is `film.maxSeconds`;
-- nothing service in a frame or a chip (§Slides): the QA ribbon or tab of a stand, a third-party store logo and
+- nothing service in a frame or a caption (§Slides): the QA ribbon or tab of a stand, a third-party store logo and
   test names are filled into the frame before upload — the same masks as the slides, applied to every
   frame; a Jira crop is never a film frame.
 
