@@ -22,7 +22,8 @@
     "042"
    ],
    "personaSet": "S1",
-   "note": "Runs first and alone; a red W0 stops every wave. Seed the persona clones before it (npm run seed:wave-personas -- --fixtures)"
+   "note": "Runs first and alone; a red W0 stops every wave. Seed the persona clones before it (npm run seed:wave-personas -- --fixtures)",
+   "subtask": "VCST-7026"
   },
   {
    "id": "W1",
@@ -37,7 +38,8 @@
     "W0"
    ],
    "personaSet": "S1",
-   "note": "The 7006/6974/6970 divergent pairs (refused AND allowed). OTP/MFA settings stay at defaults; the setting-flipping suites are in WX. VCST-7006 has no dev fix PR (only support/3.1009): GAP-01 decides whether 3.1028.0 already refuses it"
+   "note": "The 7006/6974/6970 divergent pairs (refused AND allowed). OTP/MFA settings stay at defaults; the setting-flipping suites are in WX. VCST-7006 has no dev fix PR (only support/3.1009): GAP-01 decides whether 3.1028.0 already refuses it",
+   "subtask": "VCST-7027"
   },
   {
    "id": "W2",
@@ -53,7 +55,8 @@
     "W0"
    ],
    "personaSet": "S2",
-   "note": "Subscription storefront is NOT on vcst (vc-frontend feat/VCST-6507, PR #2602 open): 124 and the subscription rows of 002/011/028/014 report NOT_DEPLOYED until it merges and a green alpha is deployed (then --update). Cart, checkout, orders and the account dashboard (120) run as usual"
+   "note": "Subscription storefront is NOT on vcst (vc-frontend feat/VCST-6507, PR #2602 open): 124 and the subscription rows of 002/011/028/014 report NOT_DEPLOYED until it merges and a green alpha is deployed (then --update). Cart, checkout, orders and the account dashboard (120) run as usual",
+   "subtask": "VCST-7028"
   },
   {
    "id": "W3",
@@ -70,7 +73,8 @@
     "W0"
    ],
    "personaSet": "S3",
-   "note": "Binder parity across product types (VCST-5640); compare (098) is in WX because it flips ProductComparison store settings"
+   "note": "Binder parity across product types (VCST-5640); compare (098) is in WX because it flips ProductComparison store settings",
+   "subtask": "VCST-7029"
   },
   {
    "id": "W4",
@@ -85,7 +89,8 @@
    "dependsOn": [
     "W0"
    ],
-   "note": "No personaSet: the rep serves the original organizations. One owner: all suites share the sales-rep fixtures. 091/093/093b/116 have uncommitted local edits — land them before claiming"
+   "note": "No personaSet: the rep serves the original organizations. One owner: all suites share the sales-rep fixtures. 091/093/093b/116 have uncommitted local edits — land them before claiming",
+   "subtask": "VCST-7030"
   },
   {
    "id": "W5",
@@ -98,7 +103,8 @@
    "dependsOn": [
     "W0"
    ],
-   "note": "No personaSet: the organization domain runs on the originals. Org switcher (6237) and member role pairs (7006/6974)"
+   "note": "No personaSet: the organization domain runs on the originals. Org switcher (6237) and member role pairs (7006/6974)",
+   "subtask": "VCST-7031"
   },
   {
    "id": "W6",
@@ -114,7 +120,8 @@
     "W0"
    ],
    "personaSet": "S4",
-   "note": "Whole-storefront sweep in classic and soft design; dark-mode contrast (6949)"
+   "note": "Whole-storefront sweep in classic and soft design; dark-mode contrast (6949)",
+   "subtask": "VCST-7032"
   },
   {
    "id": "WX",
@@ -143,7 +150,8 @@
     "111",
     "114b"
    ],
-   "note": "Whole suites: 104/114b (OtpSignIn.Enabled), 111 (MultiFactorAuthentication), 098 (ProductComparison), 107/109 (Punchout.Enabled). Plus the 28 [EXCLUSIVE] cases the domain waves skip (regression:plan --exclusive over 002,004,005,036,044,070,071,089,093,093b). One owner, alone, every setting restored in Cleanup; 114b needs playwright-chrome"
+   "note": "Whole suites: 104/114b (OtpSignIn.Enabled), 111 (MultiFactorAuthentication), 098 (ProductComparison), 107/109 (Punchout.Enabled). Plus the 28 [EXCLUSIVE] cases the domain waves skip (regression:plan --exclusive over 002,004,005,036,044,070,071,089,093,093b). One owner, alone, every setting restored in Cleanup; 114b needs playwright-chrome",
+   "subtask": "VCST-7033"
   }
  ]
 }
