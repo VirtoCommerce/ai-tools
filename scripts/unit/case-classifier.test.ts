@@ -323,8 +323,12 @@ test("050d agrees with the human judgement recorded in REG-2026-08-24-1806", () 
   // still exactly these three. Pinning the ids makes the guard growth-immune AND strictly
   // stronger — a classifier that reclassified one of these now fails by NAME rather than by
   // an off-by-one anybody would be tempted to bump. Adding a case must never turn this red;
-  // reclassifying one of these three must always turn it red.
-  const RECORDED_NON_MACHINE = ["PRF-GQL-039", "PRF-GQL-040", "PRF-GQL-057"];
+  // reclassifying one of these must always turn it red.
+  //
+  // PRF-GQL-039 and -040 LEFT THE LIST (VCST-6498, 2026-11-25): they were rewritten from
+  // [MANUAL-BLOCKED] to runner-native cases (static AGENT-TEST email, pre-clean + REST cleanup),
+  // so the classifier correctly calls them machine now. That is the suite changing, not drift.
+  const RECORDED_NON_MACHINE = ["PRF-GQL-057"];
   const suite = manifest.suites.find((s) => s.id === "050d")!;
   const r = classifyRealSuite(suite.file);
   const idOf = (c: unknown) => String((c as { id?: string }).id ?? c);
