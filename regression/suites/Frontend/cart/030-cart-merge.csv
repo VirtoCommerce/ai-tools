@@ -265,7 +265,7 @@ password=type by NAME: DEFAULT_TEST_PASSWORD","[NAV] log in to {{FRONT_URL}} as 
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",all items forced selected or deselected; per-item state lost; Order Summary miscalculated,Remove items from cart; delete the disposable customer (npm run td:customer -- delete --email <email>),C389854,Manual
-CART-111,Cart Merge Selection - Empty + Unselected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-111,Cart Merge Selection - Empty + Unselected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[EXCLUSIVE:store setting XPurchase.IsSelectedForCheckout] [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF in Admin > Stores > Cart Settings. QA default is ON — this test is BLOCKED unless config is changed for this run. SEED: document config change and restore in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -288,7 +288,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [NETWORK] no 4xx/5xx
 [API] mergeCart mutation response errors[] is empty
 [API] addItem mutation response errors[] is empty",items auto-selected despite OFF setting; Proceed to Checkout active with no selection,Remove items from cart; restore store setting to ON,C389916,Manual
-CART-112,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-112,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[EXCLUSIVE:store setting XPurchase.IsSelectedForCheckout] [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -311,7 +311,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",manually selected items reset to unselected after merge; Order Summary empty despite selections,Remove items from cart; restore store setting to ON,C389917,Manual
-CART-113,Cart Merge Selection - Mixed + Mixed (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CART-113,Cart Merge Selection - Mixed + Mixed (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[EXCLUSIVE:store setting XPurchase.IsSelectedForCheckout] [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-CONFIG REQUIRED: Store setting 'Default selected for checkout' must be set to OFF. QA default is ON — BLOCKED unless config is changed for this run. Restore config in Cleanup.","url={{FRONT_URL}}
 user={{USER_EMAIL}}

@@ -18,7 +18,7 @@ No authenticated session (guest/anonymous storefront visitor).","front_url={{FRO
 [WAIT] route guard resolves and navigation settles","[NAV] final URL is NOT /company/sales-reps (redirected to login or home) {SPEC}
 [DOM] no ""Sales reps"" table or heading renders anywhere on the resulting page {SPEC}","[NETWORK] no /graphql request for customerSalesReps is issued for this session
 [CONSOLE] no console errors from the blocked navigation attempt","page renders the Sales Reps table/columns for an unauthenticated visitor; URL stays at /company/sales-reps instead of redirecting","none (read-only)",VCST-5409 | Behavior:sr.directory.guest-redirect,"Draft"
-"SR-FE-MSR-003","Module Disabled: Link and Route Absent Even for a Corporate Member","Storefront > Sales Rep > My Sales Reps > Gating","High","PROPOSED-BL-SR-UI-GATE","","[PRE:CLEAR_SESSION]
+"SR-FE-MSR-003","Module Disabled: Link and Route Absent Even for a Corporate Member","Storefront > Sales Rep > My Sales Reps > Gating","High","PROPOSED-BL-SR-UI-GATE","","[EXCLUSIVE:store setting SalesRep.Enabled=false] [PRE:CLEAR_SESSION]
 Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STORE_ID}}, then signing in as ACME_BUYER (a corporate member who otherwise sees the link). Disruptive to other concurrent testers on {{STORE_ID}} — run in an isolated window or accept as a one-off manual check, then restore SalesRep.Enabled=true immediately after.","front_url={{FRONT_URL}}","[ADMIN] set store setting SalesRep.Enabled = false on {{STORE_ID}}
 [PRE:SIGNIN_AS:ACME_BUYER]
 [NAV] {{FRONT_URL}}/account
