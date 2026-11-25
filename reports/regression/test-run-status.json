@@ -1,28 +1,34 @@
 {
-  "runId": "REG-2026-11-20-0821",
-  "status": "stalled",
-  "startedAt": "2026-11-20T07:21:14.661Z",
+  "runId": "REG-2026-11-24-1024",
+  "status": "completed",
+  "startedAt": "2026-11-24T09:24:54.324Z",
   "env": "vcst",
-  "selection": "123,123b --ids <74 SB targets> --no-promote",
-  "ticket": "VCST-6571",
-  "note": "qa-suite-sync step-7 re-run + flag-on cases (/qa-test-lifecycle VCST-6571)",
+  "selection": "027,104 --ids CUST-173,OTP-039 --no-promote",
+  "ticket": "VCST-6237",
+  "note": "scoped run of the A9 case CUST-173 and the rewritten OTP-039",
   "suites": {
-    "123": {
-      "status": "running",
+    "104": {
+      "status": "done",
       "lane": "browser",
-      "cases": 32,
-      "browser": "playwright-firefox",
-      "startedAt": "2026-11-20T07:23:22Z"
-    },
-    "123b": {
-      "status": "running",
-      "lane": "browser",
-      "cases": 42,
+      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-20T07:23:22Z"
+      "startedAt": "2026-11-24T09:26:20.896Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-24T09:32:31.123Z"
+    },
+    "027": {
+      "status": "done",
+      "lane": "browser",
+      "cases": 1,
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-24T09:26:20.895Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-24T09:32:31.123Z"
     }
   },
-  "stalledAt": "2026-11-20T08:28:19.973Z",
-  "stalledReason": "no progress for 45 min (REG-2026-11-20-0821:in_progress:2:74:29)",
-  "finishedAt": "2026-11-20T08:28:19.973Z"
+  "finishedAt": "2026-11-24T09:32:33.065Z"
 }
