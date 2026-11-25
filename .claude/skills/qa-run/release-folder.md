@@ -207,12 +207,34 @@ make that true; the planner designs for them and every owner follows them.
 ### 7.1 Every owner signs in as their own users
 
 Carts, wishlists, orders, addresses and loyalty balances belong to a user (or an organization). Two
-people testing as the same persona destroy each other's preconditions. Each owner points the persona
-variables in **their own** `.env.local` at accounts nobody else uses this release, and writes which in
-`state.json` `personas`. Resolve them through `config.js`, never off a single `.env` layer
-([`../../rules/test-data.md`](../../rules/test-data.md) §Resolving a variable). A pooled state (an
-organization-wide loyalty balance) needs its own organization, not just its own user
-([`../../rules/test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4).
+people testing as the same persona destroy each other's preconditions — Sprint 26-22: USER_DEFAULT was in five of
+six waves, W6 waited for W3, and a W2 sign-in failed after another operator reset a shared password.
+
+**Each wave has its own persona set.** `release.json` gives every wave that may run beside another a different
+`personaSet` (`S1`…`S6`, [`test-data/personas/sets.json`](../../../test-data/personas/sets.json)); `release:check`
+fails two parallel waves with one set. The owner binds the session before the run —
+`npm run persona:use -- <set> --release <release> --wave <W>` — and every shared account `sets.json` lists signs
+in as its clone: the env loader gives `{{USER_EMAIL}}`, `{{ORG_USER_EMAIL}}`… the clone's login, the resolver gives
+`@td(USER_DEFAULT.email)` and the other listed aliases theirs, and a runner's `SIGNIN_AS` takes its login from
+`npm run persona:login`. No case is rewritten. A clone belongs to the account (two names for one account share it),
+has its original's password and org roles, and **its own copy of each of its organizations per set**
+(`<name>-<set>`, same customer groups — so the same price lists and contracts — and the same addresses); the org
+aliases naming those organizations (`ORG_ACME`…) point at the copies inside the set. It is created on the stand once,
+before W0, by
+`npm run seed:wave-personas -- --fixtures` (it reads the originals off the stand and never writes to them; `--fixtures`
+also gives each set's clones their own orders and returns — `AGENT-TEST-ORD-<key>-<set>`, read through
+`test-data/aliases.<env>.<set>.json`, so `@td(COMPLETED_ORDER.number)` is the clone's order in that wave). A seeder
+that is not set-aware refuses to run while a set is bound, so nothing re-owns an original's fixtures.
+`npm run persona:use -- --clear` after the wave. Write the set in `state.json` `personas`.
+
+**Which waves run without a set.** A wave whose cases read or ARE the shared organizations runs on the originals:
+the Sales Rep hub (its rep serves ACME, TechFlow, BuildRight — a copy is served by nobody) and the organization
+domain (its members, roles and membership locks are the originals'). Give them no `personaSet`. Every other wave
+takes a set, so it writes orders, addresses and members only into its own copies and the originals stay as those two
+waves read them. What those two still share — a case of either that writes an original organization's orders, roster
+or addresses another one of them reads — carries `[EXCLUSIVE:…]` (§7.2). A pooled state beyond that needs its own
+organization created in the case ([`../../rules/test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 4,
+§FIFTH RULE).
 
 ### 7.2 Environment-wide changes run alone, at the end
 

@@ -1,0 +1,149 @@
+{
+  "ORG_TECHFLOW": {
+    "platform_id": "54c0a6c9-d73b-463a-822a-f56ccdd44afd",
+    "name": "AGENT-TEST-Org-TechFlow-20260310-S4"
+  },
+  "_meta": {
+    "env": "vcst",
+    "set": "S4",
+    "note": "Auto-generated: persona set S4's organizations and fixtures on vcst (npm run seed:wave-personas)."
+  },
+  "ORG_ACME": {
+    "platform_id": "9e180a7e-368f-47c6-9158-583f2b1fb4db",
+    "name": "AGENT-TEST-Org-AcmeCorp-20260310-S4"
+  },
+  "ORG_BUILDRIGHT": {
+    "platform_id": "f9b943eb-efd5-4ad2-94c0-d968067a43a1",
+    "name": "AGENT-TEST-Org-BuildRight-20260310-S4"
+  },
+  "COMPLETED_ORDER": {
+    "id": "7389eed9-bfc8-455b-9cff-201c34cadd94",
+    "number": "AGENT-TEST-ORD-COMPLETED-S4"
+  },
+  "SHIPPED_ORDER": {
+    "id": "6caa5546-a0dd-4b0b-b145-ae49a589b928",
+    "number": "AGENT-TEST-ORD-SHIPPED-S4"
+  },
+  "PROCESSING_ORDER": {
+    "id": "6de22591-a51c-44eb-aad4-e5654d19464a",
+    "number": "AGENT-TEST-ORD-PROCESSING-S4"
+  },
+  "RETURNS_ORDER_A_HAPPY": {
+    "id": "136e3393-c2d0-435d-ab9f-d62996be02e8",
+    "number": "AGENT-TEST-ORD-RET-A-S4",
+    "lineXItemId": "a2b3c741-80b8-44b3-947e-0d5a9cd237b5",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_A2_PARTIAL_DELIVERY": {
+    "id": "e91313c9-cb58-4921-b56d-2778a14ef252",
+    "number": "AGENT-TEST-ORD-RET-A2-S4",
+    "lineXItemId": "f241001e-3fd1-409c-b9a1-1defa796bf47",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_B_OUTSIDE_WINDOW": {
+    "id": "3c2113a5-7ee9-43ce-bae5-b2fea77538c0",
+    "number": "AGENT-TEST-ORD-RET-B-S4",
+    "lineXItemId": "82d0096b-760d-41c1-b684-8536de59fdcd",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-10-16T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_C_NOT_DELIVERED": {
+    "id": "492e7115-c585-4a24-82b1-27ae892c22c1",
+    "number": "AGENT-TEST-ORD-RET-C-S4",
+    "lineXItemId": "e0701140-a72b-42ad-8db1-175b4a20d239",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": null
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_D_STATUS_NOT_ALLOWED": {
+    "id": "eca9e030-1177-4331-959b-dca5431a957d",
+    "number": "AGENT-TEST-ORD-RET-D-S4",
+    "lineXItemId": "dde78d72-4028-48e3-b2dc-e96490e37139",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_E_SPLIT_DELIVERY": {
+    "id": "be409d67-c912-4511-9b3a-1730e7caa6fa",
+    "number": "AGENT-TEST-ORD-RET-E-S4",
+    "lineXItemId": "80f056bf-ba9f-447d-8d63-8d966a9ba057",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-10-16T12:46:33.478Z",
+      "S2": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_F_CANCELLED_LINE": {
+    "id": "4e9108e5-33f0-4383-86b8-dca5a5d13c6b",
+    "number": "AGENT-TEST-ORD-RET-F-S4",
+    "lineXItemId": "aed3123f-a215-4ffb-957c-dc2a0ff1fd58",
+    "cancelledLineItemId": "127d6ff2-0e58-4129-a663-127c9ff770f0",
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_G_TWO_ELIGIBLE_LINES": {
+    "id": "71003e7a-736c-41c2-9a08-7379e0db608c",
+    "number": "AGENT-TEST-ORD-RET-G-S4",
+    "lineXItemId": "fe1cd1f3-ae8d-4abf-baea-0483abeef7f1",
+    "lineAItemId": "fe1cd1f3-ae8d-4abf-baea-0483abeef7f1",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 5,
+    "lineADeliveredQuantity": 5,
+    "lineBItemId": "0bea6641-25ab-4818-8bef-1a37004d2012",
+    "lineBSku": "568171770",
+    "lineBOrderedQuantity": 3,
+    "lineBDeliveredQuantity": 3,
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_ADMIN_073": {
+    "id": "847864bb-4e99-4cbd-a805-6f7289812946",
+    "number": "AGENT-TEST-ORD-RET-ADM073-S4",
+    "lineXItemId": "665c6de5-d96f-401a-ae46-c662672d3f17",
+    "lineAItemId": "665c6de5-d96f-401a-ae46-c662672d3f17",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 20,
+    "lineADeliveredQuantity": 20,
+    "lineBItemId": "4f73ae03-91a0-4d8f-a54f-b8448a3b5334",
+    "lineBSku": "568171770",
+    "lineBOrderedQuantity": 25,
+    "lineBDeliveredQuantity": 25,
+    "seededAt": "2026-11-25T12:46:33.478Z",
+    "deliveryDates": {
+      "S1": "2026-11-25T12:46:33.478Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_LINE_X": {
+    "productId": "08c33cfc9f664426a52fac8882da2df0",
+    "sku": "566903892",
+    "name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+    "cancelledProductId": "4b729fae613046448aaba7c265bb4f2d",
+    "cancelledSku": "55557702",
+    "lineYProductId": "ca255c81f8254865956c1d714f2ef457",
+    "lineYSku": "568171770",
+    "seededAt": "2026-11-25T12:46:33.478Z"
+  }
+}

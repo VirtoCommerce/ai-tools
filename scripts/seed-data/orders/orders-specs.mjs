@@ -38,14 +38,18 @@
  * window (ORDER_PAST_RETURN_WINDOW), and (c) whether invoice download is in scope at all.
  * Do NOT re-add the phantom store-setting keys to the README when picking this up.
  */
+import { fixtureTag } from '../../lib/persona-sets.mjs';
 
 /** AGENT-TEST- prefix so /qa-seed-data teardown sweeps every entity this domain creates. */
 export const ORDER_MARK = 'AGENT-TEST-ORD';
 export const QUOTE_MARK = 'AGENT-TEST-QTE';
 
 /** Deterministic, idempotency-stable identifiers keyed by the fixture business key. */
-export const orderNumber = (key) => `${ORDER_MARK}-${key}`;
-export const quoteNumber = (key) => `${QUOTE_MARK}-${key}`;
+// A wave's persona set (scripts/lib/persona-sets.mjs) gets its own fixtures: its clone owns AGENT-TEST-ORD-<key>-<set>.
+// Read at call time, never on import: this module stays side-effect-free.
+export const setTag = () => fixtureTag();
+export const orderNumber = (key) => `${ORDER_MARK}-${key}${setTag()}`;
+export const quoteNumber = (key) => `${QUOTE_MARK}-${key}${setTag()}`;
 
 /**
  * Order state fixtures. `orderStatus` / `shipmentStatus` are the platform admin values the seeded
@@ -594,6 +598,8 @@ export function judgeExistingOrder(spec, fixtureObj, live, productsById, { owner
  */
 export function finalizeOrderBody(spec, fixtureObj, ctx = {}) {
   const body = structuredClone(fixtureObj);
+  // The spec's number, never the template's (see finalizeReturnOrderBody): under a persona set it carries the suffix.
+  body.number = orderNumber(spec.key);
   body.status = spec.orderStatus;
   if (ctx.customerId) body.customerId = ctx.customerId;
   if (ctx.customerName) body.customerName = ctx.customerName;
@@ -682,7 +688,7 @@ export function finalizeQuoteBody(spec, fixtureObj, ctx = {}) {
 
 /** Distinct from ORDER_MARK so a returns teardown can never sweep the ORDER_FIXTURES orders. */
 export const RETURN_ORDER_MARK = 'AGENT-TEST-ORD-RET';
-export const returnOrderNumber = (key) => `${RETURN_ORDER_MARK}-${key}`;
+export const returnOrderNumber = (key) => `${RETURN_ORDER_MARK}-${key}${setTag()}`;
 
 /**
  * The store's return window, in days, as the fixture SET WAS DESIGNED. This is NOT the source of
@@ -1135,6 +1141,9 @@ export function applyReturnCatalogItems(fixtureObj, productsByRole = {}) {
  */
 export function finalizeReturnOrderBody(spec, fixtureObj, ctx = {}, now = new Date()) {
   const body = structuredClone(fixtureObj);
+  // The number is the spec's, never the template's: under a persona set it carries the set's suffix, and a
+  // template number would land a clone's order under the original's number.
+  body.number = returnOrderNumber(spec.key);
   body.status = spec.orderStatus;
   if (ctx.customerId) body.customerId = ctx.customerId;
   if (ctx.customerName) body.customerName = ctx.customerName;

@@ -121,6 +121,9 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 1. **Resolve the run** with `npm run regression:plan -- <suite ids>` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). **A wave is one run over all its cases** — the same run `/qa-regression sprint --frontend` makes over a whole plan, only over this wave's suites. With `--by-priority`, it is three runs instead — `--cases critical`, then `high`, then `medium,low` — for a long wave whose owner may be cut short; after each pass record it with Step 3.4 **without** `--final` (the
    wave stays open while cases are left), and with `--final` only after the last pass or when stopping. (A legacy wave with a `tier` runs only `--cases <tier>`, `rest` = `medium,low`.) Remove every suite or case listed in
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
+   Bind the session to the wave's `personaSet` first — `npm run persona:use -- <set> --release <release> --wave <W>` —
+   so the run, its runners and its pre-flight sign in as this wave's clones of the shared accounts (contract §7.1);
+   `npm run persona:use -- --clear` when the wave is done.
    `[EXCLUSIVE:…]` cases are left out by the pre-flight itself; the exclusive wave plans with `--exclusive`, which
    selects exactly them as an `--ids` set — pass that set to the run, so no other case of those suites runs twice. Machine-lane suites first: they cost no model tokens (contract §7).
    **A runner that halts on a shared cause stops the wave** (`regression-orchestrator.md` §Shared-cause halt): find the

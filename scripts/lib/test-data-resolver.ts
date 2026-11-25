@@ -16,6 +16,9 @@
 
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
+import { activePersonaSet, cloneLogin, type ActiveSet } from "./persona-sets.mjs";
+/** The columns that hold a sign-in login (a lane slot row holds two: its personal and its B2B account). */
+const LOGIN_COLUMNS = new Set(["email", "user_name", "personal_email", "b2b_email"]);
 
 /**
  * Why an `@td()` reference did not resolve on the current env (see `explainMiss`).
@@ -118,9 +121,12 @@ export class TestDataResolver {
   private csvCache: Map<string, CSVRow[]> = new Map();
   private jsonCache: Map<string, Record<string, unknown>> = new Map();
   private warnings: string[] = [];
+  /** The wave's persona set (scripts/lib/persona-sets.mjs): a listed alias's login fields resolve to its clone. */
+  private persona: ActiveSet | null = null;
 
   constructor(testDataDir: string, testEnv?: string) {
     this.testDataDir = testDataDir;
+    this.persona = activePersonaSet({ root: join(testDataDir, "..") });
 
     // Load base aliases (shared across all environments)
     const basePath = join(testDataDir, "aliases.json");
@@ -147,6 +153,16 @@ export class TestDataResolver {
         console.log(
           `[test-data-resolver] Layered ${overrideCount} env override(s) from aliases.${envName}.json`
         );
+      }
+      // A wave's persona set: the fixtures seeded for its clones (aliases.<env>.<set>.json) win, field by field.
+      const setPath = this.persona ? join(testDataDir, `aliases.${envName}.${this.persona.set}.json`) : null;
+      if (setPath && existsSync(setPath)) {
+        const own = JSON.parse(readFileSync(setPath, "utf-8")) as AliasRegistry;
+        for (const [k, v] of Object.entries(own)) {
+          if (k === "_meta" || !v || typeof v !== "object") continue;
+          const base = this.envOverrides[k];
+          this.envOverrides[k] = { ...(base && typeof base === "object" ? base : {}), ...(v as object) } as AliasRegistry[string];
+        }
       }
     }
   }
@@ -245,7 +261,7 @@ export class TestDataResolver {
     const aliasDotMatch = inner.match(/^([A-Z][A-Z0-9_]+)((?:\.\w+)+)$/);
     if (aliasDotMatch) {
       const fieldPath = aliasDotMatch[2].slice(1); // strip leading "."
-      return this.resolveAlias(aliasDotMatch[1], fieldPath);
+      return this.personaLogin(aliasDotMatch[1], fieldPath, this.resolveAlias(aliasDotMatch[1], fieldPath));
     }
 
     // Direct form: file, filter, column
@@ -277,6 +293,14 @@ export class TestDataResolver {
     if (typeof cur === "string") return cur;
     if (typeof cur === "number" || typeof cur === "boolean") return String(cur);
     return JSON.stringify(cur);
+  }
+
+  /** A login field (email / user_name) of an alias the persona set lists becomes its clone's login; any other field stays. */
+  private personaLogin(aliasName: string, fieldName: string, value: string): string {
+    if (!this.persona || !value || !this.persona.defs.accounts.includes(aliasName)) return value;
+    const def = this.aliases[aliasName] as { fields?: Record<string, string> } | undefined;
+    const column = def?.fields?.[fieldName] ?? fieldName;
+    return LOGIN_COLUMNS.has(column) ? cloneLogin(value, this.persona.set) : value;
   }
 
   private resolveAlias(aliasName: string, fieldName: string): string {

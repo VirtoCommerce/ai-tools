@@ -32,6 +32,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse } from "csv-parse/sync";
+import { loadPersonaSets } from "../lib/persona-sets.mjs";
 
 // The release folders belong to the PROJECT, not to wherever this script is installed: QA_RUN_HOME,
 // else the working directory — the same split vc-fix makes between outputRoot() and pluginRoot().
@@ -53,7 +54,7 @@ const DRAFT = /^DRAFT\b/;
 const RAN = new Set(["RUN_DONE", "TRIAGED", "DONE"]);
 const TOTAL_KEYS = ["planned", "executed", "pass", "fail", "blocked", "skipped", "ambiguous"] as const;
 
-interface Wave { id: string; title: string; note?: string; tier?: string; suites: string[]; modules?: string[]; exclusive?: string[]; dependsOn?: string[] }
+interface Wave { id: string; title: string; note?: string; tier?: string; suites: string[]; modules?: string[]; exclusive?: string[]; dependsOn?: string[]; personaSet?: string }
 interface Release { release: string; ticket?: string; baseline?: string; bundle?: Record<string, unknown>; sprint?: { label?: string; startDate?: string; endDate?: string }; env?: Record<string, unknown>; waves: Wave[] }
 type Totals = Record<(typeof TOTAL_KEYS)[number], number>;
 interface NotRun { suites: string[]; cases: number; reason: string }
@@ -166,6 +167,12 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
   if (waves.size !== plan.waves.length) problems.push("release.json: a wave id is duplicated");
   const cycle = hasCycle(plan.waves);
   if (cycle) problems.push(`release.json: dependsOn has a cycle through ${cycle}`);
+  // Per-wave persona sets (release-folder.md §7.1): two waves that can run at the same time never share one.
+  const personaDefs = loadPersonaSets(REPO_ROOT);
+  for (const w of plan.waves) if (w.personaSet && !personaDefs.sets.includes(w.personaSet)) problems.push(`release.json: wave ${w.id} personaSet '${w.personaSet}' is not in test-data/personas/sets.json (${personaDefs.sets.join(", ")})`);
+  if (!cycle) for (const [i, a] of plan.waves.entries()) for (const b of plan.waves.slice(i + 1))
+    if (a.personaSet && a.personaSet === b.personaSet && !dependsOnWave(plan.waves, a.id, b.id) && !dependsOnWave(plan.waves, b.id, a.id))
+      problems.push(`release.json: waves ${a.id} and ${b.id} can run at the same time and share personaSet ${a.personaSet}`);
   for (const w of plan.waves) {
     if (!/^[A-Z][A-Za-z0-9-]*$/.test(w.id ?? "")) problems.push(`release.json: wave id '${w.id}' must start with a capital letter (W0, C-purchase, WX)`);
     if (w.tier !== undefined && !TIERS.includes(w.tier)) problems.push(`release.json: wave ${w.id} tier '${w.tier}' not one of ${TIERS.join(" ")}`);

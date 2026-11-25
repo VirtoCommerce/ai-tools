@@ -169,12 +169,17 @@ create path (scripts/lib/disposable-customer.mjs).
 **Purpose:** establish a known authenticated session.
 
 **Steps:**
-1. Detect: is the target user already signed in? Read whoami; compare against `@td(<alias>.email)`. If match → skip.
+1. Detect: is the target user already signed in? Read whoami; compare against the login from step 4. If match → skip.
 2. If a different user is signed in → run `SIGNOUT` first.
 3. Navigate to `/sign-in`.
 4. Resolve credentials:
-   - If the alias entry has `email_env` / `password_env`: read `process.env.<email_env>` and `process.env.<password_env>` from `.env`.
-   - Otherwise use `@td(<alias>.email)` / `@td(<alias>.password)` via the standard resolver.
+   - **Login: `npm run -s persona:login -- <alias>`** — one command for every alias and store name (an alias with
+     `email_env` reads that variable, a store name its login variable, any other alias its `email`). It applies the
+     session's persona set: in a wave bound with `npm run persona:use -- <set>`, a shared persona signs in as that
+     wave's clone ([`../../skills/qa-run/release-folder.md`](../../skills/qa-run/release-folder.md) §7.1). Never
+     read the login off `aliases.json` or a CSV row by hand — that bypasses the set and two waves collide again.
+   - Password: the NAME the alias's password field carries (`{{TEST_USER_PASSWORD}}` → `TEST_USER_PASSWORD`), or its
+     `password_env`. A clone has its original's password, so the name is the same.
 5. Fill the email field with the resolved email.
 6. Fill the password field with the resolved password — on a browser lane, its NAME in the form the brief's Passwords slot gives; on a master stand that is `MASTER_PASSWORD` for every account ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets).
 7. Click the submit button.
@@ -366,7 +371,7 @@ On any `BLOCKED`:
 
 **Runner trace:**
 1. `CLEAR_SESSION` — ensures no leftover B2B org context.
-2. `SIGNIN_AS:USER2` — resolve USER2 alias → read `USER2_EMAIL`/`USER2_PASSWORD` from `.env` (alias has `email_env`/`password_env` references, not literal values). Sign in, verify whoami.
+2. `SIGNIN_AS:USER2` — `npm run -s persona:login -- USER2` prints the login (the alias's `email_env`, `USER2_EMAIL`); the password is the NAME in its `password_env`, `USER2_PASSWORD`. Sign in, verify whoami.
 3. `RESET_CART` — empty the personal cart.
 4. Plain-text check 1 — visit `/account/addresses`, confirm 1 address visible with Albania country.
 5. Proceed to Steps.

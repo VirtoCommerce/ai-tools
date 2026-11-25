@@ -37,6 +37,7 @@ import { parse } from 'dotenv';
 import { TEST_ENV_PATTERN, envSuffix } from './resolve-test-env.js';
 import { TICKET_KEY, globDirs, resolveSprint, sessionRun } from './run-dir.mjs';
 import { STORE_FILE, isPersonalServiceName, readStore, storeValues } from './test-accounts.mjs';
+import { activePersonaSet, setLogins } from './persona-sets.mjs';
 
 /** Where the master password is (the store's `master`), for messages, and the one name a browser lane types for it. */
 export const MASTER_FILE = `${STORE_FILE} (master)`;
@@ -327,6 +328,9 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
     put(k, v, storeOwn.has(k) ? `${STORE_FILE} (envs.${testEnv})` : `${STORE_FILE} (top level)`);
     if (storeOwn.has(k)) perEnv.add(k); else perEnv.delete(k);
   }
+  // A wave's persona set (persona-sets.mjs): its clones' logins replace the shared accounts' — passwords stay.
+  const personaSet = testAccounts ? activePersonaSet({ root, ambient }) : null;
+  for (const [k, login] of Object.entries(setLogins(store, testEnv, personaSet))) if (!held(k)) put(k, login, `persona set ${personaSet.set}`);
   // Every env section's names as NAME_<ENV> too — the form a lane types, and the one a suite or script that names
   // another env's account (`{{USER_PASSWORD_VCPTCORE_REGRESSION}}`) reads, as the `KEY_<ENV>` lines of .env.local did.
   for (const e of Object.keys(store.envs)) {
