@@ -141,6 +141,8 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
 2. **Medium+** listed `needs-review` ⇒ an `investigate` dispatch (`sonnet`) each,
    invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug is already filed (P6).
+   Its brief names **no package path**: `qa-investigate` writes `<RUN_DIR>/evidence-<UTCstamp>/`, the one form
+   `artifacts.json` grants (`<run>/evidence-*/**`); a path you invent (`evidence/<row>/`) fails step 7's write-zone check.
    Each runs ahead of `/vc-fix:qa-bug` and returns its package path: append `<row #> · <package path> ·
    <REPRODUCED|NOT_REPRODUCED>` to `PACKAGES` = `<WORK>/packages.md`, which you create empty before this step even
    when nothing is investigated.
