@@ -8,7 +8,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { TestDataResolver } from "./test-data-resolver.js";
-import { activeSet, assertSet, loadPersonaSets, mapAlias } from "./persona-sets.mjs";
 
 export interface RoleCredentials {
   role: string;
@@ -85,14 +84,9 @@ function expandEnvTokens(value: string, role: string): string {
  *   "ADMIN" → ADMIN_EMAIL / ADMIN_PASSWORD
  */
 export function resolveRole(
-  roleIn: string,
+  role: string,
   testDataDir: string
 ): RoleCredentials {
-  // The run's persona set: a shared persona signs in as its clone (scripts/lib/persona-sets.mjs).
-  const set = activeSet();
-  const defs = set ? loadPersonaSets(join(testDataDir, "..")) : { personas: [], sets: [] };
-  assertSet(set, defs);
-  const role = mapAlias(roleIn, set, defs);
   const aliasPath = join(testDataDir, "aliases.json");
   let aliases: Record<string, unknown> = {};
 

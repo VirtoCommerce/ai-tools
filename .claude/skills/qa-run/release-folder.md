@@ -212,13 +212,15 @@ six waves, W6 waited for W3, and a W2 sign-in failed after another operator rese
 
 **Each wave has its own persona set.** `release.json` gives every wave that may run beside another a different
 `personaSet` (`S1`…`S6`, [`test-data/personas/sets.json`](../../../test-data/personas/sets.json)); `release:check`
-fails two parallel waves with one set. The wave's run plans with `regression:plan --persona-set <set>`, and every
-shared persona its cases name (`[PRE:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH:X]`, `[AUTH role=X]`, `@td(X.…)`) becomes
-its clone `<X>_<set>`: same organization, role and password token, its own login. The browser CSV, the machine
-lane, the resolver and the pre-flight all apply it, so the pre-flight checks the clones the wave will sign in as.
-Clones are generated from their originals (`npm run td:gen:wave-personas`, gated by `td:validate:wave-personas`)
-and created on a stand by the persona's own seeder before W0. A persona not in the sets (a wave's own fixture
-account) needs nothing. Write the set in `state.json` `personas`.
+fails two parallel waves with one set. The owner binds the session before the run —
+`npm run persona:use -- <set> --release <release> --wave <W>` — and every shared account `sets.json` lists signs
+in as its clone: the env loader gives `{{USER_EMAIL}}`, `{{ORG_USER_EMAIL}}`… the clone's login, the resolver gives
+`@td(USER_DEFAULT.email)` and the other listed aliases theirs, and a runner's `SIGNIN_AS` takes its login from
+`npm run persona:login`. No case is rewritten. A clone belongs to the account (two names for one account share it),
+has its original's password, organizations and org roles, and is created on the stand once, before W0, by
+`npm run seed:wave-personas` (it reads the originals off the stand and never writes to them). Fixtures seeded for an
+original (orders keyed on `USER_EMAIL`) are seeded for the clones by running that seeder with the set bound.
+`npm run persona:use -- --clear` after the wave. Write the set in `state.json` `personas`.
 
 **Same organization, so organization-level state is still shared:** a clone isolates its carts and sign-ins, not
 its organization's orders, addresses or pooled balance. A case that changes those creates its own organization in

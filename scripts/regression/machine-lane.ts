@@ -43,7 +43,6 @@ import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, serialiseRows, type Row } from "../test-cases/append-test-cases-to-suite.js";
 import type { CaseLane } from "../lib/suite-results-merge.js";
 import { resolveTestEnv } from "../lib/resolve-test-env.js";
-import { activeSet } from "../lib/persona-sets.mjs";
 
 /**
  * tsx's CLI entry, invoked through `process.execPath`.
@@ -133,7 +132,6 @@ function main(): void {
   const lanes = JSON.parse(readFileSync(lanesPath, "utf-8")) as LanesFile;
   const machineIds = lanes.planned.filter((p) => p.lane === "machine").map((p) => p.id);
   const evidenceDir = join(runDir, "graphql-evidence");
-  const personaSet = activeSet({ runDir });
 
   if (machineIds.length === 0) {
     console.log(`[suites:machine] ${suiteId}: no machine cases — nothing to run.`);
@@ -163,8 +161,7 @@ function main(): void {
         "--run-id",
         runId,
       ],
-      // The run's persona set reaches the runner's resolver and role auth through QA_PERSONA_SET.
-      { encoding: "utf-8", env: { ...process.env, ...(personaSet ? { QA_PERSONA_SET: personaSet } : {}) } },
+      { encoding: "utf-8", env: process.env },
     );
     const durationMs = Date.now() - t0;
     const stdout = proc.stdout ?? "";

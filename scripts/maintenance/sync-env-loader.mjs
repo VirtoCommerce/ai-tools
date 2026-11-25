@@ -20,7 +20,7 @@ const plugin = (p, f) => `plugins/${p}/scripts/lib/${f}`;
 
 /** source → copies. The layers live in the repo's scripts/lib/; the plugins' load wrapper lives in vc-fix. */
 export const SYNC = [
-  ...['env-layers.mjs', 'env-layers.d.mts', 'resolve-test-env.js', 'resolve-test-env.d.ts', 'run-dir.mjs', 'run-dir.d.mts', 'test-accounts.mjs']
+  ...['env-layers.mjs', 'env-layers.d.mts', 'resolve-test-env.js', 'resolve-test-env.d.ts', 'run-dir.mjs', 'run-dir.d.mts', 'test-accounts.mjs', 'persona-sets.mjs', 'persona-sets.d.mts']
     .map((f) => ({ source: `scripts/lib/${f}`, copies: PLUGINS.map((p) => plugin(p, f)) })),
   ...['env-check.mjs', 'env-check.d.mts'].map((f) => ({ source: `scripts/lib/${f}`, copies: [plugin('vc-fix', f)] })),
   { source: plugin('vc-fix', 'load-layered-env.mjs'), copies: PLUGINS.filter((p) => p !== 'vc-fix').map((p) => plugin(p, 'load-layered-env.mjs')) },

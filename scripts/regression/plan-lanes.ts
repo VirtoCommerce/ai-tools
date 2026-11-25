@@ -54,7 +54,6 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
-import { activeSet, assertSet, loadPersonaSets, rewriteForSet } from "../lib/persona-sets.mjs";
 import {
   COLUMNS,
   describeHeaderMismatch,
@@ -226,15 +225,7 @@ function planOne(suite: { id: string; file: string; name: string }, args: Args):
     if (browserRows.length > 0) {
       // Canonical header + only the browser rows, serialised by the same writer the append
       // tool uses so quoting cannot drift.
-      // The run's persona set (persona-set.json in the run folder): every shared persona a browser case names
-      // becomes its clone, so the runner signs in as this wave's account (scripts/lib/persona-sets.mjs).
-      const set = activeSet({ runDir: outDir });
-      const defs = set ? loadPersonaSets() : { personas: [], sets: [] };
-      assertSet(set, defs);
-      const out = set
-        ? browserRows.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === "string" ? rewriteForSet(v, set, defs) : v])) as typeof r)
-        : browserRows;
-      writeFileSync(lanes.browserCsv, `${COLUMNS.join(",")}\n${serialiseRows(out)}`, "utf-8");
+      writeFileSync(lanes.browserCsv, `${COLUMNS.join(",")}\n${serialiseRows(browserRows)}`, "utf-8");
     }
   }
 

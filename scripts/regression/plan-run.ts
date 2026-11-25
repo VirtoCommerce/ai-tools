@@ -32,7 +32,6 @@
  *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
  *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
  *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
- *   npm run regression:plan -- 011,013 --preflight --run-id <RUN_ID> --persona-set S3   # sign in as wave set S3's clones
  *   npm run regression:plan -- smoke --preflight --run-blocked   # run the cases the pre-flight predicts will BLOCK (default: recorded BLOCKED, not run)
  *   npm run regression:plan -- 042,078 --cases critical[,high]            # size only those tiers (same filter as suites:filter)
  *   npm run regression:plan -- 042,078 --ids SMK-008,SMK-014              # size an exact case set
@@ -57,7 +56,6 @@ import { batchSuites, DEFAULT_MAX_BATCH_CASES } from "../../ci/lib/suite-batchin
 import { orderLpt, simulateMakespan } from "../../ci/lib/scheduler.ts";
 import { formatPreflightProblems, preflightManifest, type PreflightSuite } from "../../ci/lib/manifest-preflight.ts";
 import { runRegressionPreflight, type RegressionPreflight } from "./preflight.ts";
-import { assertSet, loadPersonaSets, RUN_SET_FILE } from "../lib/persona-sets.mjs";
 import { renderHuman } from "../preflight/render.ts";
 import { filterRows, TIER_NAMES, unknownTiers } from "./filter-cases.ts";
 import { isCanonicalHeader, parseSuite } from "../test-cases/append-test-cases-to-suite.js";
@@ -74,14 +72,13 @@ function parseArgs(argv: string[]): {
   runId: string | null;
   accept: string[];
   runBlocked: boolean;
-  personaSet: string | null;
   cases: string[];
   alsoIds: string[];
   ids: string[];
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
-  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--persona-set", "--browsers", "--fastpath", "--deterministic", "--cases", "--also-ids", "--ids"]);
+  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--browsers", "--fastpath", "--deterministic", "--cases", "--also-ids", "--ids"]);
   const positional = args.filter((a, i) => !a.startsWith("--") && !valued.has(args[i - 1]));
 
   const numFlag = (name: string, fallback: number): number => {
@@ -106,7 +103,6 @@ function parseArgs(argv: string[]): {
     alsoIds: listOf("--also-ids"),
     ids: listOf("--ids"),
     runBlocked: flags.has("--run-blocked"),
-    personaSet: valueOf("--persona-set"),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
       fastpath: numFlag("fastpath", DEFAULT_CONCURRENCY.fastpath),
@@ -135,7 +131,7 @@ function scopeCases(suites: readonly ManifestSuite[], sel: { tiers: string[]; al
 }
 
 async function main(): Promise<void> {
-  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked, personaSet, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
   // Same rules `suites:filter` applies to the same flags.
   if (ids.length > 0 && (cases.length > 0 || alsoIds.length > 0)) {
     console.error("--ids selects an exact case set; --cases (optionally with --also-ids) selects a tier — pass one or the other, never both");
@@ -155,14 +151,6 @@ async function main(): Promise<void> {
   if (notDrift.length > 0) {
     console.error(`--accept takes drift:<id> only — not acceptable: ${notDrift.join(", ")}`);
     process.exit(1);
-  }
-  // --persona-set: this run signs in as its wave's clones of the shared personas (scripts/lib/persona-sets.mjs).
-  // The run folder keeps the choice, so suites:lanes and suites:machine apply the same set.
-  if (personaSet) {
-    try { assertSet(personaSet, loadPersonaSets()); } catch (e) { console.error((e as Error).message); process.exit(1); }
-    process.env.QA_PERSONA_SET = personaSet;
-    const runDir = runId ? join("reports", "regression", runId) : preflightOut ? dirname(preflightOut) : null;
-    if (runDir) { mkdirSync(runDir, { recursive: true }); writeFileSync(join(runDir, RUN_SET_FILE), JSON.stringify({ set: personaSet }) + "\n", "utf8"); }
   }
   const manifest = loadManifest();
 
