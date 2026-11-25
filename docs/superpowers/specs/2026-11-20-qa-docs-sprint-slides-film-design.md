@@ -193,7 +193,7 @@ A Slides artifact, private, title `Sprint <S> — key stories`. 16:9.
    - bottom right, small: the versions, printed exactly as probed (prerelease suffix kept);
    - speaker notes: stand, capture date, QA state (`Tested`/`Done` verdict, or "observed on stand, QA
      not finished"), the ticket key, the film link if the ticket has one.
-4. **Not included** — grouped reasons (the release notes' list), keys only.
+4. ~~**Not included** — grouped reasons, keys only.~~ *Dropped 2026-11-25 at the owner's request (out of place in the deck): the stories not shown are named in the cover's speaker notes and in the release notes.*
 
 Export: the person uses the page's *Share › Export › PowerPoint* (not "slides as pictures"). The skill
 tells them so; it does not produce a `.pptx` itself.
@@ -201,9 +201,9 @@ tells them so; it does not produce a `.pptx` itself.
 ### 4.3 Film (when chosen)
 
 A Motion artifact built the way `media.md` §Film builds a ticket film (assets, shared kit, `scenes.json`),
-with: a title card; one scene per story, 6–8 s, its key frames, one caption chip per step; an end card.
+with: a title card; one scene per story, 6–8 s, its key frames, one ringed area and one caption per beat, no camera moves; an end card.
 **≤ 90 s and ≤ 10 stories**: more approved stories ⇒ the skill asks which 10 go into the film (the
-slides keep all). No status badges in frames or chips. The MP4 is exported by the person, as for a
+slides keep all). No status badges in frames or captions. The MP4 is exported by the person, as for a
 ticket film.
 
 ### 4.4 Records
@@ -219,6 +219,11 @@ ticket film.
   documents the sprint, not the ticket.
 
 ## 5. Corporate style
+
+> **Superseded (2026-11-25):** the **VC Brand System** Claude Design system now exists (introduced for the
+> ticket film in VCST-6571) and is the first value of `style.designSystem`. The paragraphs below record
+> the state on 2026-11-20 and the decision then; creating a second "Virto" design system is no longer
+> needed.
 
 No Virto brand book or presentation template is known to this repo (searched 2026-11-20: repo,
 artifacts, virtocommerce.com). The only official source found is the logo,

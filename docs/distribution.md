@@ -21,7 +21,8 @@ in `vc-secrets`. Every plugin that reads the profile (`vc-fix`, `vc-test`, `vc-p
 
 `/project-init` writes it into the customer's project, gitignored unless noted: `project-profile.json`, `.env.<env>`
 (URLs and identifiers, no secret; committable in their own repo), `.env.test-env` (the default env), `.env.local`
-(the tracker connection and any test-user passwords not kept in vc-secrets), `.claude/vc-secrets.local.json` (which
+(the tracker connection), `test-accounts.local.json` (every test account's login and password, per env, unless a
+role's password is kept in vc-secrets), `.claude/vc-secrets.local.json` (which
 secrets the project declares, no values), `.mcp.json`, `.claude/settings.local.json` (`VC_RUN` and `VC_SECRETS`
 paths) and the committed `.claude/rules/vc-browser.md`. Tokens live only in vc-secrets (the OS credential store or
 Azure Key Vault). Per-env test-data overrides go in `test-data/aliases.<env>.json`.

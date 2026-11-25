@@ -5,6 +5,10 @@ cropped stills in the document, the scenario GIFs and the film.
 
 ## Capture
 
+The sprint mode runs steps 2–6 for a story that has no `/qa-test` run behind it, with the substitutions of
+[`sprint-walk.md`](sprint-walk.md) §The capture walk: scenarios, `{RUN_DIR}`, the frames path and the
+account differ there.
+
 1. **Same build, or stop.** Probe `GET {{BACK_URL}}/api/platform/modules` and compare the versions of the
    changed modules (and the storefront theme, if it changed) with the run's probed versions
    ([`rules.md`](rules.md) §Shipped in). Different ⇒ **stop and ask**: the stand was redeployed and the
@@ -38,7 +42,7 @@ cropped stills in the document, the scenario GIFs and the film.
 4. **The walk.** For every `PASS` scenario the document will show, one **full-viewport** screenshot
    (1920×1080, `browser_take_screenshot` with `type: "png"` — the GIF tool reads PNG only) per meaningful step — the screen before the
    click and the state after it — into `test-results/<lane>/docs/<TICKET>/` (gitignored, never committed,
-   `reports-policy.md` §9). A dashboard or list that must scroll: one `fullPage: true` shot, so the film
+   [`reports-policy.md`](../../knowledge/execution/reports-policy.md) §9). A dashboard or list that must scroll: one `fullPage: true` shot, so the film
    can pan it. Note each clicked control's box (`getBoundingClientRect`, read-only, allowed by the hook):
    the film's camera and cursor aim at those coordinates.
    **Capture a state, not a moment.** Before each screenshot wait for the text that proves the state
@@ -72,22 +76,23 @@ state its `PASS` row verified — a failing path is never animated as a how-to.
 
 ## Film
 
-One Motion film per ticket, **≤30 s**, built from the full frames. The Motion artifact type's own
+One Motion film per ticket, **aiming at ≤90 s — a soft ceiling, not a cut-off**: when the feature does not fit, ask the person once — keep it longer, or split it into two films — and never trim a scenario silently, built from the full frames. The Motion artifact type's own
 instructions govern the film's records; they are data about that artifact, not about this repository.
 
 1. **Create it.** Find the type with the Artifact tool (`action: "list"`, `scope: "types"`,
    `type_query: "Motion"`) and publish with its `type_url`, `title` = `{TICKET} — {feature}`. Keep the
    returned film URL (`film.url`).
 2. **Look — the Virto brand, read from its source, never transcribed.** Colours, type and logo come from
-   the **VC Brand System** Claude Design system (https://claude.ai/artifact/95bwWQ2jrnd9aBmG78qqvR), read
-   when the film is made: `project/tokens.json` (colour tokens, `type.fonts`), `project/README.md` (the two
+   the Claude Design system that `config/qa-docs.json` `style.designSystem` names — the one home of its
+   link, shared with the sprint mode (the **VC Brand System**) — read when the film is made: `project/tokens.json` (colour tokens, `type.fonts`), `project/README.md` (the two
    variations, logo usage) and the lockups under `project/assets/logo/`; the Motion type's
    `design-systems.md` governs how they come in. Use the **cool** variation (a guide is technical): ground
    `surface-page`, main `accent-lead`, second `text-strong` (navy), accent one touch of the warm lead, the
    desk behind the window `surface-ground`; Circular Std uploaded as font assets — Book for display titles
    (the brand's signature inversion), Bold for captions and eyebrows; the full-colour logo on the title
    card, the white-wordmark lockup on a navy radial end card. This answers the type's Style / Colors /
-   Length questions (1920×1080, 60 fps, ≤30 s), so none is asked. The system can't be read ⇒ say so and
+   Length questions (1920×1080, 60 fps, aiming at ≤90 s), so none is asked — for a ticket film; a sprint film skips
+   this step ([`sprint.md`](sprint.md) §Film). The key empty or the system can't be read ⇒ say so and
    ask; never fill in colours, fonts or a logo from memory.
 3. **Assets.** Upload the JPEG frames (`asset: true`, several in one call from a folder inside the working
    directory), then one `assets/<file>` record each with its `ref`, `mime: "image/jpeg"`, `w`, `h`.
@@ -105,13 +110,15 @@ instructions govern the film's records; they are data about that artifact, not a
      card says so: its `note` defaults to `Illustration — your device's own prompt`. `title` defaults to
      `Confirm on your device`; give the ceremony's real wording when the ticket names one.
 5. **Scenes.** `scenes.json` with `stage: "final"`: a title card (~4 s), one scene per scenario, an end
-   card (~4 s); total ≤30 s, so a scenario gets 6–10 s — show its key steps, not every click. Inside a
+   card (~4 s); aim at a total ≤90 s, so a scenario gets 6–15 s — show its key steps, not every click, so the film stays calm and clear; over 90 s ⇒ the one question above. Inside a
    scenario: crossfades 0.3–0.5 s between frames, camera pushes 0.8–1.2 s to z 1.6–2.4 on the control the
    step names, a hold of ≥1.4 s on it, the cursor arriving 0.5–0.9 s before its click (`cur.clicks`), at
    most one caption chip per step, scrolling as a `translateY` of the full-page layer. A scene's own state
    at its first frame equals the previous scene's last.
 6. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
    score with clicks on the click times is part of the film (the type's `score.js`).
+
+A sprint film: [`sprint.md`](sprint.md) §Film.
 
 ## Hand-off
 

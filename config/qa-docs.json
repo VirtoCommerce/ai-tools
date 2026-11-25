@@ -1,0 +1,132 @@
+{
+  "$schema": "./qa-docs.schema.json",
+  "language": "en",
+  "style": {
+    "designSystem": "https://claude.ai/artifact/95bwWQ2jrnd9aBmG78qqvR"
+  },
+  "film": {
+    "maxSeconds": 90,
+    "maxStories": 10
+  },
+  "candidates": {
+    "include": [
+      {
+        "types": [
+          "Story"
+        ],
+        "statuses": [
+          "Tested",
+          "Done"
+        ],
+        "label": "Story, Tested or Done"
+      },
+      {
+        "types": [
+          "Bug",
+          "Task"
+        ],
+        "priorities": [
+          "High",
+          "Highest"
+        ],
+        "label": "High priority"
+      },
+      {
+        "types": [
+          "Bug",
+          "Task"
+        ],
+        "importantUpdate": true,
+        "label": "Important update"
+      }
+    ],
+    "exclude": [
+      {
+        "types": [
+          "TechDebt"
+        ],
+        "label": "Tech debt"
+      },
+      {
+        "types": [
+          "Spike"
+        ],
+        "label": "Spike"
+      },
+      {
+        "types": [
+          "Review task"
+        ],
+        "label": "Review task"
+      },
+      {
+        "types": [
+          "Task"
+        ],
+        "internalTask": true,
+        "label": "Internal task (no PR in a product repo)"
+      },
+      {
+        "types": [
+          "*"
+        ],
+        "summaryMatches": "^merge\\b.*\\bto next\\b",
+        "label": "Branch merge into Next"
+      },
+      {
+        "types": [
+          "*"
+        ],
+        "statuses": [
+          "Cancelled"
+        ],
+        "label": "Cancelled"
+      }
+    ]
+  },
+  "slides": {
+    "layout": "story-a-why-who",
+    "layouts": {
+      "story-a-why-who": {
+        "description": "Text column on the left (ticket key and area, title, why, changes, release state), one large 16:9 screenshot on the right; dark VC ground with the running header, page number and 2 px rule (owner's choice 2026-11-20; look from the VCST-5918 example slide, 2026-11-25).",
+        "regions": [
+          {
+            "id": "eyebrow",
+            "onScreen": true,
+            "rule": "The ticket key and the product area, short, upper case (VCST-6861 · Storefront · Subscriptions)."
+          },
+          {
+            "id": "title",
+            "onScreen": true,
+            "rule": "The story's name as in the tracker, verbatim; the ticket key is in the eyebrow."
+          },
+          {
+            "id": "why",
+            "onScreen": true,
+            "rule": "The ticket's own problem statement, shortened; none in the ticket => no line."
+          },
+          {
+            "id": "changes",
+            "onScreen": true,
+            "rule": "3-4 bullets, from the ticket document or as observed on the stand."
+          },
+          {
+            "id": "release",
+            "onScreen": true,
+            "rule": "One or two lines for where the change stands: Released with the version, Merged for the next release, In review with the PR open. Only what the PR state shows; none when unknown."
+          },
+          {
+            "id": "screenshot",
+            "onScreen": true,
+            "rule": "One frame, object-fit contain."
+          },
+          {
+            "id": "notes",
+            "onScreen": false,
+            "rule": "Only what the speaker says: the film link if any. Never the stand, capture date, QA state or probed builds: they stay in the sprint record."
+          }
+        ]
+      }
+    }
+  }
+}

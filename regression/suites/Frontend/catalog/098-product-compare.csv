@@ -436,7 +436,7 @@ MOQ-2 variant (VCST-5918): a real catalog product with a minimum order quantity 
 CMP-015,Switching organization does not carry the previous org's comparison and prices,Catalog > Product Compare v2,Critical,"BL-B2B-001, BL-CROSS-008, BL-CROSS-004, BL-CAT-014",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed (store setting ProductComparison.AnonymousListEnabled on, the default; Stores.AllowAnonymousUsers on).
 The compare list is kept on the server (a guest's under the anonymous id the browser holds, a signed-in buyer's per account and organization) and is shared by every case that uses the browser profile, so NEVER assume an empty list — step 1 clears it through the UI.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Store setting ProductComparison.MaxItems = 5 (the default), enforced PER second-level category {SPEC} (module README §Categories and limits). Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
-@td(MULTI_ORG_TF_BR_ALT.email) belongs to TWO organizations with distinct per-org roles, so the org switcher is available in the account menu.
+@td(MULTI_ORG_TF_BR_ALT.email) belongs to TWO organizations with distinct per-org roles, so the Organizations control is shown in the header.
 BL-CROSS-008 requires cart, pricing and lists to swap ATOMICALLY on an organization change; a partial swap is a critical defect. The compare list belongs to the organization in the caller's token, so a buyer who switches organization sees that organization's own list and switching back restores the first one {SPEC} (module README §XAPI specification; Jira VCST-5918 comment 112644; observed vcptcore 2026-11-17, checklist C1/C2).","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password=@td(MULTI_ORG_TF_BR_ALT.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] the sign-in form renders
 [ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
@@ -460,9 +460,9 @@ BL-CROSS-008 requires cart, pricing and lists to swap ATOMICALLY on an organizat
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare table renders both product columns
 [CAPTURE] record the price cell of each column
-[ACT] open the account-menu popup in the top header
-[WAIT] the popup renders
-[ACT] select the second organization in the organization switcher
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
+[ACT] select the second organization in the Organizations panel
 [WAIT] the page re-renders under the new organization
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare page settles","[REL] every price cell rendered on the compare page after the switch equals the price the same SKU renders on its own product page under the newly selected organization {BL}
@@ -470,7 +470,7 @@ BL-CROSS-008 requires cart, pricing and lists to swap ATOMICALLY on an organizat
 [REL] switching back to the first organization restores the price cells recorded before the switch {BL}
 [REL] after the switch the compare page lists none of the products added under the first organization (the empty state, or only what the second organization's own list holds), and after switching back it lists exactly the two products added under the first organization {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202; README: one list per user, store and token organization)","[API] the compareList request issued after the switch is sent with the second organization's token and returns that organization's own list id, different from the first organization's list id {SPEC} (README §XAPI specification)
 [CONSOLE] no TypeError or JS error during the organization switch
-[NETWORK] no 4xx/5xx on /graphql","Prices unchanged after the switch, some cells re-priced and others not, compare page shows a product the new organization cannot buy with no indication, the first organization's products are still listed under the second organization",Clear the compare list in each of the two organizations through the UI; switch back to the first organization; sign out via the account-menu popup,VCST-5735 · Archetype:SCOPE · Technique:ST | Synced: VCST-5918 (2026-11-20) | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+[NETWORK] no 4xx/5xx on /graphql","Prices unchanged after the switch, some cells re-priced and others not, compare page shows a product the new organization cannot buy with no indication, the first organization's products are still listed under the second organization",Clear the compare list in each of the two organizations through the UI; switch back to the first organization; sign out via the account-menu popup,VCST-5735 · Archetype:SCOPE · Technique:ST | Synced: VCST-5918 (2026-11-20) | Promoted: REG-2026-11-20-1202 (2026-11-22) | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23),Automated
 CMP-016,Two configurations differing only in a file section collapse into one compare entry — File sections are not compared,Catalog > Product Compare v2,Medium,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed (store setting ProductComparison.AnonymousListEnabled on, the default; Stores.AllowAnonymousUsers on).
 The compare list is kept on the server (a guest's under the anonymous id the browser holds, a signed-in buyer's per account and organization) and is shared by every case that uses the browser profile, so NEVER assume an empty list — step 1 clears it through the UI.
 Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Store setting ProductComparison.MaxItems = 5 (the default), enforced PER second-level category {SPEC} (module README §Categories and limits). Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
@@ -1982,7 +1982,7 @@ Executability: the case blocks the request carrying the mergeCompareList operati
 [NETWORK] the blocked request is the only failed request; no 5xx on /graphql
 [API] errors[] is empty on the mergeCompareList response of the retry {SPEC}","The guest's products are gone after the next load, the merge is not retried, the list shows only the guest products or only the account's, an error toast persists after the retry",Remove the network block; clear the compare list of {{USER2_EMAIL}} through the UI,VCST-5918 · Archetype:STALE · Technique:ST,Draft
 CMP-057,Each organization keeps its own compare list — clearing one leaves the other untouched,Catalog > Product Compare v2 > Server-side list,Critical,"BL-CROSS-008, BL-CAT-014",,"[PRE:CLEAR_SESSION]
-@td(MULTI_ORG_TF_BR_ALT.email) belongs to TWO organizations; the organization switcher is in the account menu. The list belongs to the organization in the caller's token, so a switch shows that organization's own list {SPEC} (README §XAPI specification, comment 112644). Both lists are EMPTY at case start — screen 1 clears the first, screen 3 the second. Compare fixtures seeded on the env (test-data/compare/compare-products.csv); the fixture categories must be in the Category search index, or every tab reads 'Unknown category' (checklist X1) — assert tab COUNTS, never labels, until that data fix lands.","login=@td(MULTI_ORG_TF_BR_ALT.email), password=@td(MULTI_ORG_TF_BR_ALT.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_CMP_C.sku)","--- SCREEN: Organization 1 ---
+@td(MULTI_ORG_TF_BR_ALT.email) belongs to TWO organizations; the Organizations control is in the header. The list belongs to the organization in the caller's token, so a switch shows that organization's own list {SPEC} (README §XAPI specification, comment 112644). Both lists are EMPTY at case start — screen 1 clears the first, screen 3 the second. Compare fixtures seeded on the env (test-data/compare/compare-products.csv); the fixture categories must be in the Category search index, or every tab reads 'Unknown category' (checklist X1) — assert tab COUNTS, never labels, until that data fix lands.","login=@td(MULTI_ORG_TF_BR_ALT.email), password=@td(MULTI_ORG_TF_BR_ALT.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_CMP_C.sku)","--- SCREEN: Organization 1 ---
 [NAV] {{FRONT_URL}}/sign-in
 [WAIT] the sign-in form renders
 [ACT] fill 'Email': @td(MULTI_ORG_TF_BR_ALT.email)
@@ -2007,8 +2007,9 @@ CMP-057,Each organization keeps its own compare list — clearing one leaves the
 [WAIT] the compare table renders
 [CAPTURE] the header Compare badge as ORG1_BADGE
 --- SCREEN: Organization 2 ---
-[ACT] open the account-menu popup in the top header
-[ACT] select the second organization in the organization switcher
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
+[ACT] select the second organization in the Organizations panel
 [WAIT] the page re-renders under the new organization
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the page settles
@@ -2020,8 +2021,9 @@ CMP-057,Each organization keeps its own compare list — clearing one leaves the
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare table renders
 --- SCREEN: Back to organization 1 ---
-[ACT] open the account-menu popup in the top header
-[ACT] select the first organization in the organization switcher
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
+[ACT] select the first organization in the Organizations panel
 [WAIT] the page re-renders under the first organization
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare table renders
@@ -2031,8 +2033,9 @@ CMP-057,Each organization keeps its own compare list — clearing one leaves the
 [ACT] click 'OK' in the confirmation dialog
 [WAIT] the empty-state heading renders
 --- SCREEN: Organization 2 again ---
-[ACT] open the account-menu popup in the top header
-[ACT] select the second organization in the organization switcher
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) is open and listbox 'Organizations' is rendered
+[ACT] select the second organization in the Organizations panel
 [WAIT] the page re-renders
 [NAV] {{FRONT_URL}}/compare
 [WAIT] the compare table renders
@@ -2041,7 +2044,7 @@ CMP-057,Each organization keeps its own compare list — clearing one leaves the
 [REL] ORG1_AGAIN holds exactly @td(PROD_CMP_A.name) and @td(PROD_CMP_B.name), ORG1_AGAIN_BADGE = 2, and @td(PROD_CMP_C.name) is absent — the first list came back intact and the second organization's product did not leak into it {SPEC} {OBSERVED} (checklist C2)
 [REL] ORG2_AGAIN holds only @td(PROD_CMP_C.name) — Clear all in the first organization did not touch the second organization's list {OBSERVED} (checklist C2: Clear all in A left B's item)","[API] the compareList request after each switch is sent with the new organization's token and returns that organization's own list id {SPEC}
 [CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","The first organization's products show under the second, the first list is empty or changed after returning, Clear all in one organization empties the other, the badge keeps the previous organization's count",Clear the compare list in each of the two organizations through the UI; sign out via the account-menu popup,VCST-5918 · Archetype:SCOPE · Technique:ST | Promoted: REG-2026-11-20-1202 (2026-11-22),Automated
+[NETWORK] no 4xx/5xx on /graphql","The first organization's products show under the second, the first list is empty or changed after returning, Clear all in one organization empties the other, the badge keeps the previous organization's count",Clear the compare list in each of the two organizations through the UI; sign out via the account-menu popup,VCST-5918 · Archetype:SCOPE · Technique:ST | Promoted: REG-2026-11-20-1202 (2026-11-22) | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23),Automated
 CMP-058,"Remove, Clear category and Clear all are saved on the server — a reload and a fresh device agree",Catalog > Product Compare v2 > Server-side list,High,BL-CAT-018,,"[PRE:CLEAR_SESSION]
 {{USER2_EMAIL}} (personal buyer) starts with an EMPTY list. Four products across two groups: PROD_CMP_A, PROD_CMP_B and PROD_CMP_FILL_1 in Group A, PROD_CMP_C in Group C. Sources: module README at tag 3.1000.0 {SPEC}, Jira VCST-5918 comment 112644 (decisions) {SPEC}, run VCST-5918 on vcptcore 2026-11-17/19 {OBSERVED}. Compare fixtures seeded on the env (test-data/compare/compare-products.csv); the fixture categories must be in the Category search index, or every tab reads 'Unknown category' (checklist X1) — assert tab COUNTS, never labels, until that data fix lands.","login={{USER2_EMAIL}}, password={{USER2_PASSWORD}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), f_sku=@td(PROD_CMP_FILL_1.sku), c_sku=@td(PROD_CMP_C.sku)","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] the sign-in form renders
