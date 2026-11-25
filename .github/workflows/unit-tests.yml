@@ -27,15 +27,22 @@ permissions:
 
 jobs:
   test:
-    # Two legs on purpose. The suite has only ever run on Windows — that is where the team develops
+    # Two full legs on purpose. The suite has only ever run on Windows — that is where the team develops
     # and where it is known green — so `windows-latest` is the honest signal today. `ubuntu-latest`
     # is added because a suite that only passes on one OS is a portability bug waiting to surface,
     # and this is the first time it has ever run anywhere but a developer's machine: a red Linux leg
     # on the first run would be a genuine finding, not a regression from this PR.
+    #
+    # The third leg, `macos-latest`, runs ONLY the vc-secrets suite. The rest of the repo has never run
+    # on macOS, and a red leg there would block PRs that have nothing to do with it. vc-secrets has a
+    # macOS backend (the Keychain) whose code paths this leg runs on a real darwin node — but with
+    # `security` still faked, as on every OS: the real Keychain is the job of vc-secrets-os-smoke.yml.
+    # Every other step carries `matrix.os != 'macos-latest'`. The vc-secrets suite imports only Node's
+    # own modules, so that leg needs no `npm ci`.
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -50,12 +57,16 @@ jobs:
           # red on both legs. Note the repo README/CLAUDE.md still claim a Node 18 floor; that is
           # true for the plugin scripts but NOT for running the suite.
           node-version: '22'
-          cache: 'npm'
+          # An empty value turns caching off: the macOS leg never installs, so there is nothing for
+          # the post step to save and a missing cache path must not fail it.
+          cache: ${{ matrix.os != 'macos-latest' && 'npm' || '' }}
       # `npm ci` needs the lockfile to match package.json; fall back so a lockfile drift reports as
       # a test failure rather than masquerading as an install failure.
       - name: Install
+        if: ${{ matrix.os != 'macos-latest' }}
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
       - name: Unit suite
+        if: ${{ matrix.os != 'macos-latest' }}
         run: npm test
       # `npm test` globs scripts/unit/** only, so nothing above reaches the vc-secrets suite. One glob
       # for every test file in the package, quoted so Node expands it rather than bash -- bash without
@@ -78,7 +89,7 @@ jobs:
       # the plugin scripts, so its allowlist, credential helper and redactor are credential-handling code
       # with committed tests — the same exception as vc-secrets, and the same empty-glob floor.
       - name: vc-init bridge suite
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.os != 'macos-latest' }}
         shell: bash
         run: |
           pattern="plugins/vc-init/bridge/**/*.test.mjs"
@@ -86,7 +97,7 @@ jobs:
           test "$count" -gt 0 || { echo "vc-init: no test file matches $pattern" >&2; exit 1; }
           node --test "$pattern"
       - name: vc-test store suite
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.os != 'macos-latest' }}
         shell: bash
         run: |
           pattern="plugins/vc-test/lib/*.test.mjs"
@@ -97,4 +108,5 @@ jobs:
       # scripts/**/*.ts only. Stated explicitly because a green "typecheck" on a change that is all
       # .mjs proves nothing about that change — a claim made, and wrongly relied on, in this very PR.
       - name: Typecheck (TypeScript sources only)
+        if: ${{ matrix.os != 'macos-latest' }}
         run: npx tsc --noEmit -p ci/tsconfig.json

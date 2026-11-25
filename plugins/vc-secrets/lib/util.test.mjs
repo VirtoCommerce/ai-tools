@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as m from "../vc-secrets.mjs";
+import "../test-support.mjs";   // makes the real keystores unreachable for this file's process
 
 test("readFailureReason: no shape of a JSON.parse message carries file content out", () => {
     // The three shapes V8 produces for a content window -- elided on both sides, anchored at the

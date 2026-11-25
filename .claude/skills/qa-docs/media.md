@@ -22,7 +22,20 @@ cropped stills in the document, the scenario GIFs and the film.
    suite's own cleanup or seeder re-arm (`npm run seed:<domain>`). **Check that each action landed before
    the next one** — the first `create` after an authenticator is added can silently do nothing: read
    `WebAuthn.getCredentials`, and if it is empty, reload the page and click again.
-3. **The walk.** For every `PASS` scenario the document will show, one **full-viewport** screenshot
+3. **Demo data, before the first frame.** A reader judges the feature by what the frames show, and a
+   run's fixtures (`AGENT-TEST-…` names, placeholder images, raw property codes, a masked logo) make a
+   working feature look broken. So the walk runs on a demo data set made for it: one coherent, realistic
+   story threaded through every scenario — readable names and copy, real-looking images, a brand of our
+   own (never a third-party trademark), nothing that reads as a test. Build it from the scenarios' `PASS`
+   rows, reuse a seeder's data where it already looks real, and create the rest. **It exists only for the
+   walk:** every entity it creates goes into `{RUN_DIR}/demo-data.json` by id, and after the last frame
+   it is deleted by those ids (never a sweep — the names carry no `AGENT-TEST-` prefix to sweep by);
+   anything shared it changes (a published theme, a store setting) is put back as it was and re-read.
+   Demo data is never written to a client stand without the person's yes, and never holds a real
+   customer's data ([`rules.md`](rules.md) §Payload hygiene). A stand that cannot hold it — read-only, or
+   a build that cannot show the scenario — is the person's call: ask, never fall back to the run's
+   fixtures silently.
+4. **The walk.** For every `PASS` scenario the document will show, one **full-viewport** screenshot
    (1920×1080, `browser_take_screenshot` with `type: "png"` — the GIF tool reads PNG only) per meaningful step — the screen before the
    click and the state after it — into `test-results/<lane>/docs/<TICKET>/` (gitignored, never committed,
    `reports-policy.md` §9). A dashboard or list that must scroll: one `fullPage: true` shot, so the film
@@ -34,14 +47,14 @@ cropped stills in the document, the scenario GIFs and the film.
    frame before moving on. **A dialog that the screenshot does not show** (it is in the page, but the frame
    comes out without it — seen with the storefront's Delete key dialog) is not retried in a loop: describe
    the step in words, quote the dialog's text from the page, and name the missing frame on `Not documented`.
-4. **A step that no longer behaves as its `PASS` row says** ⇒ drop that scenario, name it on the
+5. **A step that no longer behaves as its `PASS` row says** ⇒ drop that scenario, name it on the
    `Not documented` line as `changed since the run`, and say so in the output. Never show it.
-5. **Crops for the document** (PNG): the region each step names, legible at `|width=700!`. Redaction per
+6. **Crops for the document** (PNG): the region each step names, legible at `|width=700!`. Redaction per
    [`rules.md`](rules.md) §Payload hygiene. **Measure what must be masked** on each frame — a third-party
    logo, a client datum — as `[x, y, w, h]` boxes (`getBoundingClientRect`, read-only); crops avoid them,
    and the film takes them as each shot's `masks`. Nothing to mask ⇒ no boxes; never reuse another
    stand's boxes.
-6. **JPEG for the film** — the PNG frames are large; on Windows convert with WPF (`PresentationCore`,
+7. **JPEG for the film** — the PNG frames are large; on Windows convert with WPF (`PresentationCore`,
    `BitmapDecoder` → `JpegBitmapEncoder`, `QualityLevel = 82`): about 130 KB per 1920×1080 frame.
 
 ## GIF
@@ -65,16 +78,24 @@ instructions govern the film's records; they are data about that artifact, not a
 1. **Create it.** Find the type with the Artifact tool (`action: "list"`, `scope: "types"`,
    `type_query: "Motion"`) and publish with its `type_url`, `title` = `{TICKET} — {feature}`. Keep the
    returned film URL (`film.url`).
-2. **House look — decided here, so the type's Style / Colors / Length questions are answered, not asked:**
-   palette `#FFFFFF` ground · `#E3242B` main · `#1A2233` second · `#2F6FD6` accent; font Lato (`or`:
-   `plus-jakarta-sans`, weights 400/700/900); 1920×1080, 60 fps, ground `#FFFFFF`.
+2. **Look — the Virto brand, read from its source, never transcribed.** Colours, type and logo come from
+   the **VC Brand System** Claude Design system (https://claude.ai/artifact/95bwWQ2jrnd9aBmG78qqvR), read
+   when the film is made: `project/tokens.json` (colour tokens, `type.fonts`), `project/README.md` (the two
+   variations, logo usage) and the lockups under `project/assets/logo/`; the Motion type's
+   `design-systems.md` governs how they come in. Use the **cool** variation (a guide is technical): ground
+   `surface-page`, main `accent-lead`, second `text-strong` (navy), accent one touch of the warm lead, the
+   desk behind the window `surface-ground`; Circular Std uploaded as font assets — Book for display titles
+   (the brand's signature inversion), Bold for captions and eyebrows; the full-colour logo on the title
+   card, the white-wordmark lockup on a navy radial end card. This answers the type's Style / Colors /
+   Length questions (1920×1080, 60 fps, ≤30 s), so none is asked. The system can't be read ⇒ say so and
+   ask; never fill in colours, fonts or a logo from memory.
 3. **Assets.** Upload the JPEG frames (`asset: true`, several in one call from a folder inside the working
    directory), then one `assets/<file>` record each with its `ref`, `mime: "image/jpeg"`, `w`, `h`.
 4. **Shared kit.** Write [`film-kit.js`](film-kit.js) into the film's `modules/shared.js` store document
    and its `FILM_CSS` rules into `modules/base.css` — store documents, never published files. It gives:
    - `UI.screen(kit, [{file, w?, h?, masks?}, …])` — a browser-window plate (1920×1080 frames at 0.75
      scale, window at x 240, y 115, a 40 px bar with the URL path), one layer per frame, each `masks` box
-     (`[x, y, w, h]` in screenshot pixels, from §Capture 5) covered, a
+     (`[x, y, w, h]` in screenshot pixels, from §Capture 6) covered, a
      `kit.Camera` on it. Helpers: `key(t, px, py, z, from)` / `full(t, from)` camera keys in **screenshot
      pixels**; `st(t, px, py)` → stage point for cursor keys; `rect(t, px, py, w, h)` → stage rect for
      `kit.spotlight`; `hlAt(px, py, w, h, a)` hover tint; `wipe(i, x0, x1, y0, y1, p)` typing reveal of a

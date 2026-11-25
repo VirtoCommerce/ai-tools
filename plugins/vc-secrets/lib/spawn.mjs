@@ -108,7 +108,7 @@ function runTool(spec, { stdinValue, redactValues = [] } = {}) {
         // own comment gives the reason -- a group kill against a child that is not names a pgid the
         // child is not in, which a recycled pid makes somebody else's, and that group takes the follow-up
         // SIGKILL. Spawning every tool this runs detached would change signal and terminal delivery on
-        // the path every secret read takes, the interactive write included, which inherits stdio
+        // the path every secret read takes, the interactive gpg unlock included, which inherits stdio
         // precisely so pinentry gets the TTY. And there is nothing to collect: no spec routed
         // through here leaves a durable grandchild, the one that raises a long-lived UI carries
         // timeoutMs: null and never arms this timer, and pinentry is gpg-agent's child, not gpg's.

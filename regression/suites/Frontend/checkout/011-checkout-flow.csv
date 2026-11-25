@@ -204,23 +204,37 @@ NOTE: No inline client-side validation error is expected for HTML tags — form 
 [NETWORK] No 5xx errors on shipment update","Alert dialog fires from injected script; HTML renders and executes in name field on confirmation; server returns 500 from unsanitized input","none","VCST-4803 coverage gap — checkout address XSS","Manual"
 "CHK-030","Checkout Validation - Fix Errors and Proceed","Checkout > Validation","Critical","BL-CHK-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User at checkout shipping address step with validation errors present","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
-[ACT] click 'Continue' with empty fields to trigger validation errors
-[ASSERT] Verify multiple inline errors shown
-[ACT] Fix Street field with valid data
-[ASSERT] Verify Street error clears immediately
-[ACT] Fix City field with valid data
-[ASSERT] Verify City error clears
-[ACT] Fix ZIP field with valid data
-[ASSERT] Verify ZIP error clears
-[ACT] Fix remaining fields
-[ASSERT] Verify all errors cleared
-[ACT] click 'Continue'
-[ASSERT] Verify form advances to next step","[DOM] Each field's error disappears as that field is corrected
-[STATE] No residual errors on correctly filled fields
-[STATE] Form advances after all errors resolved
-[DOM] No new errors appear on valid input","[CONSOLE] No JS exceptions during sequential field correction
-[API] Successful continuation call after all validation passes","Errors only clear on re-submit (not per-field); residual errors remain on corrected fields; form fails to advance after all errors fixed","none","Coverage Gap Analysis","Automated"
+Products in cart; checkout is the single page /cart; the new-address form is reached through the Add New dialog (runnable regardless of whether the user already has saved addresses)","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/cart
+[ACT] click 'Shipping' delivery-option button
+[WAIT] Wait for address section to render
+[ACT] click [data-test-id=""select-address-button""] to open the Select Address popup
+[WAIT] Wait for the Select Address popup to render
+[ACT] click 'Add New' to open the new-address form
+[WAIT] Wait for the 'New address' dialog to render
+[ACT] Fill First name with a valid value
+[ACT] Fill Last name with a valid value
+[ACT] Fill Email with an invalid-format value (no @ sign)
+[ACT] press Tab in the 'Email' field to move focus out
+[ASSERT] Verify an inline error appears under the Email field
+[ASSERT] Verify the 'Create' button is not enabled while the Email value is invalid
+[ACT] Replace the Email value with a valid email address
+[ACT] press Tab in the 'Email' field to move focus out
+[ASSERT] Verify the Email error clears as soon as the value is corrected
+[ACT] Select Country = 'United States of America'
+[ACT] Select 'State'
+[ACT] Fill 'Address' with a valid street address
+[ACT] Fill 'City' with a valid city
+[ACT] Fill 'ZIP / Postal code' with a valid postal code for the country
+[ASSERT] Verify no inline error is shown on any correctly filled field
+[ASSERT] Verify the 'Create' button is enabled
+[ACT] click 'Create' to save the new address
+[WAIT] Wait for the dialog to close
+[ASSERT] Verify the new address is saved and displayed in the Shipping Details summary","[DOM] An inline error message is visible below the 'Email' field while it holds a value without @; the 'First name' and 'Last name' fields show no error
+[DOM] The 'Email' field's inline error is no longer visible once the value is corrected (no re-submit needed)
+[STATE] 'Create' stays disabled while any required value is missing or invalid and enables once every value is valid
+[DOM] No error text is visible anywhere in the 'New address' dialog once every field holds a valid value
+[STATE] The saved address is displayed in the Shipping Details summary","[CONSOLE] No JS exceptions during sequential field correction
+[API] No address is created while the form is invalid; the create request fires once, after every value is valid, and errors[] is empty",Email error persists after the value is corrected; errors shown on correctly filled fields; 'Create' stays disabled after every value is valid; an invalid-format value is accepted without any error; address not saved after 'Create',Delete the address created by this case from the user's saved addresses; remove the cart lines,Coverage Gap Analysis; Synced: VCST-6572 (2026-11-20),"Automated"
 "CHK-043","Separate Billing Address","Checkout > Billing","High","BL-CHK-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User in checkout with shipping address selected, at billing or payment step","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout with shipping address and method selected

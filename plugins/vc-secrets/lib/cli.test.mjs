@@ -8,7 +8,7 @@ import * as clients from "../clients.mjs";
 import { stripComments, tmpDirs } from "../test-support.mjs";
 import {
     launcherEnv, denyFs, scopedPaths, trustedStateFor, crossingReport, OAUTH_DECL, KV_PAT, withStubOnPath, NO_TRUST,
-    withProcessEnv, withOwnRoot, namespaceCfg, namespaceOauthCfg, corruptTrustFile, namespaceStoreSeams,
+    withProcessEnv, withOwnRoot, namespaceCfg, namespaceOauthCfg, corruptTrustFile, namespaceStoreSeams, POSIX_STUB_ONLY,
 } from "../test-fixtures.mjs";
 
 test("cmdUnlock: must keep showing pinentry interactively — no --pinentry-mode reaches the gpg it runs", { skip: m.detectLocalBackend(process.platform, process.env) !== "gpg" && "needs gpg to be the backend this machine selects -- the stub on PATH stands in for it" }, async () => {
@@ -311,4 +311,98 @@ test("unlock: a config with nothing in a repository's namespace never reads the 
         assert.doesNotMatch(result.out, /trust|SKIP/i, `${what}: ${result.out}`);
         assert.ok(result.decrypted.length >= 1, what);
     }
+});
+
+// `set` on the Keychain, with the value read by this process and written through the seams cmdSet takes.
+// The real `security` must stay unreachable: a correct cmdSet never spawns it, because `run` is injected,
+// and the stub standing first on PATH is what turns a regression into a failure here instead of a write to
+// the machine's Keychain or a prompt on its terminal.
+function withKeychainOnly(fn) {
+    return withProcessEnv({ VC_SECRETS_LOCAL_BACKEND: "keychain", USER: "u" },
+        () => withStubOnPath("security", "#!/bin/sh\nexit 97\n", fn));
+}
+
+function setSeams(value) {
+    const seen = { asked: [], specs: [], commands: [] };
+    const prompt = async (question) => {
+        seen.asked.push(question);
+
+        return value;
+    };
+    const run = async (spec, { stdinValue } = {}) => {
+        seen.specs.push(spec);
+        seen.commands.push(spec.stdinCommand ? spec.stdinCommand(stdinValue) : null);
+    };
+
+    return { seen, seams: { prompt, run } };
+}
+
+function userSecretCfg() {
+    return m.loadConfig(scopedPaths({ user: { secrets: { tok: { backend: "local" } } } }));
+}
+
+test("set on the keychain: a 190-character value is stored whole, through security -i on stdin and never argv", POSIX_STUB_ONLY, async (t) => {
+    // The Keychain's own prompt silently cuts what is typed at 128 characters, and `set` said "stored" for
+    // a truncated token that the service then refused. The value is read here and written the way migrate
+    // and the doctor's probe write: the whole command on stdin.
+    t.mock.method(process.stderr, "write", () => true);
+    const value = "0123456789".repeat(19);
+    assert.equal(value.length, 190);
+    const cfg = userSecretCfg();
+    const { seen, seams } = setSeams(value);
+    await withKeychainOnly(() => m.cmdSet("tok", cfg, seams));
+
+    assert.deepEqual(seen.asked, ['value for "tok" (hidden): ']);
+    assert.equal(seen.specs.length, 1);
+    const [spec] = seen.specs;
+    assert.ok(!spec.interactive, "no spec that inherits the terminal and prompts there is run");
+    assert.equal(spec.cmd, "security");
+    assert.deepEqual(spec.args, ["-i"]);
+    assert.ok(spec.args.every((arg) => !arg.includes("0123456789")), "no part of the value is in argv");
+    assert.equal(seen.commands[0],
+        `add-generic-password -U -a "u" -s "${m.keyFor("tok", cfg.secrets.tok, cfg)}" -w "${value}"\n`);
+});
+
+test("set on the keychain: an empty value is refused and nothing is spawned", POSIX_STUB_ONLY, async () => {
+    const cfg = userSecretCfg();
+    const { seen, seams } = setSeams("");
+    await withKeychainOnly(() => assert.rejects(() => m.cmdSet("tok", cfg, seams), /empty value -- nothing stored/));
+    assert.deepEqual(seen.specs, []);
+});
+
+test("set on the keychain: a value over the command-line limit is refused with the size error and nothing is written", POSIX_STUB_ONLY, async () => {
+    const cfg = userSecretCfg();
+    const { seen, seams } = setSeams("x".repeat(m.SECURITY_LINE_LIMIT));
+    await withKeychainOnly(() => assert.rejects(() => m.cmdSet("tok", cfg, seams), (e) => {
+        assert.ok(e instanceof m.VcSecretsError);
+        assert.match(e.message, /^value too large for the keychain: entry "vc-secrets:user:tok" needs \d+ bytes on one command line; limit 4095$/);
+
+        return true;
+    }));
+    assert.deepEqual(seen.specs, [], "refused before anything was spawned, so no security -i waits on a stdin that never comes");
+});
+
+test("set on the keychain: a value with a line ending is refused, not handed to security in argv", POSIX_STUB_ONLY, async () => {
+    // The prompt cannot produce one -- Enter ends it -- but the builder has an argv fallback for exactly such a
+    // value, and `set` must not reach it: argv is readable by every process on the machine while the write runs.
+    const cfg = userSecretCfg();
+    const { seen, seams } = setSeams("line1\nline2");
+    await withKeychainOnly(() => assert.rejects(() => m.cmdSet("tok", cfg, seams), /line ending/));
+    assert.deepEqual(seen.specs, []);
+});
+
+test("set: a repository's secret is asked for and written only in a checkout trusted for its namespace", POSIX_STUB_ONLY, async (t) => {
+    // The child-process controls for the trust gate cannot reach the write any more: a spawned `set` has no
+    // terminal to read the value from. This is the in-process control -- the same gate, with the seams.
+    t.mock.method(process.stderr, "write", () => true);
+    const cfg = namespaceCfg({ projectId: "proj-x" });
+    const refused = setSeams("a-value");
+    await withKeychainOnly(() => assert.rejects(() => m.cmdSet("pat", cfg, { ...refused.seams, trustState: NO_TRUST }), /this checkout is not trusted/));
+    assert.deepEqual(refused.seen.asked, [], "no value is asked for a namespace this checkout has not earned");
+    assert.deepEqual(refused.seen.specs, []);
+
+    const trusted = setSeams("a-value");
+    await withKeychainOnly(() => m.cmdSet("pat", cfg, { ...trusted.seams, trustState: trustedStateFor(cfg) }));
+    assert.equal(trusted.seen.specs.length, 1);
+    assert.match(trusted.seen.commands[0], /-s "vc-secrets:proj-x:pat" -w "a-value"\n$/);
 });

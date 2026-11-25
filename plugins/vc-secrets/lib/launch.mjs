@@ -13,7 +13,7 @@ import { severingClose } from "../vc-secrets-teardown.mjs";  // the one teardown
 
 import { buildSpawnInvocation, mergeDeclaredEnv, resolveSpawnCommand, sanitizeEnv, windowsEnvValue } from "./spawn.mjs";
 import { LEGACY_SECRET_ENV_VARS, parseLiteral, requireLaunchable, resolveEnvEntries } from "./config.mjs";
-import { TIMEOUT_LOCAL_MS, detectLocalBackend, makeSecretResolver, scopeKeyFor } from "./keystore.mjs";
+import { TIMEOUT_LOCAL_MS, makeSecretResolver, oauthBackend, scopeKeyFor } from "./keystore.mjs";
 import { readTrustState, trustGateOf, trustProblem, trustRefusal } from "./trust.mjs";
 import { ensureFreshToken, oauthEntryKeys, oauthLaunchDeps } from "./oauth-token.mjs";
 
@@ -571,36 +571,44 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     // before this existed: it runs, and says once that a client stop may leave its tree behind. Refusing
     // to launch over it would trade a working server for a guarantee the platform would not give.
     //
-    // The oauth entries' two keys ride in that same call when oauthLaunchDeps will read the Credential
-    // Manager, which saves the launch two more PowerShell round trips. What comes back is held apart
-    // (oauthSeed) and handed to oauthLaunchDeps, whose first readCache alone may use it. It is not part of
-    // the Map prefetch returns, which is keyed by a secret's name: an entry and a secret may share one.
+    // When oauthLaunchDeps will read the oauth entries from the dpapi store, their keys ride in that same call
+    // twice over: as Credential Manager names, for the pair an earlier version left there, and as dpapi files,
+    // which node reads and the script decrypts. That saves the launch the PowerShell round trips the pair would
+    // otherwise cost. What comes back is held apart (oauthSeed) and handed to oauthLaunchDeps, whose first
+    // readCache alone may use it. It is not part of the Map prefetch returns, which is keyed by a secret's
+    // name: an entry and a secret may share one.
     let oauthSeed = null;
     const prefetch = (deps.bindPlatform ?? process.platform) === "win32"
         ? async (refs, oauthRefs) => {
             // The backend oauthLaunchDeps defaults to. An invalid VC_SECRETS_LOCAL_BACKEND is not raised here:
             // it is raised where it is today, by the read that needs it.
-            let oauthBackend = null;
+            let backend = null;
             if (oauthRefs.length > 0) {
                 try {
-                    oauthBackend = deps.backend ?? detectLocalBackend();
+                    backend = deps.backend ?? oauthBackend(process.platform);
                 } catch (e) {
                     if (!(e instanceof VcSecretsError)) {
                         throw e;
                     }
                 }
             }
-            const extraKeys = oauthBackend === "wcm"
+            const oauthKeys = backend === "dpapi"
                 ? oauthRefs.flatMap(({ name: entryName, decl }) => Object.values(oauthEntryKeys(entryName, decl, cfg)))
                 : [];
-            const { seeded, job, outcomes } = await resolver.readWcmBatch(refs,
-                { pid: process.pid, extraKeys, ...(deps.credReadMany ? { run: deps.credReadMany } : {}) });
-            oauthSeed = outcomes.size > 0 ? outcomes : null;
+            const { seeded, job, outcomes, dpapiOutcomes, files, mayHaveBound } = await resolver.readWcmBatch(refs,
+                { pid: process.pid, extraKeys: oauthKeys, dpapiKeys: oauthKeys,
+                    ...(deps.credReadMany ? { run: deps.credReadMany } : {}) });
+            oauthSeed = outcomes.size + dpapiOutcomes.size + files.size > 0 ? { wcm: outcomes, dpapi: dpapiOutcomes, files } : null;
             if (job !== "ok") {
                 // A whole-call failure carries PowerShell's stderr, which can span lines; the warning is one.
                 const why = Number.isInteger(job) ? `win32 error ${job}` : job.replace(/\s*\r?\n\s*/g, " ");
-                fs.writeSync(2, `vc-secrets: could not bind the launch's process tree to this launcher (${why})`
-                    + " -- a client stop may leave it running\n");
+                // A call that carried DPAPI blobs can fail as a whole after the bind (they are handled behind it),
+                // and prints nothing before it ends, so there the bind is unknown rather than failed.
+                fs.writeSync(2, mayHaveBound
+                    ? `vc-secrets: the launch's PowerShell call failed (${why}) -- it may have bound the launch's process `
+                        + "tree to this launcher before it did; if not, a client stop may leave it running\n"
+                    : `vc-secrets: could not bind the launch's process tree to this launcher (${why})`
+                        + " -- a client stop may leave it running\n");
             }
 
             return seeded;

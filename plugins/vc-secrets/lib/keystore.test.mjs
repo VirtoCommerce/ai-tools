@@ -6,8 +6,10 @@ import path from "node:path";
 import * as m from "../vc-secrets.mjs";
 import * as cache from "../vc-secrets-cache.mjs";
 import * as oauth from "../vc-secrets-oauth.mjs";
-import { tmpDirs } from "../test-support.mjs";
-import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath } from "../test-fixtures.mjs";
+import { pathPresent } from "./util.mjs";
+import { removeFileWithRetry } from "./keystore.mjs";
+import { UNREACHABLE_POWERSHELL, tmpDirs } from "../test-support.mjs";
+import { denyFs, CAN_RUN_POSIX_STUB, scopedPaths, credHex, stubBinary, withStubOnPath, WIN32_COMMAND_LINE_LIMIT } from "../test-fixtures.mjs";
 
 test("loadConfig: a project secret shadowing a user-scope name keys the PROJECT namespace", () => {
     // The point of the two fields: the winner's `home` is project, so its key is the project's — the
@@ -29,6 +31,45 @@ test("detectLocalBackend: platform rule (WSL is linux → gpg)", () => {
 test("detectLocalBackend: VC_SECRETS_LOCAL_BACKEND override, invalid rejected", () => {
     assert.equal(m.detectLocalBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "keychain" }), "keychain");
     assert.throws(() => m.detectLocalBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "vault9000" }), m.VcSecretsError);
+});
+
+test("oauthBackend: Credential Manager platforms store the OAuth pair with dpapi", () => {
+    assert.equal(m.oauthBackend("win32", {}), "dpapi");
+    assert.equal(m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "wcm" }), "dpapi");
+});
+
+test("oauthBackend: keychain and gpg are unchanged", () => {
+    assert.equal(m.oauthBackend("darwin", {}), "keychain");
+    assert.equal(m.oauthBackend("linux", {}), "gpg");
+});
+
+test("oauthBackend: dpapi is not a value VC_SECRETS_LOCAL_BACKEND accepts", () => {
+    assert.throws(() => m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: "dpapi" }), /VC_SECRETS_LOCAL_BACKEND/);
+});
+
+test("OAUTH_BACKENDS: the backends oauthBackend can answer with, derived from the local ones", () => {
+    assert.deepEqual([...m.OAUTH_BACKENDS].sort(), ["dpapi", "gpg", "keychain"]);
+    for (const local of ["wcm", "keychain", "gpg"]) {
+        assert.ok(m.OAUTH_BACKENDS.includes(m.oauthBackend("linux", { VC_SECRETS_LOCAL_BACKEND: local })),
+            `oauthBackend over "${local}" must be one of the backends that can hold the pair`);
+    }
+});
+
+test("dpapiKeyToPath: LOCALAPPDATA is the root, XDG_CONFIG_HOME overrides it", () => {
+    const key = "vc-secrets:user:oauth-ado-refresh";
+    assert.equal(m.dpapiKeyToPath(key, { LOCALAPPDATA: "/L" }), path.join("/L", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+    assert.equal(m.dpapiKeyToPath(key, { LOCALAPPDATA: "/L", XDG_CONFIG_HOME: "/X" }), path.join("/X", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+});
+
+test("dpapiKeyToPath: with neither LOCALAPPDATA nor XDG_CONFIG_HOME the root is Windows' own default for LOCALAPPDATA", () => {
+    // Not the profile itself: a client that strips LOCALAPPDATA must read the directory login wrote, which is
+    // where Windows points LOCALAPPDATA by default, `<profile>\AppData\Local`.
+    assert.equal(m.dpapiKeyToPath("vc-secrets:user:oauth-ado-refresh", {}),
+        path.join(os.homedir(), "AppData", "Local", "vc-secrets", "secrets", "user", "oauth-ado-refresh.dpapi"));
+});
+
+test("dpapiKeyToPath: a malformed key is refused", () => {
+    assert.throws(() => m.dpapiKeyToPath("../x", { LOCALAPPDATA: "/L" }), m.VcSecretsError);
 });
 
 test("keyFor: project scope uses the project's namespace, user scope uses \"user\"", () => {
@@ -69,9 +110,9 @@ test("builders: no secret and no raw script in argv, timeouts per spec", () => {
     assert.ok(Buffer.from(writeEncoded, "base64").toString("utf16le").includes("InputEncoding"),
         "write script must set Console.InputEncoding to UTF-8 (non-ASCII secrets)");
 
-    const kcWrite = m.buildLocalWrite("keychain", "vc-secrets:user:ado-pat", { USER: "u" });
-    assert.equal(kcWrite.interactive, true);
-    assert.equal(kcWrite.timeoutMs, null, "interactive specs must not carry a kill timer");
+    const kcWrite = m.buildLocalWrite("keychain", "vc-secrets:user:ado-pat", { USER: "u" }, { value: "v" });
+    assert.ok(!kcWrite.interactive, "no keychain write inherits the terminal");
+    assert.equal(kcWrite.timeoutMs, m.TIMEOUT_LOCAL_MS, "a write that waits on no one carries a kill timer");
 
     const gpgWrite = m.buildLocalWrite("gpg", "vc-secrets:user:ado-pat", { HOME: "/h", VC_SECRETS_GPG_RECIPIENT: "dev@x" });
     assert.ok(gpgWrite.args.includes("--trust-model"), "explicit recipient needs trust-model always");
@@ -101,94 +142,11 @@ test("the read script prints hex, because the encoding has to be decided from th
     assert.doesNotMatch(m.PS_CRED_READ, /PtrToStringUni/);
 });
 
-function markerHome() {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-marker-"));
-    tmpDirs.push(dir);
-
-    return { XDG_CONFIG_HOME: dir };
-}
-
-test("the oversize marker lives beside the keystore, not inside it, and keeps the key's scope", () => {
-    // A sibling of `secrets/` rather than a child: something that walks the keystore directory must
-    // not meet a diagnostic file there and try to read it as an entry. And per-scope like the keys
-    // themselves -- two projects on one machine declare the same entry NAME routinely, and a flat
-    // layout would have each overwrite the other's marker and report the wrong project's overflow.
-    const env = markerHome();
-    const user = m.oversizeMarkerPath("vc-secrets:user:oauth-ado-dev-access", env);
-    const project = m.oversizeMarkerPath("vc-secrets:p1:oauth-ado-dev-access", env);
-    assert.equal(path.dirname(path.dirname(user)), path.join(env.XDG_CONFIG_HOME, "vc-secrets", "state"));
-    assert.equal(path.dirname(m.secretsDir(env)), path.dirname(path.dirname(path.dirname(user))),
-        "the state directory must sit beside the secrets directory, not under it");
-    assert.notEqual(user, project, "two scopes may not share one marker");
-});
-
-test("the oversize marker records the measurement and no byte of the value", () => {
-    // The value is the access TOKEN. Nothing about it may reach a file that exists to be read by a
-    // diagnostic and pasted into a report -- so the marker is handed a byte count and never the
-    // bytes, and the assertion below is on the whole object rather than on the fields of interest:
-    // a field added later carrying part of the value would pass a field-by-field check.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    m.recordOversizeMarker(key, { backend: "wcm", bytes: 2588, limit: 2560, env, at: 1_700_000_000 });
-    assert.deepEqual(JSON.parse(fs.readFileSync(m.oversizeMarkerPath(key, env), "utf8")),
-        { key, backend: "wcm", bytes: 2588, limit: 2560, at: 1_700_000_000 });
-});
-
-test("the oversize marker reads back, clears, and reports nothing once cleared", () => {
-    // Clearing is the half that makes this a CURRENT STATE rather than a log of something once
-    // true. Without it doctor keeps naming an overflow that a later, smaller entry already fixed --
-    // wrong in the reassuring direction, which is the expensive direction for a diagnostic.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    m.recordOversizeMarker(key, { backend: "wcm", bytes: 2588, limit: 2560, env });
-    assert.equal(m.readOversizeMarker(key, env).bytes, 2588);
-    m.clearOversizeMarker(key, env);
-    assert.equal(m.readOversizeMarker(key, env), null);
-});
-
-test("clearing a marker that was never written is silent, since that is every ordinary success", () => {
-    // Clear runs on the SUCCESS path of every login and every renewal, and almost none of them ever
-    // overflowed. Throwing here would fail a working sign-in over a file that correctly does not
-    // exist.
-    const env = markerHome();
-    m.clearOversizeMarker("vc-secrets:user:oauth-ado-dev-access", env);
-});
-
-test("a corrupt marker reads as no marker, because a hint that cannot be read is not a finding", () => {
-    // Deliberately the opposite call from the keystore reads, where collapsing absent with
-    // unreadable is a defect -- see PS_CRED_READ's ERROR_NOT_FOUND check and newKeyPresent, which
-    // both insist the two stay apart. What hangs on this one is whether doctor
-    // prints one advisory line -- not whether a token exists -- so inventing a finding out of an
-    // unparseable diagnostic would send a developer to diagnose the diagnostic.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    const file = m.oversizeMarkerPath(key, env);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, "{ not json");
-    assert.equal(m.readOversizeMarker(key, env), null);
-});
-
-test("recordOversizeMarker: a state path that cannot be created warns instead of failing the sign-in", () => {
-    // Both call sites stand inside a catch that has already decided this failure will not fail the
-    // operation -- cmdLogin says so in as many words, because a login rejected there costs an
-    // interactive sign-in while the refresh token it just stored is rotated away by the next one.
-    // clearOversizeMarker was guarded from the start; this is the sibling that was not, and the
-    // asymmetry is reachable: a read-only profile, a full disk, or the case staged here.
-    const env = markerHome();
-    const key = "vc-secrets:user:oauth-ado-dev-access";
-    fs.mkdirSync(path.join(env.XDG_CONFIG_HOME, "vc-secrets"), { recursive: true });
-    fs.writeFileSync(path.join(env.XDG_CONFIG_HOME, "vc-secrets", "state"), "");
-    assert.doesNotThrow(() => m.recordOversizeMarker(key,
-        { backend: "wcm", bytes: 2588, limit: 2560, env }));
-    assert.equal(m.readOversizeMarker(key, env), null,
-        "a marker that could not be written must not read back as one that was");
-});
-
 test("a message improved for a human keeps the exit code the code reads", () => {
     // mapResolveError returns a NEW error in every branch, so it silently dropped toolExitCode --
     // and the caller still received an error, just one that no longer answered WHICH failure this
-    // was. The oversize marker is the consumer that made it visible: it must record only exit 4,
-    // and by the time the write failure reached it the 4 was gone.
+    // was. doctor's write probe is the consumer that made it visible: it reports the Credential Manager
+    // ceiling only for exit 4, and by the time the write failure reached it the 4 was gone.
     const raw = Object.assign(new Error("value too large for Credential Manager (2588 bytes; limit 2560)"),
         { toolExitCode: 4 });
     const mapped = m.mapResolveError("wcm", "oauth-ado-dev-access", raw);
@@ -341,13 +299,33 @@ test("buildLocalRead/buildLocalWrite: reject keys outside vc-secrets:<scope>:<na
 });
 
 test("buildLocalWrite: gpg tmp target for atomic write", () => {
-    const spec = m.buildLocalWrite("gpg", "vc-secrets:user:ado-pat", { HOME: "/h" }, { tmp: true });
+    const key = "vc-secrets:user:ado-pat";
+    const env = { HOME: "/h" };
+    const spec = m.buildLocalWrite("gpg", key, env, { tmp: true });
     const target = spec.args[spec.args.indexOf("-o") + 1];
-    assert.ok(target.endsWith(path.join("ado-pat.gpg.tmp")), `expected .gpg.tmp target, got "${target}"`);
+    // Named for this process: login stores even when the token lock is busy, so two writers must not share a tmp path.
+    assert.equal(target, `${m.keyToPath(key, env)}.${process.pid}.tmp`);
 
     const finalSpec = m.buildLocalWrite("gpg", "vc-secrets:user:ado-pat", { HOME: "/h" });
     const finalTarget = finalSpec.args[finalSpec.args.indexOf("-o") + 1];
     assert.ok(finalTarget.endsWith("ado-pat.gpg") && !finalTarget.endsWith(".tmp"), "default (no tmp option) targets the final path");
+});
+
+test("writeSecretValue: gpg renames the same pid-suffixed tmp file the builder targets", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-gpg-tmp-");
+    const key = "vc-secrets:user:ado-pat";
+    const finalPath = m.keyToPath(key, env);
+    // Stands in for gpg: writes exactly where the spec's `-o` points.
+    let target = null;
+    const run = async (spec) => {
+        target = spec.args[spec.args.indexOf("-o") + 1];
+        fs.writeFileSync(target, "CIPHER");
+    };
+    await m.writeSecretValue(key, "the-token", { backend: "gpg", env, run });
+
+    assert.equal(fs.readFileSync(finalPath, "utf8"), "CIPHER");
+    assert.equal(pathPresent(target, "the tmp file"), false, "the tmp file was renamed, not left behind");
+    assert.equal(target, `${finalPath}.${process.pid}.tmp`);
 });
 
 test("buildLocalDelete refuses a key that is not three segments", () => {
@@ -578,15 +556,15 @@ test("newKeyPresent: keychain exit 44 IS absence", { skip: !CAN_RUN_POSIX_STUB &
 
 // ── regressions: keystore writes, declaration validation and install-shim ─────────────────────────
 
-test("keychain write: migrate gets a non-interactive shape, set keeps the prompt", () => {
-    // With no value the prompt is right: `set` has a human at the TTY and the plaintext never passes
-    // through this process. With a value it must NOT prompt — migrate holds a value the user cannot
-    // retype, and the interactive shape asked for one anyway and stored whatever was typed as a
-    // successful migration.
+test("keychain write: the shape is always non-interactive, and a build with no value is refused", () => {
+    // `set`, migrate, login and renewal all hold the value before they write. The shape that left the
+    // value to security's own prompt is gone: that prompt cuts what is typed at 128 characters, and it
+    // reported success for the truncated entry. A build with no value must not fall into the command shape
+    // instead -- runTool composes the command only when handed a value, so security -i would read an empty
+    // stdin, exit 0, and the write would be reported as stored.
     const key = `${m.KEY_PREFIX}:demo:tok`;
-    const prompting = m.buildLocalWrite("keychain", key, { USER: "u" });
-    assert.equal(prompting.interactive, true);
-    assert.ok(!prompting.args.includes("secret-value"));
+    assert.throws(() => m.buildLocalWrite("keychain", key, { USER: "u" }),
+        /keychain write for "vc-secrets:demo:tok" needs the value/);
 
     const copying = m.buildLocalWrite("keychain", key, { USER: "u" }, { value: "secret-value" });
     assert.ok(!copying.interactive, "a copy must not wait for a human");
@@ -731,4 +709,541 @@ test("writeSecretValue: an oversize keychain value is refused before the runner 
         () => m.writeSecretValue(key, oversized, { backend: "keychain", env: { USER: "u" }, run }),
         (e) => e instanceof m.VcSecretsError && /too large for the keychain/.test(e.message));
     assert.equal(runnerCalls.length, 0, "the runner must never be reached once the guard has refused");
+});
+
+function decodedScript(spec) {
+    return Buffer.from(spec.args[spec.args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le");
+}
+
+test("PS_DPAPI_PROTECT: CurrentUser scope, the key as entropy, the value on stdin and never in env", () => {
+    const key = "vc-secrets:user:oauth-a-refresh";
+    const script = m.PS_DPAPI_PROTECT;
+    assert.match(script, /CryptProtectData/);
+    assert.ok(script.includes("$env:VC_SECRETS_NAME"), "the key is the entropy");
+    assert.ok(script.includes("[Console]::In.ReadToEnd()"), "the value arrives on stdin, untrimmed");
+
+    // The flags argument is the scope switch: CRYPTPROTECT_LOCAL_MACHINE would let any account on the
+    // machine decrypt the file. The only flag passed is UI_FORBIDDEN (0x1), so no prompt can block a launch.
+    assert.match(script, /const int CRYPTPROTECT_UI_FORBIDDEN = 0x1;/);
+    assert.match(script, /CryptProtectData\(ref [^;]*System\.IntPtr\.Zero, CRYPTPROTECT_UI_FORBIDDEN, out output\)/);
+    assert.doesNotMatch(script, /CRYPTPROTECT_LOCAL_MACHINE/);
+
+    // A DPAPI failure is exit 1 naming the code. A script that swallowed it would hand node an empty
+    // blob to write over a previously valid entry.
+    assert.ok(script.includes("CryptProtectData failed win32err="), "the failure names the win32 code");
+    assert.match(script, /CryptProtectData failed win32err="\+\$ex\.NativeErrorCode\); exit 1 \}/);
+
+    const spec = m.buildDpapiProtect(key, {});
+    assert.deepEqual(spec.extraEnv, { VC_SECRETS_NAME: key });
+    assert.equal(spec.cmd, "powershell.exe");
+    assert.equal(spec.stdinData, m.VALUE_ON_STDIN);
+    assert.equal(spec.timeoutMs, m.TIMEOUT_LOCAL_MS);
+    assert.equal(spec.captureStdout, true);
+    assert.equal(decodedScript(spec), script);
+    assert.ok(!spec.args.some((a) => a.includes("CryptProtectData")), "raw script must not be in argv");
+});
+
+test("buildDpapiProtect: a malformed key is refused before anything is built", () => {
+    assert.throws(() => m.buildDpapiProtect("../x", {}), m.VcSecretsError);
+});
+
+test("PS_DPAPI_UNPROTECT_MANY: reads blobs from stdin, reports a per-key win32 code instead of failing the call", () => {
+    const script = m.PS_DPAPI_UNPROTECT_MANY;
+    assert.match(script, /CryptUnprotectData/);
+    assert.ok(script.includes("[Console]::In.ReadToEnd()"));
+    assert.ok(script.includes('"err"'));
+    assert.ok(script.includes('"ok"'));
+    assert.ok(script.includes("UTF8.GetBytes($p.Name)"), "each key is its own blob's entropy");
+});
+
+test("the DPAPI C# class is its own, so it cannot collide with a CredMan class in one PowerShell session", () => {
+    assert.match(m.CS_DPAPI, /public static class Dpapi \{/);
+    assert.doesNotMatch(m.CS_DPAPI, /CredMan/);
+    assert.ok(m.PS_DPAPI_PROTECT.includes(m.CS_DPAPI));
+    assert.ok(m.PS_DPAPI_UNPROTECT_MANY.includes(m.CS_DPAPI));
+});
+
+test("unprotectManyIo: no blobs, no PowerShell", async () => {
+    const run = async () => { throw new Error("must not spawn"); };
+    const result = await m.unprotectManyIo({ blobs: new Map(), env: {}, run });
+    assert.ok(result instanceof Map);
+    assert.equal(result.size, 0);
+});
+
+test("unprotectManyIo: maps each key's outcome", async () => {
+    const refresh = "vc-secrets:user:oauth-a-refresh";
+    const access = "vc-secrets:user:oauth-a-access";
+    const blobs = new Map([[refresh, Buffer.from([1, 2, 3])], [access, Buffer.from([4, 5])]]);
+    const calls = [];
+    const run = async (spec, opts) => {
+        calls.push({ spec, opts });
+
+        return '{"vc-secrets:user:oauth-a-refresh":{"ok":"6869"},"vc-secrets:user:oauth-a-access":{"err":13}}';
+    };
+    const result = await m.unprotectManyIo({ blobs, env: { VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL }, run });
+    assert.deepEqual([...result], [[refresh, { ok: "6869" }], [access, { err: 13 }]]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].spec.stdinData, m.VALUE_ON_STDIN);
+    assert.equal(calls[0].spec.captureStdout, true);
+    assert.equal(decodedScript(calls[0].spec), m.PS_DPAPI_UNPROTECT_MANY);
+    assert.equal(calls[0].opts.stdinValue,
+        JSON.stringify({ [refresh]: Buffer.from([1, 2, 3]).toString("base64"), [access]: Buffer.from([4, 5]).toString("base64") }));
+});
+
+test("unprotectManyIo: output that is not the object is an error that does not echo it", async () => {
+    const blobs = new Map([["vc-secrets:user:oauth-a-refresh", Buffer.from([1])]]);
+    for (const out of ["secret-bytes", '"secret-bytes"', "[]", "null", '{"other":{"ok":"secret-bytes"}}',
+        '{"vc-secrets:user:oauth-a-refresh":"secret-bytes"}']) {
+        await assert.rejects(
+            () => m.unprotectManyIo({ blobs, env: { VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL }, run: async () => out }),
+            (e) => e instanceof m.VcSecretsError && !e.message.includes("secret-bytes"),
+            `output ${out}`);
+    }
+});
+
+test("unprotectManyIo: a malformed key is refused before PowerShell is spawned", async () => {
+    const run = async () => { throw new Error("must not spawn"); };
+    await assert.rejects(
+        () => m.unprotectManyIo({ blobs: new Map([["../x", Buffer.from([1])]]), env: {}, run }), m.VcSecretsError);
+});
+
+test("PS_CRED_READ_MANY: dpapi blobs are decrypted after the job bind", () => {
+    // The reads and the duplicate/assign sequence keep their places: the decrypt rides behind both, so a
+    // failure in it can never keep the launcher out of the job, and the script reads stdin only when node
+    // says it sent blobs.
+    const script = m.PS_CRED_READ_MANY;
+    assert.ok(script.includes(m.CS_DPAPI), "the batched read compiles the shared DPAPI class");
+    assert.ok(script.includes("VC_SECRETS_DPAPI_ON_STDIN"));
+    const bind = script.indexOf("[CredManLaunch]::Bind(");
+    const decrypt = script.indexOf("[Dpapi]::Unprotect(");
+    assert.equal(script.split("[Dpapi]::Unprotect(").length - 1, 1, "one decrypt call site");
+    assert.ok(bind >= 0 && decrypt > bind, "the decrypt call comes after the bind call");
+    assert.ok(script.indexOf("[Console]::In.ReadToEnd()") > bind, "stdin is read after the bind");
+    assert.ok(script.indexOf("[CredManLaunch]::CredRead(") < bind, "the reads still come first");
+    assert.ok(script.includes("UTF8.GetBytes($p.Name)"), "each key is its own blob's entropy");
+});
+
+test("buildCredReadMany: blobs put the decrypt on stdin and switch the script to read it", () => {
+    const key = "vc-secrets:user:oauth-a-refresh";
+    const plain = m.buildCredReadMany([key], 7, {});
+    assert.equal(plain.stdinData, undefined, "no blobs: nothing on stdin, as before");
+    assert.equal(plain.extraEnv.VC_SECRETS_DPAPI_ON_STDIN, undefined);
+
+    const withBlobs = m.buildCredReadMany([key], 7, {}, new Map([[key, Buffer.from([1, 2])]]));
+    assert.equal(withBlobs.stdinData, m.VALUE_ON_STDIN);
+    assert.equal(withBlobs.extraEnv.VC_SECRETS_DPAPI_ON_STDIN, "1");
+    assert.equal(withBlobs.extraEnv.VC_SECRETS_NAMES, JSON.stringify([key]));
+    assert.throws(() => m.buildCredReadMany([], 7, {}, new Map([["../x", Buffer.from([1])]])), m.VcSecretsError);
+});
+
+test("credReadManyIo: the blobs travel on stdin as base64 and never in the environment", { skip: WIN32_COMMAND_LINE_LIMIT || (!CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind") }, async () => {
+    const key = "vc-secrets:user:oauth-a-refresh";
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-stdin-"));
+    tmpDirs.push(dir);
+    const out = path.join(dir, "stdin.txt");
+    const stub = `#!/bin/sh
+cat > "${out}"
+printf '%s' '{"creds":{},"job":"ok","dpapi":{}}'
+`;
+    await withStubOnPath("vc-ps-batch-stdin", stub, async () => {
+        const env = { VC_SECRETS_POWERSHELL: "vc-ps-batch-stdin" };
+        const result = await m.credReadManyIo({ keys: [], pid: 1, env, blobs: new Map([[key, Buffer.from([1, 2, 3])]]) });
+        assert.equal(result.job, "ok");
+    });
+    assert.equal(fs.readFileSync(out, "utf8"), JSON.stringify({ [key]: Buffer.from([1, 2, 3]).toString("base64") }));
+});
+
+test("readWcmBatch: dpapi files are read by node, sent as blobs, and come back as outcomes and presence", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
+    const present = "vc-secrets:user:oauth-a-refresh";
+    const absent = "vc-secrets:user:oauth-a-access";
+    const unreadable = "vc-secrets:user:oauth-b-refresh";
+    fs.mkdirSync(path.dirname(m.dpapiKeyToPath(present, env)), { recursive: true });
+    fs.writeFileSync(m.dpapiKeyToPath(present, env), Buffer.from("CIPHER"));
+    // A directory where the file should be: not absent, and not readable.
+    fs.mkdirSync(m.dpapiKeyToPath(unreadable, env), { recursive: true });
+
+    const resolver = m.makeSecretResolver({}, env);
+    let asked = null;
+    const batch = await resolver.readWcmBatch([], { pid: 9, dpapiKeys: [present, absent, unreadable],
+        run: async (request) => {
+            asked = request;
+
+            return { creds: {}, job: "ok", dpapi: { [present]: { ok: credHex("plain") } } };
+        } });
+    assert.deepEqual([...asked.blobs.keys()], [present], "only a file that exists is sent");
+    assert.equal(asked.blobs.get(present).toString(), "CIPHER");
+    assert.deepEqual([...batch.dpapiOutcomes], [[present, { ok: credHex("plain") }]]);
+    assert.deepEqual([...batch.files], [[present, true], [absent, false]],
+        "a file that could not be read is left out, so its single read reports it");
+    assert.equal(batch.job, "ok");
+});
+
+test("readWcmBatch: a dpapi outcome of -1, the script's mark for a failure that is not DPAPI's, is not seeded", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
+    const odd = "vc-secrets:user:oauth-a-refresh";
+    const refused = "vc-secrets:user:oauth-a-access";
+    for (const key of [odd, refused]) {
+        fs.mkdirSync(path.dirname(m.dpapiKeyToPath(key, env)), { recursive: true });
+        fs.writeFileSync(m.dpapiKeyToPath(key, env), Buffer.from("CIPHER"));
+    }
+    const batch = await m.makeSecretResolver({}, env).readWcmBatch([], { pid: 9, dpapiKeys: [odd, refused],
+        run: async () => ({ creds: {}, job: "ok", dpapi: { [odd]: { err: -1 }, [refused]: { err: 13 } } }) });
+    assert.deepEqual([...batch.dpapiOutcomes], [[refused, { err: 13 }]], "DPAPI's own code is seeded, -1 is not");
+    assert.equal(batch.files.get(odd), true, "the file is still known to be there, so it is decrypted singly");
+});
+
+test("readWcmBatch: with dpapi blobs attached, a call that fails as a whole seeds nothing", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-batch-dpapi-"));
+    tmpDirs.push(dir);
+    const env = { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL };
+    const key = "vc-secrets:user:oauth-a-refresh";
+    fs.mkdirSync(path.dirname(m.dpapiKeyToPath(key, env)), { recursive: true });
+    fs.writeFileSync(m.dpapiKeyToPath(key, env), Buffer.from("CIPHER"));
+    const batch = await m.makeSecretResolver({}, env).readWcmBatch([], { pid: 9, extraKeys: [key], dpapiKeys: [key],
+        run: async () => { throw new m.VcSecretsError("powershell.exe exited 1: nope"); } });
+    assert.equal(batch.job, "powershell.exe exited 1: nope");
+    assert.equal(batch.outcomes.size + batch.dpapiOutcomes.size + batch.files.size + batch.seeded.size, 0,
+        "each entry is then read singly, exactly as a whole-call failure leaves it today");
+});
+
+// The dpapi file store: PowerShell turns a value into a blob, node owns every file operation.
+const DPAPI_KEY = "vc-secrets:user:oauth-a-refresh";
+
+// The PowerShell name rides in the object because psCommand reads it from the env a function is handed, not
+// from process.env: a call made with the default runner would otherwise start the real powershell.exe.
+function tmpConfigEnv(prefix) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+    tmpDirs.push(dir);
+
+    return { dir, env: { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL } };
+}
+
+test("tmpConfigEnv: a call made with the default runner cannot start the real PowerShell", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-guard-fixture-");
+    const failure = await m.unprotectManyIo({ blobs: new Map([[DPAPI_KEY, Buffer.from("x")]]), env }).then(() => null, (e) => e);
+    assert.ok(failure?.message.includes(UNREACHABLE_POWERSHELL), `the start was ${failure?.message}, not the guard's path`);
+});
+
+// A PowerShell that prints the base64 of `cipher` for the protect script; any other script is a mistake.
+function fakeProtect(cipher, calls = []) {
+    return async (spec, opts) => {
+        calls.push({ spec, opts });
+        assert.equal(Buffer.from(spec.args[spec.args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le"),
+            m.PS_DPAPI_PROTECT, "only the protect script may run on a write");
+
+        return Buffer.from(cipher).toString("base64");
+    };
+}
+
+const refused = (code) => Object.assign(new Error(`${code}: refused`), { code });
+
+test("writeSecretValue: dpapi writes the ciphertext PowerShell returns, through a pid-suffixed tmp file", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-write-");
+    const calls = [];
+    const renames = [];
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    await m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER", calls),
+        rename: (from, to) => { renames.push({ from, to }); fs.renameSync(from, to); } });
+
+    assert.equal(fs.readFileSync(target, "utf8"), "CIPHER");
+    assert.deepEqual(fs.readdirSync(path.dirname(target)), ["oauth-a-refresh.dpapi"], "no tmp file remains");
+    assert.equal(renames.length, 1);
+    assert.ok(renames[0].from.endsWith(`.${process.pid}.tmp`), `the rename source is "${renames[0].from}"`);
+    assert.equal(renames[0].to, target);
+    assert.equal(calls[0].opts.stdinValue, "the-token", "the value goes on stdin");
+    assert.deepEqual(calls[0].opts.redactValues, ["the-token"]);
+    assert.deepEqual(calls[0].spec.extraEnv, { VC_SECRETS_NAME: DPAPI_KEY });
+});
+
+test("writeSecretValue: dpapi retries a rename refused with EPERM and succeeds", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-retry-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    let refusals = 2;
+    const sleeps = [];
+    await m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER"),
+        rename: (from, to) => {
+            if (refusals > 0) {
+                refusals -= 1;
+                throw refused("EPERM");
+            }
+            fs.renameSync(from, to);
+        },
+        sleep: async (ms) => { sleeps.push(ms); } });
+
+    assert.deepEqual(sleeps, [50, 100]);
+    assert.equal(fs.readFileSync(target, "utf8"), "CIPHER");
+});
+
+test("writeSecretValue: dpapi gives up after five refused renames, leaves the previous entry and no tmp file", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-giveup-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "PREVIOUS");
+    let attempts = 0;
+    const sleeps = [];
+    await assert.rejects(
+        () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER"),
+            rename: () => { attempts += 1; throw refused("EBUSY"); },
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e.code === "EBUSY");
+
+    assert.equal(attempts, m.RENAME_ATTEMPTS);
+    assert.equal(attempts, 5);
+    assert.deepEqual(sleeps, [50, 100, 150, 200], "no wait after the last refusal");
+    assert.equal(fs.readFileSync(target, "utf8"), "PREVIOUS");
+    assert.deepEqual(fs.readdirSync(path.dirname(target)), ["oauth-a-refresh.dpapi"], "the tmp file is gone");
+});
+
+test("writeSecretValue: dpapi does not retry ENOENT", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-enoent-");
+    let attempts = 0;
+    const sleeps = [];
+    await assert.rejects(
+        () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: fakeProtect("CIPHER"),
+            rename: () => { attempts += 1; throw refused("ENOENT"); },
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e.code === "ENOENT");
+
+    assert.equal(attempts, 1);
+    assert.deepEqual(sleeps, []);
+});
+
+test("writeSecretValue: dpapi refuses to store an empty ciphertext over the entry", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-empty-");
+    await assert.rejects(
+        () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => "" }),
+        /no ciphertext/);
+    assert.equal(pathPresent(m.dpapiKeyToPath(DPAPI_KEY, env), "the dpapi entry"), false);
+});
+
+test("writeSecretValue: dpapi stores only base64 ciphertext, and a stray line in stdout is refused by name", async () => {
+    // Node's base64 decoder skips every character outside the alphabet, so a warning PowerShell printed ahead
+    // of the ciphertext would be decoded into a corrupt blob and stored after a "successful" write. The error
+    // names the entry and never carries the output, which may sit beside a secret.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-stray-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    for (const stray of ["WARNING: module cache rebuilt\r\nQ0lQSEVS", "Q0lQ\nSEVS", "Q0 lQSEVS", "Q0lQSEVS===", "=Q0lQSEVS", "!!!", "\r\n"]) {
+        await assert.rejects(
+            () => m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => stray }),
+            (e) => e instanceof m.VcSecretsError && e.message.includes("oauth-a-refresh")
+                && !/WARNING|Q0lQ|SEVS|!!!/.test(e.message),
+            JSON.stringify(stray));
+        assert.equal(pathPresent(target, "the dpapi entry"), false, `a refused output left an entry: ${JSON.stringify(stray)}`);
+    }
+
+    // The ciphertext PowerShell prints, with or without padding and a trailing line ending, is still stored.
+    for (const printed of ["Q0lQSEVS", "Q0lQSEU=\r\n", "  Q0lQSA==\n"]) {
+        await m.writeSecretValue(DPAPI_KEY, "the-token", { backend: "dpapi", env, run: async () => printed });
+        assert.deepEqual(fs.readFileSync(target), Buffer.from(printed.trim(), "base64"), JSON.stringify(printed));
+    }
+});
+
+test("writeSecretValue: a dpapi value over the Credential Manager ceiling is stored", async () => {
+    // The bug's own size plus one: Credential Manager refuses 2907 bytes (exit 4), the file store has no ceiling.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-large-");
+    const value = "x".repeat(2907);
+    assert.ok(value.length > m.WCM_BLOB_LIMIT);
+    const calls = [];
+    await m.writeSecretValue(DPAPI_KEY, value, { backend: "dpapi", env, run: fakeProtect("CIPHER", calls) });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].opts.stdinValue.length, 2907, "the whole value reached the protect run");
+    assert.equal(calls[0].opts.stdinValue, value);
+    assert.equal(fs.readFileSync(m.dpapiKeyToPath(DPAPI_KEY, env), "utf8"), "CIPHER");
+});
+
+test("readDpapiFile: absence is the path not existing", () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-read-absent-");
+    assert.equal(m.readDpapiFile(DPAPI_KEY, env), undefined);
+
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, Buffer.from([1, 2, 3]));
+    assert.deepEqual(m.readDpapiFile(DPAPI_KEY, env), Buffer.from([1, 2, 3]));
+});
+
+test("readDpapiFile: an entry that cannot be examined is not absent", (t) => {
+    // undefined here would be read as "not signed in": an interactive sign-in that spends an
+    // authorization code, over a refresh token that never left the disk.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-read-denied-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    denyFs(t, "readFileSync", target);
+
+    assert.throws(() => m.readDpapiFile(DPAPI_KEY, env),
+        (e) => e instanceof m.VcSecretsError && e.message === 'could not read the stored entry "oauth-a-refresh": EACCES');
+});
+
+function wcmDeleteRun(held, calls = []) {
+    return async (spec) => {
+        calls.push(spec);
+        if (!held) {
+            throw Object.assign(new m.VcSecretsError("powershell.exe exited 3: "), { toolExitCode: 3 });
+        }
+    };
+}
+
+test("deleteEntryIo: dpapi removes the file and the Credential Manager entry of the same key", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-both-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    const calls = [];
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(true, calls) })(DPAPI_KEY);
+
+    assert.equal(pathPresent(target, "the dpapi entry"), false);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].extraEnv.VC_SECRETS_NAME, DPAPI_KEY);
+    assert.equal(Buffer.from(calls[0].args[calls[0].args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le"),
+        m.PS_CRED_DELETE);
+});
+
+test("deleteEntryIo: dpapi with only a legacy Credential Manager entry removes it and succeeds", async () => {
+    // Logout after an upgrade, before any launch migrated the pair: the file never existed, the legacy
+    // entry did, and reporting "nothing stored" would leave the live refresh token behind.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-legacy-");
+    const calls = [];
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(true, calls) })(DPAPI_KEY);
+
+    assert.equal(calls.length, 1, "the legacy entry was deleted");
+});
+
+test("deleteEntryIo: dpapi with only the file removes it and succeeds", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-file-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false) })(DPAPI_KEY);
+
+    assert.equal(pathPresent(target, "the dpapi entry"), false);
+});
+
+test("deleteEntryIo: dpapi with neither present is exit 3", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-none-");
+    await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false) })(DPAPI_KEY),
+        (e) => e.toolExitCode === 3);
+});
+
+test("deleteEntryIo: dpapi does not treat an unremovable file or a Credential Manager failure as absence", async () => {
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-fail-");
+    const denied = () => { throw Object.assign(new Error("EACCES"), { code: "EACCES" }); };
+    await assert.rejects(
+        () => m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false), rm: denied, sleep: async () => {} })(DPAPI_KEY),
+        (e) => e instanceof m.VcSecretsError && e.toolExitCode === undefined && /could not remove/.test(e.message));
+
+    const failing = async () => { throw Object.assign(new m.VcSecretsError("powershell.exe exited 1: CredDelete failed win32err=5"), { toolExitCode: 1 }); };
+    await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: failing })(DPAPI_KEY),
+        (e) => e.toolExitCode === 1);
+});
+
+test("deleteEntryIo: dpapi leaves the file in place when the Credential Manager delete fails", async () => {
+    // The file decides the store. Removing it first would leave the legacy pair as the store the next launch
+    // falls back to, so a failed Credential Manager delete would bring a logged-out token back.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-order-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    const failing = async () => { throw Object.assign(new m.VcSecretsError("powershell.exe exited 1: CredDelete failed win32err=5"), { toolExitCode: 1 }); };
+    await assert.rejects(() => m.deleteEntryIo("dpapi", env, { run: failing })(DPAPI_KEY),
+        (e) => e.toolExitCode === 1);
+
+    assert.equal(fs.readFileSync(target, "utf8"), "BLOB");
+});
+
+// The removal twin of the rename retry above: the same attempts, the same delays, the same codes, and absence
+// told apart from a failure. `rm` and `sleep` are injected, so no test here waits for real.
+function failingRm(code, failures, calls) {
+    return () => {
+        calls.push(code);
+        if (calls.length <= failures) {
+            throw refused(code);
+        }
+    };
+}
+
+test("removeFileWithRetry: a lock that clears is waited out, 50 then 100 ms, and the file counts as removed", async () => {
+    const calls = [];
+    const sleeps = [];
+    const removed = await removeFileWithRetry("any-file", { rm: failingRm("EBUSY", 2, calls),
+        sleep: async (ms) => { sleeps.push(ms); } });
+
+    assert.equal(removed, true);
+    assert.equal(calls.length, 3);
+    assert.deepEqual(sleeps, [50, 100]);
+});
+
+test("removeFileWithRetry: EPERM, EBUSY and EACCES are each retried", async () => {
+    for (const code of ["EPERM", "EBUSY", "EACCES"]) {
+        const calls = [];
+        await removeFileWithRetry("any-file", { rm: failingRm(code, 1, calls), sleep: async () => {} });
+
+        assert.equal(calls.length, 2, `${code} was not retried`);
+    }
+});
+
+test("removeFileWithRetry: a lock that never clears throws the original error after five attempts and four waits", async () => {
+    const calls = [];
+    const sleeps = [];
+    const original = refused("EPERM");
+    await assert.rejects(
+        () => removeFileWithRetry("any-file", { rm: () => { calls.push("EPERM"); throw original; },
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e === original);
+
+    assert.equal(calls.length, m.RENAME_ATTEMPTS);
+    assert.equal(calls.length, 5);
+    assert.deepEqual(sleeps, [50, 100, 150, 200], "no wait after the last refusal");
+});
+
+test("removeFileWithRetry: an absent path is false on the first attempt, ENOENT and ENOTDIR alike", async () => {
+    for (const code of ["ENOENT", "ENOTDIR"]) {
+        const calls = [];
+        const sleeps = [];
+        const removed = await removeFileWithRetry("any-file", { rm: failingRm(code, 9, calls),
+            sleep: async (ms) => { sleeps.push(ms); } });
+
+        assert.equal(removed, false, code);
+        assert.equal(calls.length, 1, `${code} was retried`);
+        assert.deepEqual(sleeps, [], code);
+    }
+});
+
+test("removeFileWithRetry: any other code is thrown after one attempt, not waited on", async () => {
+    const calls = [];
+    const sleeps = [];
+    await assert.rejects(
+        () => removeFileWithRetry("any-file", { rm: failingRm("EISDIR", 9, calls),
+            sleep: async (ms) => { sleeps.push(ms); } }),
+        (e) => e.code === "EISDIR");
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(sleeps, []);
+});
+
+test("deleteEntryIo: dpapi waits out a transient lock on the file and removes it", async () => {
+    // A logout or a pair clear that hit an antivirus scan or an indexer for a moment was a hard failure.
+    const { env } = tmpConfigEnv("vc-secrets-dpapi-del-busy-");
+    const target = m.dpapiKeyToPath(DPAPI_KEY, env);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "BLOB");
+    let busy = 1;
+    const sleeps = [];
+    await m.deleteEntryIo("dpapi", env, { run: wcmDeleteRun(false),
+        rm: (file) => {
+            if (busy > 0) {
+                busy -= 1;
+                throw refused("EBUSY");
+            }
+            fs.rmSync(file);
+        },
+        sleep: async (ms) => { sleeps.push(ms); } })(DPAPI_KEY);
+
+    assert.equal(pathPresent(target, "the dpapi entry"), false);
+    assert.deepEqual(sleeps, [50]);
 });
