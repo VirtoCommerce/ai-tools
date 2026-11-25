@@ -109,8 +109,8 @@ export interface RegressionPreflight {
    * suite → case → reason: the cases a WARN/BLOCK row predicts will BLOCK. `suites:lanes` reads this from the run
    * folder's preflight.json and plans them in the `preflight` lane, which nothing executes; `suites:merge` records
    * them BLOCKED with this reason. A run then spends no browser time and no model tokens on a case whose outcome is
-   * already known — and the counts stay whole, because the case is still in the suite's total. Empty when the
-   * caller passed `--run-blocked` (`skipDisabled`).
+   * already known — and the counts stay whole, because the case is still in the suite's total. Under
+   * `--run-blocked` (`skipDisabled`) only the `[EXCLUSIVE]` cases remain: `--exclusive` is the only thing that lifts those.
    */
   skip: Record<string, Record<string, string>>;
   skipDisabled?: boolean;
@@ -271,7 +271,7 @@ export async function runRegressionPreflight(o: {
   browserSuites?: string[];
   /** Case-level checks (personas, fixtures, declared settings — requirements.ts). Default on; off only for an offline plan. */
   requirements?: boolean;
-  /** false = `--run-blocked`: run the predicted-BLOCKED cases anyway (the `skip` map stays empty). Default true. */
+  /** false = `--run-blocked`: run the predicted-BLOCKED cases anyway (the `skip` map keeps only `[EXCLUSIVE]` cases). Default true. */
   skipBlocked?: boolean;
   /** The release's exclusive wave (WX): `[EXCLUSIVE:…]` cases run instead of being recorded BLOCKED. */
   exclusive?: boolean;
@@ -323,14 +323,17 @@ export async function runRegressionPreflight(o: {
   for (const [s, m] of Object.entries(absent)) for (const id of Object.keys(m)) delete predicted[s]?.[id];
   const nCases = Object.values(predicted).reduce((n, m) => n + Object.keys(m).length, 0);
   const skipBlocked = o.skipBlocked !== false;
-  if (nCases) checks.push(skipBlocked
-    ? { id: "skip", status: "WARN", found: `${nCases} case(s) in ${Object.keys(predicted).length} suite(s) are recorded BLOCKED without running — each with the reason of its row above`,
-        who: "me", do: "fix those rows and re-run the pre-flight before the run; --run-blocked runs them anyway", diagnose: [] }
-    : { id: "skip", status: "WARN", found: `--run-blocked: ${nCases} case(s) the rows above predict will BLOCK are run anyway`, who: null, do: null, diagnose: [] });
   // --run-blocked never runs an [EXCLUSIVE] case in a parallel wave: only --exclusive lifts that skip.
   const exclusiveOnly: Record<string, Record<string, string>> = {};
   if (!skipBlocked) for (const [s, m] of Object.entries(predicted))
     for (const [id, why] of Object.entries(m)) if (why.startsWith("pre-flight exclusive:")) (exclusiveOnly[s] ??= {})[id] = why;
+  const nExclusive = Object.values(exclusiveOnly).reduce((n, m) => n + Object.keys(m).length, 0);
+  if (nCases) checks.push(skipBlocked
+    ? { id: "skip", status: "WARN", found: `${nCases} case(s) in ${Object.keys(predicted).length} suite(s) are recorded BLOCKED without running — each with the reason of its row above`,
+        who: "me", do: "fix those rows and re-run the pre-flight before the run; --run-blocked runs them anyway", diagnose: [] }
+    : { id: "skip", status: "WARN", who: null, do: null, diagnose: [],
+        found: `--run-blocked: ${nCases - nExclusive} case(s) the rows above predict will BLOCK are run anyway`
+          + (nExclusive ? `; ${nExclusive} [EXCLUSIVE] case(s) stay BLOCKED (only --exclusive runs them)` : "") });
   return {
     skip: skipBlocked ? predicted : exclusiveOnly, ...(skipBlocked ? {} : { skipDisabled: true }), notDeployed: absent,
     for: o.for, selection: o.selection, facts, mcp, gating, secrets, changedSince, baselineRunId: baseline?.runId ?? null,

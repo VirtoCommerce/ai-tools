@@ -33,7 +33,7 @@
  *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
  *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
  *   npm run regression:plan -- 042 --preflight --release sprint-26-22   # + the release's delivery check (release:delivery --write)
- *   npm run regression:plan -- 029,004 --preflight --exclusive   # the release's exclusive wave (WX): run the [EXCLUSIVE:…] cases
+ *   npm run regression:plan -- 029,004 --preflight --exclusive   # the release's exclusive wave (WX): ONLY the [EXCLUSIVE:…] cases (an --ids set of them)
  *   npm run regression:plan -- smoke --preflight --run-blocked   # run the cases the pre-flight predicts will BLOCK (default: recorded BLOCKED, not run)
  *   npm run regression:plan -- 042,078 --cases critical[,high]            # size only those tiers (same filter as suites:filter)
  *   npm run regression:plan -- 042,078 --ids SMK-008,SMK-014              # size an exact case set
@@ -58,6 +58,7 @@ import { batchSuites, DEFAULT_MAX_BATCH_CASES } from "../../ci/lib/suite-batchin
 import { orderLpt, simulateMakespan } from "../../ci/lib/scheduler.ts";
 import { formatPreflightProblems, preflightManifest, type PreflightSuite } from "../../ci/lib/manifest-preflight.ts";
 import { runRegressionPreflight, type RegressionPreflight } from "./preflight.ts";
+import { collectCaseNeeds } from "./requirements.ts";
 import { renderHuman } from "../preflight/render.ts";
 import { filterRows, TIER_NAMES, unknownTiers } from "./filter-cases.ts";
 import { isCanonicalHeader, parseSuite } from "../test-cases/append-test-cases-to-suite.js";
@@ -147,6 +148,10 @@ async function main(): Promise<void> {
     console.error("--also-ids adds to a tier — pass --cases <tier> with it");
     process.exit(1);
   }
+  if (exclusive && (ids.length > 0 || cases.length > 0)) {
+    console.error("--exclusive selects the [EXCLUSIVE:…] cases itself — pass no --ids / --cases with it");
+    process.exit(1);
+  }
   const badTiers = unknownTiers(cases);
   if (badTiers.length > 0) {
     console.error(`unknown --cases tier(s) ${badTiers.join(", ")} — expected one of ${TIER_NAMES.join(", ")}`);
@@ -178,6 +183,17 @@ async function main(): Promise<void> {
   const suites = resolved.ids
     .map((id) => manifest.suites.find((s) => s.id === id))
     .filter((s): s is ManifestSuite => Boolean(s));
+
+  // The exclusive wave runs ONLY the [EXCLUSIVE:…] cases: every other case of these suites already ran in its
+  // domain wave. So --exclusive is an exact case set, carried by the same --ids path a scoped run uses.
+  const caseIds = exclusive
+    ? [...new Set([...collectCaseNeeds(process.cwd(), suites.map((s) => ({ id: s.id, file: s.file }))).exclusive.values()]
+        .flatMap((keys) => [...keys].map((k) => k.slice(k.indexOf("/") + 1))))].sort()
+    : ids;
+  if (exclusive && caseIds.length === 0) {
+    console.error(`--exclusive: no [EXCLUSIVE:…] case in ${selection} — nothing for the exclusive wave to run`);
+    process.exit(1);
+  }
 
   // Preflight BEFORE planning: a suite with no CSV or no executor is not a scheduling problem,
   // it is a manifest problem, and it should not be discovered mid-run as a "test failure".
@@ -216,7 +232,7 @@ async function main(): Promise<void> {
 
   // A case filter changes how much of each suite runs: its count becomes the kept cases and its estimate scales by
   // kept/source. A suite that keeps no case leaves the plan and is reported, never hidden.
-  const scope = scopeCases(toPlan, { tiers: cases, alsoIds, ids });
+  const scope = scopeCases(toPlan, { tiers: cases, alsoIds, ids: caseIds });
   const empty = scope ? toPlan.filter((s) => scope.get(s.id)?.kept === 0) : [];
   if (scope) toPlan = toPlan.filter((s) => scope.get(s.id)?.kept !== 0);
   const scaled = (s: ManifestSuite) => {
@@ -245,7 +261,7 @@ async function main(): Promise<void> {
       selection,
       filterSummary: resolved.filterSummary,
       skipped: resolved.skipped,
-      ...(scope ? { caseFilter: { tiers: cases, alsoIds, ids, suites: [...scope.values()], noCaseKept: empty.map((s) => s.id) } } : {}),
+      ...(scope ? { caseFilter: { tiers: cases, alsoIds, ids: caseIds, ...(exclusive ? { exclusive: true } : {}), suites: [...scope.values()], noCaseKept: empty.map((s) => s.id) } } : {}),
       problems,
       totals: {
         suites: plan.totalSuites,
@@ -295,7 +311,8 @@ async function main(): Promise<void> {
     const all = [...scope.values()];
     const sum = (k: "kept" | "source" | "untypeable") => all.reduce((n, c) => n + c[k], 0);
     console.log("");
-    console.log(`Case filter (${ids.length ? `ids: ${ids.length} requested` : cases.join(", ")}${alsoIds.length ? ` + ${alsoIds.length} also-ids` : ""}): ${sum("kept")} of ${sum("source")} cases kept`);
+    console.log(`Case filter (${exclusive ? `--exclusive: ${caseIds.length} [EXCLUSIVE] case(s)` : ids.length ? `ids: ${ids.length} requested` : cases.join(", ")}${alsoIds.length ? ` + ${alsoIds.length} also-ids` : ""}): ${sum("kept")} of ${sum("source")} cases kept`);
+    if (exclusive) console.log(`  Run exactly these — pass them as --ids (suites:filter narrows each resolved CSV): ${caseIds.join(",")}`);
     if (sum("untypeable")) console.log(`  ${sum("untypeable")} case(s) with an unreadable Priority left out (as suites:filter leaves them out): ${all.filter((c) => c.untypeable).map((c) => `${c.id} ${c.untypeable}`).join(", ")}`);
     for (const c of all.filter((x) => x.legacy)) console.log(`  ! ${c.id}: legacy 11-column suite — Priority unreadable, counted unfiltered`);
     if (empty.length) console.log(`  No case kept — left out of the plan: ${empty.map((s) => s.id).join(", ")}`);
