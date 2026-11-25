@@ -262,13 +262,14 @@ ticket to attach it to, so `--video` does not apply — the person keeps or shar
   | `preflight` | capability → `ok` or the reason |
   | `stories[]` | `key`, `title`, `stand`, `versions`, `material` (`disk` · `jira` · `walk`, per artifact), `outcome` (`approved` · `shown` · `not-included: <reason>`), `qa_state`, `frame` + `masks` (the file used and its boxes) |
   | `slides[]` / `film[]` | `{ "slug", "url", "owner": "same" \| "other", "created" }` — `film[]` also `exported` |
-  | `demo_data` | stand → the path of its ledger (`test-results/docs/<label>/demo-data/<stand>.json`) |
+  | `demo_data` | stand → `{ "ledger": "<path>", "left_in_place": bool, "note" }`, the ledger at `test-results/docs/<label>/demo-data/<stand>.json`. The ledger is gitignored and local: a record resumed on another machine has no restore values, so a set that re-attributed existing records is restored on the machine that made it, or the person is told it cannot be |
   | `runs[]` | `{ "date", "runner": "same" \| "other", "reached": <last section done> }` — no person's name |
 
-- **A re-run** reads the record first. A record carries no person's name, so "the owner" is found by trying:
-  publish to the newest `slides[]` / `film[]` entry's `url` (amend, never fork); the Artifact tool refuses
-  an artifact the runner cannot edit ⇒ the runner is `other`: create new artifacts and append them to the
-  arrays. A record from an earlier layout may lack keys (`title`, `versions`, `qa_state`, entries in
+- **A re-run** reads the record first. A record carries no person's name, so "the owner" is found by asking
+  the Artifact tool: `read` the newest `slides[]` / `film[]` entry's `url` — its header says whether the runner
+  can edit it ("writer"). Writer ⇒ amend, never fork. Not a writer, or unreadable ⇒ the runner is `other`:
+  create new artifacts and append them to the arrays. Never decide it by a publish attempt: the tool refuses
+  a first publish to an artifact this session has not read, owner or not. A record from an earlier layout may lack keys (`title`, `versions`, `qa_state`, entries in
   `slides[]` / `film[]`): read it as far as it goes — a missing key is unknown, never guessed, and the
   story is re-probed. A run whose last `reached` is §Approval or later resumes from the record without
   asking §Ask and §Approval again.

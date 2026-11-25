@@ -20,7 +20,7 @@ sections by name.
   §What VirtoOZ is authoritative FOR).
 - **The sprint mode** ([`sprint.md`](sprint.md)) shows a story that has no ticket document only as it was
   observed on a stand by its capture walk — never from ticket or PR text — and keeps its QA state in the
-  speaker notes. A step that differs on the stand is not shown. Such a story gets no ticket document.
+  sprint record only, never on a slide or in its notes. A step that differs on the stand is not shown. Such a story gets no ticket document.
 
 ## Shipped in
 
