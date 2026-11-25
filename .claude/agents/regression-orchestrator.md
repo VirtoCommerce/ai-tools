@@ -178,6 +178,14 @@ Discard any free-form prose — all detail belongs in the results files.
    the lane on it.
 4. Repeat until every lane's queue is empty and nothing is in flight.
 
+#### Shared-cause halt
+
+A runner result with an `errors[]` entry `type: "halted"` (`test-runner-tags.md` §Shared-cause brake) means one
+cause is failing a whole area. **Dispatch nothing more**: let the suites already running finish, then show the
+user the signature, the tripping cases and the suites it touched, and ask once: fix and resume (re-dispatch the
+halted suites), run the rest anyway, or stop. Never retry a halted suite on its own (Step 5) and never re-classify
+its `halted:` rows as product failures — triage gets them as one shared cause.
+
 ### Step 5: Retry Logic
 
 | Failure Type | Action | Delay |

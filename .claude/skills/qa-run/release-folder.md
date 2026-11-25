@@ -247,6 +247,13 @@ or transitively). Inside a parallel wave such a case is skipped and recorded in 
 "quickly". `exclusive` names suites, not cases: a suite with only some env-wide cases is listed whole,
 and the parallel waves leave it out — splitting it by case is the planner's call, made in `PLAN.md`.
 
+**A case carries it itself:** `[EXCLUSIVE:<what it changes>]` in its Preconditions
+([`../../knowledge/execution/test-runner-tags.md`](../../knowledge/execution/test-runner-tags.md)). Its suite then
+stays in its domain wave: the pre-flight records the tagged cases `BLOCKED` (`exclusive:` rows, not run, never
+`--run-blocked`), and the exclusive wave runs exactly them with `regression:plan --exclusive`. A suite goes into
+`exclusive` whole only when every case of it is env-wide (104, 111, 114). `npm run suites:review` flags untagged
+candidates (`EXC-001`); a case that can create and delete its own data instead needs no tag.
+
 ### 7.3 Seed once, before the parallel waves
 
 The planner (or the W0 owner) seeds everything the waves need before the first parallel wave

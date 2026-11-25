@@ -32,11 +32,16 @@ Keep the JSON; the consumer stores it as the `preflight` block of its `summary.j
 
 **Build-scoped (`regression`, `smoke`)** runs the regression planner instead:
 
-    npm run regression:plan -- <selection> --preflight --json [--run-id <RUN_ID>] [--preflight-out reports/regression/<RUN_ID>/preflight.json] [--accept drift:<id>,…]
+    npm run regression:plan -- <selection> --preflight --json [--run-id <RUN_ID>] [--preflight-out reports/regression/<RUN_ID>/preflight.json] [--accept drift:<id>,…] [--release <release> [--accept delivery:<KEY>,…]]
+
+A wave of a release passes `--release`: the release's `delivery.json` (`npm run release:delivery -- <release> --write`)
+must describe the stand as it is now, and its `delivery:*` rows join `checks[]` — a `PARTIAL` ticket (one repo's half
+deployed, another's not) BLOCKs, a sprint ticket not on the stand BLOCKs until accepted. Show them first
+([`waves.md`](../qa-run/waves.md) Step 0 item 4).
 
 Its JSON carries the pre-flight under `preflight` (same `checks[]`, `verdict`, `facts`) plus the plan.
 Exit `2` NOT READY · `1` the selection itself cannot run (unknown id, missing CSV, no executor) · `3`
-could not run (also `1`: an `--accept` id that is not `drift:*`). `--run-id` makes that run's own `test-run-status.json` no lock. `3` — report its message and STOP, as for the change-scoped CLI. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
+could not run (also `1`: an `--accept` id other than `drift:*` and, with `--release`, `delivery:*`). `--run-id` makes that run's own `test-run-status.json` no lock. `3` — report its message and STOP, as for the change-scoped CLI. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
 `NOT_DEPLOYED` (BLOCKED-on-deploy), never FAIL. Suites in `preflight.secrets.gated` are out too: every case
 types a password nobody has — report them BLOCKED (`SECRET_UNDECLARED`), never FAIL. A `secret:*` WARN names
 the cases of suites that still run: they are BLOCKED without a sign-in attempt (typing an unregistered name
@@ -144,7 +149,7 @@ The `Who` column decides which list a row goes to:
 Never type, substitute or switch a password or token; on a failed credential, hand over the text.
 Then ask the one question: **fix what you can · find the cause first · proceed as is · stop.** "Fix what you can" covers `me` rows; when there are `me, with OK` rows, that option names them (e.g. "fix what you can, including `ledger` — runs `releases:refresh` and commits"), and choosing it is the explicit yes for exactly those rows. Never a second question.
 
-- Build-scoped: "proceed as is" on `drift:*` BLOCK rows means the consumer re-runs the plan with `--accept <those drift ids>`, which turns exactly those rows into WARN `(accepted)`; no other row can be accepted.
+- Build-scoped: "proceed as is" on `drift:*` BLOCK rows means the consumer re-runs the plan with `--accept <those drift ids>`, which turns exactly those rows into WARN `(accepted)`. With `--release`, a `NOT_DELIVERED` sprint ticket's `delivery:<KEY>` row can be accepted the same way, and only on the W0 owner's yes (`waves.md` Step 0 item 4); a `PARTIAL` row never can. No other row can be accepted.
 - No answer, or no option chosen, is **stop**: nothing is fixed or diagnosed, and step 6 returns `NOT READY` with `remediations: []`.
 - "Find the cause" runs the row's `diagnose[]` recipe (read-only) and reports the cause.
 - After any fix, **re-run the whole step 1**, not the one check — a fix can move another fact.

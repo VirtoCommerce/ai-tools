@@ -58,8 +58,20 @@ sub-tasks are assigned and in progress right now. Change nothing.
 2. `npm run release:check -- <release>` must be green. Read `release.json` (this wave's `suites`, `dependsOn`,
    `exclusive`) and every other wave's `state.json`.
 3. **Dependencies:** every wave in `dependsOn` is at least `RUN_DONE` — W0 especially. If not, STOP and say which.
-4. **Before every wave, and before every resumed run of one:** run the [`/preflight`](../../skills/preflight/SKILL.md)
-   skill as `regression <this wave's suite ids>` for `env.testEnv`. Beyond the stand and the build it checks what the
+4. **Is what the release tests on the stand? (delivery — before W0 always, before any other wave when the stand
+   changed).** `npm run release:delivery -- <release> --write`: every Done ticket of the sprint and every ticket the
+   stand's components picked up since the sprint started, checked PR by PR against the build the stand runs
+   (`scripts/preflight/delivery.ts`). It writes `delivery.json` into the release folder; item 5's pre-flight reads it
+   (`--release`) and BLOCKs when it is missing or the stand changed since. **Before W0, show the owner the whole
+   result as its own message — first thing, before any other row:** every `PARTIAL` ticket (one repo's half is on the
+   stand, another's is not: the deployed half calls code that is not there, so a whole area fails for a reason no case
+   is about — VCST-6078 cost a whole W2 run in Sprint 26-22), every sprint ticket `NOT_DELIVERED` or `INCOMPLETE`, and
+   every `UNKNOWN`. A `PARTIAL` stops the release: no wave starts until delivery deploys the missing half or rolls the
+   deployed one back. A `NOT_DELIVERED` sprint ticket is deployed, or the owner accepts it (`--accept delivery:<KEY>`)
+   and its cases report `NOT_DEPLOYED`, never FAIL. Then, on the owner's yes, post the same list as one comment on the
+   release ticket, naming the W0 sub-task, so every wave owner and the delivery manager see it.
+5. **Before every wave, and before every resumed run of one:** run the [`/preflight`](../../skills/preflight/SKILL.md)
+   skill as `regression <this wave's suite ids> --release <release>` for `env.testEnv`. Beyond the stand and the build it checks what the
    wave's cases need — personas and lane accounts, `@td()` fixtures, and the store, platform and deploy-config
    requirements in `config/suite-requirements.json` — and names the cases each gap will BLOCK. Show the rows; offer the
    `me` / `me, with OK` fixes (seeding, a store setting) before the run, and hand the `you` rows (a vc-deploy-dev PR,
@@ -111,7 +123,11 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
    Bind the session to the wave's `personaSet` first — `npm run persona:use -- <set> --release <release> --wave <W>` —
    so the run, its runners and its pre-flight sign in as this wave's clones of the shared accounts (contract §7.1);
-   `npm run persona:use -- --clear` when the wave is done. Machine-lane suites first: they cost no model tokens (contract §7).
+   `npm run persona:use -- --clear` when the wave is done.
+   `[EXCLUSIVE:…]` cases are left out by the pre-flight itself; the exclusive wave plans with `--exclusive`, which
+   selects exactly them as an `--ids` set — pass that set to the run, so no other case of those suites runs twice. Machine-lane suites first: they cost no model tokens (contract §7).
+   **A runner that halts on a shared cause stops the wave** (`regression-orchestrator.md` §Shared-cause halt): find the
+   cause before anything else runs — a site-wide failure is a delivery or stand problem, not a product bug.
 2. **Do not re-seed** a fixture set another wave uses while another wave is running — check the wave sub-tasks
    in the tracker, not only `state.json` (contract §7.3). Data this wave needs for itself is created under the
    owner's personas and removed afterwards.
