@@ -334,10 +334,10 @@ User logged in as {{MULTI_ORG_USER_EMAIL}} — must belong to ≥2 organizations
 [WAIT] PDP loaded; 'Increase quantity' stepper visible
 [ACT] click 'Increase quantity' (+) once (B2B-store add-to-cart entry point)
 [WAIT] cart badge > 0
-[ACT] click 'OrgName / UserName' button in top-right header
-[WAIT] account dropdown opens with 'Organizations' section
-[ACT] click radio button for a DIFFERENT organization
-[WAIT] header org name updates to new org","[DOM] account dropdown shows 'Organizations' section with radio button list
+[ACT] click the Organizations control in the header (data-test-id=""organizations-button"", the last item of the right icon group after Cart)
+[WAIT] the Organizations panel (role=dialog) opens with listbox 'Organizations'
+[ACT] click the option for a DIFFERENT organization in listbox 'Organizations'
+[WAIT] header org name updates to new org","[DOM] the Organizations panel shows listbox 'Organizations' with one option per organization
 [DOM] header 'OrgName / UserName' button text changes to new org (differs from pre_switch_org)
 [DOM] cart icon badge ('header a[href=""/cart""]') shows '0' after switching organization (BL-B2B-001, BL-CROSS-008)
 [STATE] Org A items do NOT carry over to Org B
@@ -345,7 +345,7 @@ User logged in as {{MULTI_ORG_USER_EMAIL}} — must belong to ≥2 organizations
 [GQL] me query returns new org in organization.id after switch
 [GQL] addItem (Increase quantity) returns 200, errors[] empty
 [CONSOLE] no errors during org switch
-[NETWORK] no 4xx/5xx on org switch",Org A cart items visible after switching to Org B (BL-B2B-001 critical); cart badge not clearing; org name unchanged after switch; Organizations section absent from dropdown,Switch back to original org; remove test item from Org A cart,VCST-4499,Automated
+[NETWORK] no 4xx/5xx on org switch",Org A cart items visible after switching to Org B (BL-B2B-001 critical); cart badge not clearing; org name unchanged after switch; Organizations section absent from dropdown,Switch back to original org; remove test item from Org A cart,VCST-4499 | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23),Automated
 SMK-021,B2B — Company Members Page Accessible,Smoke > B2B,Critical,BL-B2B-005,ECL-14.3,User logged in as {{ORG_USER_EMAIL}} with org admin or member role; organization account active,"email={{ORG_USER_EMAIL}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/members
 [WAIT] Company Members page loads
 [ASSERT] page heading references 'Members' or 'Company'
@@ -456,20 +456,24 @@ All major storefront areas accessible",front_url={{FRONT_URL}},"[NAV] {{FRONT_UR
 [NETWORK] no 5xx across all 4 page loads
 [NETWORK] no CSS/JS 404s breaking layout",Any TypeError or ReferenceError on any page (BL-CROSS-011); blank page on any of the 4 pages; 5xx in network tab,none,VCST-4499,Automated
 SMK-027,Smoke: Data-Test-ID Attribute Smoke After PR-2234 Selector Rename,Smoke > Selector Regression,High,BL-CROSS-011,ECL-10.2,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:USER_DEFAULT]
-vc-frontend build including PR #2234 deployed",store_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
+[PRE:SIGNIN_AS:MULTI_ORG_11]
+vc-frontend build including PR #2234 and PR #2667 (theme >= 2.63.0) deployed; the signed-in user belongs to 11 organizations (the panel search renders only above 10)",store_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}
 [ASSERT] element with data-test-id='top-header' exists in DOM
 [ASSERT] element with data-test-id='language-selector' exists and is clickable
 [ASSERT] element with data-test-id='language-selector-button' exists
 [ACT] click language-selector-button
 [WAIT] language selector dropdown opens
-[ASSERT] element with data-test-id='organizations-search' exists in account menu (B2B org user)
+[ASSERT] element with data-test-id='organizations-button' exists in the header (B2B multi-org user)
+[ACT] click organizations-button
+[WAIT] the Organizations panel (role=dialog) is open
+[ASSERT] elements with data-test-id='organizations-search' and data-test-id='organizations-list' exist in the Organizations panel
 [ASSERT] element with data-test-id='sign-in-error-alert' does NOT exist when no error present
 [ASSERT] no elements with old-style data-test-id containing 'main-layout.top-header.' prefix exist in DOM","[DOM] data-test-id='top-header' present
 [DOM] data-test-id='language-selector' present and interactive
 [DOM] data-test-id='language-selector-button' present
+[DOM] data-test-id='organizations-button' present in the header; after it is clicked, 'organizations-search' and 'organizations-list' are present in the Organizations panel
 [DOM] no data-test-id values starting with 'main-layout.top-header.' (deprecated prefix removed)","[CONSOLE] no JS errors after page load
-[NETWORK] no 4xx/5xx on page load",Old data-test-id='main-layout.top-header' still present (rename not deployed); language-selector not found; JS error on page load,none,"vc-frontend PR #2234, VCST-4968",Reviewed
+[NETWORK] no 4xx/5xx on page load",Old data-test-id='main-layout.top-header' still present (rename not deployed); language-selector not found; JS error on page load,none,"vc-frontend PR #2234, VCST-4968 | Synced: VCST-6237 PR vc-frontend#2667 (2026-11-23)",Reviewed
 SMK-028,Smoke: Sign-In Form Data-Test-ID and Email Input Accessible Post-PR-2234,Smoke > Selector Regression,High,BL-AUTH-001,ECL-10.2,"[PRE:CLEAR_SESSION]
 vc-frontend build including PR #2234 deployed; not signed in",store_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/sign-in
 [ASSERT] sign-in form loads without errors

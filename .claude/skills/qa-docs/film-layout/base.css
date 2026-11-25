@@ -1,0 +1,16 @@
+/* Written into the film's `modules/base.css`. Colours are the design system's tokens (cool variation: navy, accent blue,
+   white, orange); fonts are the design system's Circular Std files, uploaded as assets named by their stem. */
+#stage { --ground:#050A40; --main:#3D5FD9; --second:#FFFFFF; --accent:#FF7E13; color:var(--second); font-family:"CircularStd-Book", var(--sans, system-ui, sans-serif) }
+.ground { position:absolute; inset:0; background:linear-gradient(135deg, #050A40 0%, #2B3AA8 100%); overflow:hidden }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:24px } .words > * { margin:0 }
+.film-key { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:28px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent) }
+.film-name { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:46px; line-height:1.05; color:var(--second) }
+.film-cap { display:flex; flex-direction:row; align-items:center; gap:20px; font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:42px; line-height:1.15; color:#FFFFFF }
+.film-sq { display:block; flex:0 0 auto; width:14px; height:46px; border-radius:4px; background:#FF7E13 }
+.film-hl { position:absolute; box-sizing:border-box; border:4px solid #FF7E13; border-radius:10px; box-shadow:0 0 0 4000px rgba(5,10,64,.62); opacity:0 }
+.film-dot { display:block; width:12px; height:12px; border-radius:50%; background:#808AFF }
+.t-eyebrow { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:34px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent) }
+.t-display { font-size:200px; line-height:1; letter-spacing:-.02em }
+.t-bold { font-family:"CircularStd-Bold", "CircularStd-Book", var(--sans, system-ui, sans-serif); font-size:200px; line-height:1; letter-spacing:-.02em }
+.t-sub { font-size:40px; line-height:1.3; color:color-mix(in srgb, var(--second) 78%, transparent) }
+.t-radial { position:absolute; inset:0; background:radial-gradient(120% 90% at 90% 100%, #2B3AA8 0%, #12164F 45%, #050A40 80%) }

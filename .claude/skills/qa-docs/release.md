@@ -31,3 +31,12 @@ is fixed:
 
 [`rules.md`](rules.md) §Truth guardrail and §Payload hygiene bind every line; when the file is written,
 record its path in each included run's `documentation.json` as `aggregated_into`.
+
+**In the sprint mode** ([`sprint.md`](sprint.md)) the same aggregate carries two more parts: a **Shown on
+slides / film, no ticket document** group between *What's new* and *Not included* (one line per story the
+mode captured on a stand: key, title, stand), and a **Slides** / **Film** link line for what that run
+made; a story listed in that group is not repeated under *Not included*. The plain `release --sprint` /
+`--version` invocation adds neither.
+
+*Not included* may group tickets by reason, keys comma-separated — one line per reason, not per ticket —
+so a large window stays within the cap; every ticket is still named.

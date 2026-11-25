@@ -165,11 +165,11 @@ export class TestDataResolver {
     }
   }
 
-  /** Resolve all @td() tokens in a string */
-  resolve(input: string): string {
+  /** Resolve all @td() tokens in a string; `finish` post-processes each resolved value (resolveCSV escapes it for a CSV cell) */
+  resolve(input: string, finish: (value: string) => string = (value) => value): string {
     return input.replace(/@td\(([^)]+)\)/g, (_match, inner: string) => {
       try {
-        return this.resolveToken(inner.trim());
+        return finish(this.resolveToken(inner.trim()));
       } catch (err) {
         const msg = `[test-data-resolver] Failed to resolve @td(${inner}): ${(err as Error).message}`;
         this.warnings.push(msg);
@@ -179,9 +179,13 @@ export class TestDataResolver {
     });
   }
 
-  /** Resolve all @td() tokens in an entire CSV content string */
+  /**
+   * Resolve all @td() tokens in an entire CSV content string. A token sits inside a quoted cell, so a
+   * resolved value that carries `"` (a JSON array such as OTP_INPUTS.invalidEmails) has them doubled:
+   * substituted raw, the first one closed the cell and the file stopped parsing.
+   */
   resolveCSV(csvContent: string): string {
-    return this.resolve(csvContent);
+    return this.resolve(csvContent, (value) => value.replace(/"/g, '""'));
   }
 
   /** Get warnings from the last resolve operation */

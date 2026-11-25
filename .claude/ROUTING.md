@@ -71,6 +71,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Review test-case quality / triangulate staleness** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --triangulate \| --fix` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| env <profile> \| verify <collection>` | Skill |
 | **Document a tested ticket** (What's new · How to set it up · How it works, one Jira comment, a Motion film) | `/qa-docs <TICKET> [--video]` · `/qa-docs release --sprint <S> \| --version <V>` | Skill |
+| **Show a sprint's key stories** — release notes, a Slides deck (editable in PowerPoint) and/or a short film, from real stand frames | `/qa-docs <sprint> [--notes] [--slides] [--film]` | Skill |
 | **Look up VC documentation** | VirtoOZ connector — `knowledge/execution/doc-sources.md` | Knowledge |
 
 > `/qa-sync-tests` was **removed** — the command file is deleted and there is no redirect or alias.

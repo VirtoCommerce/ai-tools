@@ -51,11 +51,12 @@ Every token is stored by you, in a terminal, with `node "<VC_SECRETS>" set <name
 and never written to a file. Full flow: [`plugins/vc-init/README.md`](plugins/vc-init/README.md).
 
 It asks for an env name (any: `qa`, `staging`, `client_eu`…), the bug tracker (Jira or Azure Boards), the code
-host (GitHub or Azure Repos), auth per axis (PAT recommended), where test-user passwords live (vc-secrets or
-`.env.local`, separately for admins and storefront users) and the stand's URLs and logins — then derives the rest
-(native-platform vs client project, fork account) from your token + a live repo scan, and writes
-`project-profile.json`, `.env.<env>`, `.env.test-env` (the default env), `.env.local`, `.mcp.json` and the
-vc-secrets declarations. That profile routes every `/qa-fix` to the right repo and tracker. Restart Claude Code
+host (GitHub or Azure Repos), auth per axis (PAT recommended), where test-account passwords live
+(`test-accounts.local.json`, recommended, or vc-secrets; separately for admins and storefront users) and the stand's
+URLs and logins — then derives the rest (native-platform vs client project, fork account) from your token + a live
+repo scan, and writes `project-profile.json`, `.env.<env>`, `.env.test-env` (the default env), `.env.local` (the
+tracker connection), `test-accounts.local.json` (every test account's login and password, per env), `.mcp.json` and
+the vc-secrets declarations. That profile routes every `/qa-fix` to the right repo and tracker. Restart Claude Code
 when it finishes.
 
 **Day-2 modes** skip the interview:
@@ -141,15 +142,14 @@ Files load in order; later overrides earlier:
 
 Validate with `npm run env:check` (it prints which variables are set, empty and required). Variable *names* are stable across envs — only values differ. In code: `import './config.js'` (or `loadEnv()` from `scripts/lib/load-env.mjs` for a script that must run without the CORE variables), then read `process.env.X` (ES modules — always `.js`).
 
-`.env.local` for this repo's own scripts and CI — the plugins never read a token from it (theirs live in vc-secrets), but `ci/` reads `ANTHROPIC_API_KEY` and the deploy / hotfix / bundle-check scripts read `GIT_TOKEN`:
+`.env.local` for this repo's own scripts — the plugins never read a token from it (theirs live in vc-secrets), but the deploy / hotfix / bundle-check scripts read `GIT_TOKEN`:
 
 ```env
-ANTHROPIC_API_KEY=sk-ant-...
-GIT_TOKEN=ghp_...         POSTMAN_API_KEY=...        FIGMA_API_KEY=...
-GITHUB_FIX_BUGS_TOKEN=ghp_...   # write-capable PAT for /qa-fix (push + PR). GIT_TOKEN is read-only and 403s on push to the VC org.
+GIT_TOKEN=ghp_...         # read-only PAT for the repo's GitHub scripts
+QA_ENV_PATH=...           # optional: folders whose .env.<env> files are envs too
 ```
 
-Test-account logins and passwords (`ADMIN` / `ADMIN_PASSWORD`, `USER_EMAIL` / `USER_PASSWORD`, …) do not go here: they are in `test-accounts.local.json`.
+Test-account logins and passwords (`ADMIN` / `ADMIN_PASSWORD`, `USER_EMAIL` / `USER_PASSWORD`, …) do not go here: they are in `test-accounts.local.json`. **Get the team's copy from its secret store and put it at the repo root** — the whole team works from the same file; coming from old `.env.local` / `.env.playwright.*` passwords, `npm run creds:migrate` (then `-- --apply`) moves them in. Check it with `npm run creds:check -- <env>` (names the gaps) and `npm run creds:verify -- <env>` (signs each account in). Working with the store: [`.claude/knowledge/execution/test-accounts.md`](.claude/knowledge/execution/test-accounts.md).
 
 Safe non-prod defaults ship in [`templates/.env.local.template`](templates/.env.local.template). App Insights monitoring vars (`APPINSIGHTS_APP_ID_*`, `APPINSIGHTS_RESOURCE_*`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`) are committed in `.env.${TEST_ENV}` — no secrets needed.
 
