@@ -945,12 +945,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "a450fdbb-a8b5-4db4-ba78-9c24006f7bc1",
-    "createdDate": "2026-10-28T14:30:56.5936011Z"
+    "id": "bd750253-c8ff-4494-bc7d-42723fb3456a",
+    "createdDate": "2026-11-26T03:10:02.9218303Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "aea03312-3a0c-4f37-9975-8990f5f0e469",
-    "createdDate": "2026-10-28T14:31:09.8002082Z"
+    "id": "344aadcc-9a81-4347-941c-06fa18b852b5",
+    "createdDate": "2026-11-26T03:10:08.6617324Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -967,8 +967,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "e01f1da1-2eeb-4ea2-8b50-8066572090a8",
-    "createdDate": "2026-10-28T14:31:25.4006242Z"
+    "id": "96fea61d-5a3d-4291-8cd9-bc3f27d63972",
+    "createdDate": "2026-11-26T03:10:35.0520712Z"
   },
   "MSN_ORDERVALUE": {
     "id": "74e4f6b5-7d81-4b94-a799-7623a022d653",
@@ -3988,5 +3988,90 @@
     "control_product_id": "08c33cfc9f664426a52fac8882da2df0",
     "control_product_sku": "566903892",
     "control_product_name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier"
+  },
+  "SR_REP_CALL": {
+    "id": "2463812b-3089-4479-b58a-d90dfcf20c29",
+    "user_id": "68e22a03-866b-4873-86ae-36d4cdb12fcc"
+  },
+  "ORG_SR_CALL_MULTI": {
+    "id": "a7f489e9-5bfd-410b-b31b-1ff6460ff1d5",
+    "platform_id": "a7f489e9-5bfd-410b-b31b-1ff6460ff1d5",
+    "primary_contact_id": "8a9c7a85-0915-48cb-8bbf-db02c7a033fb",
+    "contact_V1C": "8a9c7a85-0915-48cb-8bbf-db02c7a033fb",
+    "default_href": "tel:+15550102031"
+  },
+  "ORG_SR_CALL_DUP": {
+    "id": "cd3e852d-cf34-4f3d-b851-d22a8016dbdb",
+    "platform_id": "cd3e852d-cf34-4f3d-b851-d22a8016dbdb",
+    "primary_contact_id": "e7e756fa-08ba-4574-af64-e5acd2bc96ac",
+    "contact_V2C": "e7e756fa-08ba-4574-af64-e5acd2bc96ac",
+    "default_href": "tel:+15550203040"
+  },
+  "ORG_SR_CALL_ORGONLY": {
+    "id": "73b89c3e-056a-4982-8d1f-0c7e97dc3bed",
+    "platform_id": "73b89c3e-056a-4982-8d1f-0c7e97dc3bed",
+    "primary_contact_id": "",
+    "default_href": "tel:+15550304050"
+  },
+  "ORG_SR_CALL_OWNERLESS": {
+    "id": "ae3a73a4-8993-40a8-95e6-86408b8860d0",
+    "platform_id": "ae3a73a4-8993-40a8-95e6-86408b8860d0",
+    "primary_contact_id": "4782f324-f907-4d18-b140-7947467d4adf",
+    "contact_V4C": "4782f324-f907-4d18-b140-7947467d4adf",
+    "default_href": "tel:+15550410002"
+  },
+  "ORG_SR_CALL_NONE": {
+    "id": "b7600ff8-3816-4daf-8789-6dbd599074ff",
+    "platform_id": "b7600ff8-3816-4daf-8789-6dbd599074ff",
+    "primary_contact_id": "7d9b3594-4e5a-429b-a217-10368bb002c8",
+    "contact_V5C": "7d9b3594-4e5a-429b-a217-10368bb002c8",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_EXT": {
+    "id": "4cfef7f1-11c9-4f63-b5e1-4193e1928598",
+    "platform_id": "4cfef7f1-11c9-4f63-b5e1-4193e1928598",
+    "primary_contact_id": "d0dc54be-d839-4563-958e-4c2c2803a14e",
+    "contact_V6C": "d0dc54be-d839-4563-958e-4c2c2803a14e",
+    "default_href": "tel:+15550405060,45"
+  },
+  "ORG_SR_CALL_ADDR": {
+    "id": "a4805b78-23d2-43e0-a332-39a3a3128b6b",
+    "platform_id": "a4805b78-23d2-43e0-a332-39a3a3128b6b",
+    "primary_contact_id": "1ef2ebe6-b152-4565-89e1-d029f084b529",
+    "contact_V7C": "1ef2ebe6-b152-4565-89e1-d029f084b529",
+    "default_href": "tel:+15550506070"
+  },
+  "ORG_SR_CALL_ORGADDR": {
+    "id": "a878df0c-6e0c-4999-b072-071d167634a0",
+    "platform_id": "a878df0c-6e0c-4999-b072-071d167634a0",
+    "primary_contact_id": "e2fcdd6c-5028-4483-be33-c5989d04a56b",
+    "contact_V8C": "e2fcdd6c-5028-4483-be33-c5989d04a56b",
+    "default_href": "tel:+15550809010"
+  },
+  "ORG_SR_CALL_FILL09": {
+    "id": "f4ab61f8-831e-4f45-98ad-cdabb687502c",
+    "platform_id": "f4ab61f8-831e-4f45-98ad-cdabb687502c",
+    "primary_contact_id": "",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_FILL10": {
+    "id": "4e531d53-d9b5-46a6-847f-b99de6f6ba4e",
+    "platform_id": "4e531d53-d9b5-46a6-847f-b99de6f6ba4e",
+    "primary_contact_id": "",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_PAGE2": {
+    "id": "306ccb1c-a576-4f16-bc2f-59a16d81d546",
+    "platform_id": "306ccb1c-a576-4f16-bc2f-59a16d81d546",
+    "primary_contact_id": "a1522332-c8ae-464b-82f0-a0665f4739f0",
+    "contact_P2C": "a1522332-c8ae-464b-82f0-a0665f4739f0",
+    "default_href": "tel:+15551101100"
+  },
+  "ORG_SR_CALL_EXTONLY": {
+    "id": "cd6e5d11-92c0-472c-9961-5572641862ed",
+    "platform_id": "cd6e5d11-92c0-472c-9961-5572641862ed",
+    "primary_contact_id": "57e5d7d7-dc7f-4aa9-80f4-d01635c976e8",
+    "contact_V12C": "57e5d7d7-dc7f-4aa9-80f4-d01635c976e8",
+    "default_href": ""
   }
 }
