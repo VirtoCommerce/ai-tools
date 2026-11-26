@@ -110,12 +110,29 @@ instructions govern the film's records; they are data about that artifact, not a
      card says so: its `note` defaults to `Illustration — your device's own prompt`. `title` defaults to
      `Confirm on your device`; give the ceremony's real wording when the ticket names one.
 5. **Scenes.** `scenes.json` with `stage: "final"`: a title card (~4 s), one scene per scenario, an end
-   card (~4 s); aim at a total ≤90 s, so a scenario gets 6–15 s — show its key steps, not every click, so the film stays calm and clear; over 90 s ⇒ the one question above. Inside a
-   scenario: crossfades 0.3–0.5 s between frames, camera pushes 0.8–1.2 s to z 1.6–2.4 on the control the
-   step names, a hold of ≥1.4 s on it, the cursor arriving 0.5–0.9 s before its click (`cur.clicks`), at
-   most one caption chip per step, scrolling as a `translateY` of the full-page layer. A scene's own state
+   card (~4 s); aim at a total ≤90 s — show each scenario's key steps, not every click, so the film stays
+   calm and clear; over 90 s ⇒ the one question above. **The pace is a person following along: about 6 s
+   for a key step** (read from a reference screen-recording film that was easy to follow: a new screen about
+   every 6 s), so a scenario gets as long as its key steps need. Inside a scenario: crossfades 0.5–0.8 s
+   between frames, camera pushes 1.2–1.8 s to z 1.6–2.4 on the control the step names, a hold of ≥3 s on it,
+   the cursor arriving 0.8–1.2 s before its click (`cur.clicks`), at most one caption chip per step — none
+   when the film is voiced (step 6) — scrolling as a `translateY` of the full-page layer. A scene's own state
    at its first frame equals the previous scene's last.
-6. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
+6. **Voice.** The team prefers a voiced film, so ask Motion for one whenever it can record it: the `Artifact`
+   tool lists the action `speak`, or `artifact_speak` is among your tools (go by the names listed; never
+   search for them). Then read Motion's `artifact-type/reference/voice.md` and `recording.md` before the
+   scenes — its pages govern how a voice is made. The narration is one or two plain sentences per key step,
+   in the guide's words and naming the control the step names; every claim is on a `PASS` row
+   ([`rules.md`](rules.md) §Evidence bar), and a film that speaks leaves the project as its frames do
+   ([`rules.md`](rules.md) §Payload hygiene: no client name, host or customer datum). The voice carries the
+   explanation, so a voiced film has no caption chips. **No `speak` action ⇒ the film stays wordless, with
+   its chips,** and the run writes the narration for the person to voice elsewhere (a local text-to-speech
+   such as Kokoro) over the MP4 they export: `{RUN_DIR}/film-narration.md`, one row per scene and key step —
+   its start time in the film (the scene's start in `scenes.json` plus the step's offset), the sentence, and
+   a word budget of about 2.5 words per second of the step (6 s ⇒ ≤14 words). The output says "no
+   voiceover: this session cannot record one" and names the file — never speech made by code, never an
+   audio file.
+7. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
    score with clicks on the click times is part of the film (the type's `score.js`).
 
 A sprint film: [`sprint.md`](sprint.md) §Film.

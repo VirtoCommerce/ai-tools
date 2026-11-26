@@ -242,6 +242,8 @@ these differences:
 - the look comes from `style.designSystem` — installed if the Motion type takes a design system, else
   its tokens read at run time and passed to the shared kit; §Film step 2 does not apply here at all —
   neither its look nor its ticket film's "aim at ≤90 s" answer to the type's Length question: the length is `film.maxSeconds`;
+- the ticket film's pace and voice ([`media.md`](media.md) §Film, steps 5 and 6) do not apply: this film
+  keeps the beats above and stays wordless;
 - nothing service in a frame or a caption (§Slides): the QA ribbon or tab of a stand, a third-party store logo and
   test names are filled into the frame before upload — the same masks as the slides, applied to every
   frame; a Jira crop is never a film frame.

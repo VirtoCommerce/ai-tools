@@ -94,7 +94,7 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    `reports/ba/<Domain>/<ticket>-<slug>-guide.md`. An existing guide for the ticket is amended in place,
    never forked. Check the size cap (§Size cap) and the payload rules (§Payload hygiene) before step 6.
 
-5. **Make the film** — one Motion artifact, aiming at ≤90 s (a soft ceiling: [`media.md`](media.md) §Film), from the same frames: [`media.md`](media.md) §Film.
+5. **Make the film** — one Motion artifact, aiming at ≤90 s (a soft ceiling: [`media.md`](media.md) §Film), from the same frames, at the pace and with the voice rule of [`media.md`](media.md) §Film.
    Its link becomes the guide's `Video:` line ([`template.md`](template.md) `{video_line}`) before step 6 renders it.
 
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
@@ -154,6 +154,6 @@ Then give the person the film link — and `--video`, when the comment went with
 
 - Writes documentation for a ticket that is neither Tested nor Done, or an instruction with no `PASS` row.
 - Posts a documentation comment beside one already on the ticket — it updates that one, or leaves it.
-- Creates a video file, renders stills of the film, or attaches a video — the film travels as a link to its artifact.
+- Creates a video or audio file, renders stills of the film, or attaches a video — the film travels as a link to its artifact.
 - Posts a second documentation comment for the same run — `--video` amends the one there is.
 - Drives any browser other than a Playwright lane ([`../../rules/vc-browser.md`](../../rules/vc-browser.md)).
