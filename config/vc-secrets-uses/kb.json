@@ -1,0 +1,10 @@
+{
+  "$comment": "What the kb (scripts/kb) launches with the GitHub token. /project-init (vc-init write-secrets-decl.mjs) declares these in .claude/vc-secrets.local.json, bound to the github axis secret; `vc-secrets trust` approves them. The server relaunches itself through `kb`, the Stop hook and `npm run kb -- push` through `kb-push` (scripts/kb/core/via-secrets.mjs).",
+  "axis": "github",
+  "servers": {
+    "kb": { "command": "node", "args": ["scripts/kb/mcp.mjs"], "env": ["GITHUB_TOKEN"] }
+  },
+  "tasks": {
+    "kb-push": { "command": "node", "args": ["scripts/kb/kb.mjs", "push"], "env": ["GITHUB_TOKEN"] }
+  }
+}

@@ -1,0 +1,168 @@
+// The write token through vc-secrets, WITHOUT making reading depend on it.
+//
+// The token lives in vc-secrets (CLAUDE.md §Project Overview), so it reaches only a process the
+// launcher starts: `node <shim> run kb` for the server, `node <shim> task kb-push` for the Stop hook's
+// push. The obvious wiring — put `node ${VC_SECRETS} run kb` into `.mcp.json` — fails three ways:
+//
+//   * the desktop app does not expand `${VC_SECRETS}` in `.mcp.json` from the settings `env`, so node
+//     looks for a file literally named `${VC_SECRETS}` and the server never starts;
+//   * the launcher REFUSES an untrusted or changed declaration (README §Trusting), and a refused
+//     launch is a missing server — reading, which needs no token (PLAN §6.4), dies with the write;
+//   * `kb-register` rewrites the `kb` entry on every session start, so a hand fix does not survive.
+//
+// So `.mcp.json` keeps the plain `node scripts/kb/mcp.mjs`, and the SERVER decides: with no token of
+// its own and a declared `kb` server, it relaunches itself through the launcher and relays stdio. The
+// client's bytes are kept until the relaunched server answers; if the launcher exits before a single
+// byte of output (untrusted, secret not set, shim gone), the server runs here, read-only, on the
+// bytes it kept — the queue is durable and the next launch with a token pushes it.
+//
+// HOP is the loop guard: the launcher passes the inherited environment to its child
+// (plugins/vc-secrets/README.md), so the relaunched server sees it and serves directly.
+
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { PassThrough } from 'node:stream';
+
+import { defaultShimPath } from '../../../plugins/vc-secrets/scripts/shim-path.mjs';
+import { DENIED_RECHECK_MS, accessBlock, readPushStatus } from './queue.mjs';
+import { repoRoot, writeToken } from './token.mjs';
+
+export const HOP = 'KB_VIA_VC_SECRETS';
+
+/**
+ * Does a vc-secrets declaration (local, project or user scope — plugins/vc-secrets/README.md
+ * §Declarations) name this `servers` / `tasks` entry? Existence only: the launcher, not this, validates
+ * the declaration, checks trust and resolves the secret — and a refusal costs only the write.
+ */
+export function vcSecretsDeclares(kind, name, env = process.env) {
+  const home = env.HOME || env.USERPROFILE || homedir();
+  for (const file of [
+    join(repoRoot(env), '.claude', 'vc-secrets.local.json'),
+    join(repoRoot(env), '.claude', 'vc-secrets.json'),
+    join(home, '.claude', 'vc-secrets.json'),
+  ]) {
+    try { if (JSON.parse(readFileSync(file, 'utf8'))?.[kind]?.[name]) return true; } catch { /* absent or unreadable */ }
+  }
+  return false;
+}
+
+/**
+ * The launcher's shim: `$VC_SECRETS` (what `/project-init` puts into the settings `env`), else the
+ * plugin's documented default location. Null when neither file exists — no vc-secrets on this machine.
+ */
+export function shimPath(env = process.env) {
+  for (const p of [env.VC_SECRETS, defaultShimPath(env)]) {
+    if (p && !p.includes('${') && existsSync(p)) return p;
+  }
+  return null;
+}
+
+/**
+ * Should this process go through the launcher for its token? Only when it has no token of its own,
+ * is not already the launcher's child, a declaration names the entry, and the shim is on disk.
+ * @returns {{ shim: string } | null}
+ */
+export function viaSecrets(kind, name, env = process.env) {
+  if (env[HOP] || writeToken(env).token) return null;
+  if (!vcSecretsDeclares(kind, name, env)) return null;
+  const shim = shimPath(env);
+  return shim ? { shim } : null;
+}
+
+/**
+ * The recorded "this token cannot write" denial (VCST-6378) that holds for the token this machine
+ * pushes with — `accessBlock` for a token this process can see. A token kept in vc-secrets it cannot
+ * see, so its fingerprint cannot be compared; it is the only token the relayed pushes use, so the
+ * recorded denial is taken as its own until the usual re-check. Without this, a vc-secrets token
+ * refused with 403 would be retried silently on every turn and never reported: the incident
+ * `accessBlock` exists to end.
+ */
+export function pushDenial(env = process.env, now = Date.now()) {
+  const { token } = writeToken(env);
+  if (token) return accessBlock(env, token, now);
+  if (!viaSecrets('tasks', 'kb-push', env)) return null;
+  const d = readPushStatus(env).denied;
+  const at = Date.parse(String(d?.at ?? ''));
+  return d && Number.isFinite(at) && now - at < DENIED_RECHECK_MS ? d : null;
+}
+
+/**
+ * Relaunch the server as `node <shim> run kb` and relay stdio. `fallback(input)` runs the server in
+ * this process on a stream that replays what the client already sent — called when the launcher ends
+ * before it wrote anything (it refused, or the server it started could not come up).
+ */
+export function relayThroughSecrets({
+  shim, env = process.env, input = process.stdin, output = process.stdout, errput = process.stderr,
+  fallback,
+}) {
+  const note = (s) => { try { errput.write(`[kb-mcp] ${s}\n`); } catch { /* stderr is a courtesy */ } };
+  const child = spawn(process.execPath, [shim, 'run', 'kb'], {
+    cwd: repoRoot(env),
+    env: { ...env, [HOP]: '1' },
+    stdio: ['pipe', 'pipe', 'inherit'],
+  });
+
+  let kept = [];       // the client's bytes, until the relaunched server answers
+  let alive = false;   // it wrote output: it is the server now, nothing to fall back to
+  let ended = false;   // the client closed stdin
+  let sink = child.stdin;
+
+  child.stdin.on('error', () => { /* a refused launch closes its stdin; the exit handler decides */ });
+  input.on('data', (chunk) => {
+    if (kept) kept.push(chunk);
+    try { sink.write(chunk); } catch { /* see above */ }
+  });
+  input.on('end', () => { ended = true; try { sink.end(); } catch { /* see above */ } });
+
+  child.stdout.on('data', (chunk) => {
+    if (!alive) { alive = true; kept = null; }
+    output.write(chunk);
+  });
+
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { try { child.kill(signal); } catch { /* gone */ } });
+
+  const fallBack = (why) => {
+    note(`vc-secrets did not start kb (${why}) — serving here without a write token; captures stay queued`);
+    const replay = new PassThrough();
+    for (const chunk of kept) replay.write(chunk);
+    kept = null;
+    sink = replay;
+    if (ended) replay.end();
+    fallback(replay);
+  };
+
+  child.on('error', (err) => { if (!alive && kept) fallBack(err?.message ?? String(err)); });
+  // 'close', not 'exit': it fires after the child's stdout has drained, so no last frame is lost.
+  child.on('close', (code, signal) => {
+    if (alive) { process.exit(code ?? (signal ? 1 : 0)); return; }
+    if (kept) fallBack(signal ? `signal ${signal}` : `exit ${code}`);
+  });
+  return child;
+}
+
+// ── THE PUSH TASK ────────────────────────────────────────────────────────────────────────────
+//
+// A task's argv is fixed by its declaration — the caller picks only WHICH task (README §Tasks) — so
+// `kb-push` is declared as the neutral `node scripts/kb/kb.mjs push`, and the caller's flags travel in
+// the environment the launcher passes down: the Stop hook sends `auto` (log-only lines wait for
+// company, VCST-6378), a person's `npm run kb -- push` sends nothing and means now. Only these boolean
+// flags travel, and they are read only by a push the relay started (HOP set), so a stray variable in
+// somebody's shell changes nothing.
+
+export const PUSH_FLAGS_ENV = 'KB_PUSH_FLAGS';
+export const RELAYED_PUSH_FLAGS = Object.freeze(['auto', 'dry-run', 'no-sweep', 'json']);
+
+/** The environment for `node <shim> task kb-push`: the caller's, the loop guard, the flags. */
+export function pushTaskEnv(env = process.env, flags = {}) {
+  const on = RELAYED_PUSH_FLAGS.filter((f) => flags[f]);
+  return { ...env, [HOP]: '1', [PUSH_FLAGS_ENV]: on.join(' ') };
+}
+
+/** The flags a relayed push was started with — `{}` for any push the relay did not start. */
+export function relayedPushFlags(env = process.env) {
+  if (!env[HOP]) return {};
+  const asked = String(env[PUSH_FLAGS_ENV] ?? '').split(/\s+/).filter(Boolean);
+  return Object.fromEntries(asked.filter((f) => RELAYED_PUSH_FLAGS.includes(f)).map((f) => [f, true]));
+}

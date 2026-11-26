@@ -26,6 +26,10 @@
  *   projectId vcqa-<project dir>-<4 hex>           stable: reused on every re-run (it namespaces the
  *                                                   keystore entries, so a new id would orphan them)
  *
+ * and the project's own launchables from `config/vc-secrets-uses/*.json` (lib/secret-uses.mjs) — e.g.
+ * this repo's kb `kb` server and `kb-push` task — each env name bound to its axis secret, while that
+ * axis is a PAT.
+ *
  * The human review is `vc-secrets trust` — it prints exactly these commands and env names, and a
  * launch is refused until the operator types `y` at a terminal. So this writer is careful to produce
  * a file that only CHANGES when something the operator must re-approve changed:
@@ -64,6 +68,7 @@ import { GITHUB_MCP_DECL } from "./lib/github-mcp.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredLanes, declaredPasswords, isPasswordName, laneArgsForEnv, laneServer, onboardTask, passwordSecret, passwordSecretNames, runnerTask, vcSecretsRoles } from "./lib/passwords.mjs";
 import { laneCommands, readTemplateServers } from "./lib/playwright-lanes.mjs";
+import { readSecretUses, useEntries } from "./lib/secret-uses.mjs";
 
 /**
  * Secret name and the env vars it is bound to, per axis. The env names are the runtime contract.
@@ -110,8 +115,10 @@ export function nextPasswords(declaredMap, { addEnvs = [], addNames = [], roles 
  * @param {{ pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, projectId: string, githubServer?: object|null|undefined,
  *   passwords?: Record<string,string[]>, lanes?: Record<string,{command:string,args:string[]}> }} inputs
  *   passwords / lanes: undefined keeps what the file declares (lib/passwords.mjs)
+ *   uses: the project's own launchables bound to an axis secret (lib/secret-uses.mjs); declared while the
+ *   axis is a PAT, removed when it is not (only as this writer declared them)
  */
-export function buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes }) {
+export function buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes, uses = [] }) {
   const base = existing && typeof existing === "object" ? existing : {};
   const secrets = { ...(base.secrets || {}) };
   const tasks = { ...(base.tasks || {}) };
@@ -157,6 +164,18 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
 
   if (githubServer === null || !pat.github) delete servers.github;
   else if (githubServer !== undefined) servers.github = githubServer;
+  // Before the lanes, which are deleted and re-appended on every run: after them, a re-run would move the
+  // lanes in front of a use server and rewrite an unchanged file (and ask for trust again).
+  for (const use of uses) {
+    const entries = useEntries(use, AXIS_SECRETS[use.axis].secret);
+    for (const [kind, target] of [["servers", servers], ["tasks", orderedTasks]]) {
+      for (const [name, entry] of Object.entries(entries[kind])) {
+        if (pat[use.axis]) target[name] = entry;
+        // No secret to bind: drop what an earlier run declared, never an entry a person wrote by hand.
+        else if (JSON.stringify(target[name]) === JSON.stringify(entry)) delete target[name];
+      }
+    }
+  }
   Object.assign(servers, laneServers);
 
   const out = { schemaVersion: 1, projectId };
@@ -268,7 +287,7 @@ export function patAxesFromProfile(raw) {
  * servers are rebuilt from the template (lib/playwright-lanes.mjs) — `templateServers` overrides it in tests.
  * @param {{ root: string, pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, githubServer?: object|null, out?: string,
  *   passwordChange?: { addEnvs: string[]|"none", addNames: string[] }, templateServers?: object }} opts
- * @returns {{ status: "written"|"unchanged", path: string, projectId: string, secrets: string[], tasks: string[], servers: string[], passwords: Record<string,string[]>, trustNeeded: boolean, shim: string, shimInstalled: boolean }}
+ * @returns {{ status: "written"|"unchanged", path: string, projectId: string, secrets: string[], tasks: string[], servers: string[], uses: string[], passwords: Record<string,string[]>, trustNeeded: boolean, shim: string, shimInstalled: boolean }}
  */
 export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DECL, out: outFlag, passwordChange, templateServers }) {
   const out = resolve(root, outFlag || join(".claude", "vc-secrets.local.json"));
@@ -295,7 +314,10 @@ export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DE
 
   const passwords = passwordChange ? nextPasswords(declaredPasswords(existing), passwordChange) : declaredPasswords(existing);
   const lanes = Object.keys(passwords).length ? laneCommands({ servers: templateServers || readTemplateServers(), root, shim }) : {};
-  const next = buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes });
+  const { uses, skipped } = readSecretUses(root, AXIS_SECRETS);
+  for (const { file, why } of skipped) console.error(`[write-secrets-decl] skipped ${join("config", "vc-secrets-uses", file)}: ${why}`);
+  const next = buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes, uses });
+  const usedNames = (kind) => new Set(uses.filter((u) => pat[u.axis]).flatMap((u) => Object.keys(u[kind])));
   const text = `${JSON.stringify(next, null, 2)}
 `;
   const changed = !existing || `${JSON.stringify(existing, null, 2)}
@@ -312,8 +334,9 @@ export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DE
     path: out,
     projectId,
     secrets: [...Object.keys(AXIS_SECRETS).filter((a) => pat[a]).map((a) => AXIS_SECRETS[a].secret), ...passwordSecretNames(passwords)],
-    tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t) || Object.keys(passwords).some((e) => t === onboardTask(e) || t === runnerTask(e))),
-    servers: Object.keys(next.servers || {}).filter((n) => n === "github" || /^playwright-[a-z0-9]+\./.test(n)),
+    tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t) || Object.keys(passwords).some((e) => t === onboardTask(e) || t === runnerTask(e)) || usedNames("tasks").has(t)),
+    servers: Object.keys(next.servers || {}).filter((n) => n === "github" || /^playwright-[a-z0-9]+\./.test(n) || usedNames("servers").has(n)),
+    uses: uses.map((u) => u.file),
     passwords,
     trustNeeded,
     shim,
