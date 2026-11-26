@@ -34,21 +34,23 @@
 [NETWORK] POST /revoke/token called during logout","[NETWORK] POST /revoke/token returns HTTP 200
 [NETWORK] Old token returns 401 on subsequent API call
 [CONSOLE] no TypeError or JS errors","Logout does not call /revoke/token; old token still valid after logout; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.session.signout.token-revoked | DataProfile:profile.auth.signout-token-revoked,"Manual"
-"AUTH-048","Session Expiry During Checkout - Cart Preserved After Re-Auth","Session > Checkout Recovery","Critical","BL-AUTH-001","ECL-1.2, ECL-4.2","User logged in; product in stock; guest checkout store (B2B-store): /cart and /checkout have no login gate","email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+"AUTH-048","Session Expiry During Checkout - Cart Preserved After Re-Auth","Session > Checkout Recovery","Critical","BL-AUTH-001","ECL-1.2, ECL-4.2","User logged in; product in stock; guest checkout store (B2B-store): /cart and /checkout have no login gate","email={{USER_EMAIL}};password={{USER_PASSWORD}};sku=@td(BUYABLE_PRICED_PRODUCT.sku) (a simple buyable product; TEST_SKU is a configurable one);front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
 [WAIT] Wait for the home page
-[ACT] Type {{TEST_SKU}} into the header search and open the matching product from the results
+[ACT] Type @td(BUYABLE_PRICED_PRODUCT.sku) into the header search and open the matching product from the results
 [WAIT] Wait for product page to load
 [ACT] Click 'Add to Cart'
 [WAIT] Wait for cart badge to increment
 [ASSERT] Cart badge shows at least 1 item
 [NAV] Navigate to {{FRONT_URL}}/cart
 [WAIT] Wait for cart page to load
-[ASSERT] Cart contains {{TEST_SKU}}; the Shipping details and Payment details sections are rendered on /cart
+[ASSERT] Cart contains @td(BUYABLE_PRICED_PRODUCT.sku); the Shipping details and Payment details sections are rendered on /cart
 [KEY] record the cart total and the line quantity
-[ACT] Clear all cookies and local storage via browser console to simulate session loss
+[ACT] Open a second tab of the same browser on {{FRONT_URL}}, open the account menu and click Logout there (this ends the session for both tabs)
+[WAIT] the second tab shows the signed-out header
+[ACT] Close the second tab and return to the first
 [NAV] Reload {{FRONT_URL}}/cart
 [WAIT] Wait for the cart page to settle
 [ASSERT] /cart renders anonymous: empty-cart state with a 'Sign in' link, no user name in the header, URL stays /cart
@@ -56,10 +58,10 @@
 [WAIT] Wait for redirect after re-authentication
 [NAV] Navigate to {{FRONT_URL}}/cart
 [WAIT] Wait for cart page to load","[STATE] After session loss /cart renders anonymous (no authenticated header, empty-cart state with a Sign in link) and does NOT redirect to /sign-in on a guest-checkout store {OBSERVED} KB-A5347A19
-[STATE] After re-authentication the cart still contains {{TEST_SKU}} {OBSERVED} KB-A5347A19
+[STATE] After re-authentication the cart still contains @td(BUYABLE_PRICED_PRODUCT.sku) {OBSERVED} KB-A5347A19
 [STATE] Cart item quantities are preserved after re-auth
 [DOM] Cart total matches pre-loss total
-[STATE] The checkout sections (Shipping details, Payment details) are rendered on /cart after re-authentication {OBSERVED} KB-A5347A19","[API] cart query returns items including sku={{TEST_SKU}} after re-auth
+[STATE] The checkout sections (Shipping details, Payment details) are rendered on /cart after re-authentication {OBSERVED} KB-A5347A19","[API] cart query returns items including sku=@td(BUYABLE_PRICED_PRODUCT.sku) (a simple buyable product; TEST_SKU is a configurable one) after re-auth
 [NETWORK] POST /connect/token returns HTTP 200 on re-login
 [CONSOLE] no TypeError or JS errors
 [NETWORK] no 4xx/5xx on /graphql after re-auth","Cart empty after re-authentication; checkout sections missing on /cart after re-login; 4xx/5xx on cart query after re-auth; /cart still shows the authenticated header after the session is cleared; console TypeError","Remove {{TEST_SKU}} from cart after test","E2E-AUTH-001 | Behavior:auth.session.establish.expiry | DataProfile:profile.auth.session-expiry | 2026-11-26 (Sprint 26-23 W1 triage): after session loss /cart is anonymous with no redirect to /sign-in on a guest-checkout store; added the post-re-login cart check on /cart; the /product/{{TEST_SKU}} NAV replaced by a header-search step (KB-A5347A19)","Draft"
