@@ -80,14 +80,15 @@ Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
 [GQL] the same query with (a) the payload segment edited (role and sub changed, signature kept), (b) alg=none and an empty signature, (c) the exp claim edited into the past with the signature kept, (d) the literal Bearer abc.def.ghi
 [HTTP] GET {{BACK_URL}}/api/platform/security/users with the valid storefront token, then with (a)","[BODY] token header: alg=RS256, typ=at+jwt {OBSERVED}
 [BODY] payload aud=resource_server, scope=offline_access, role=__customer; exp minus iat equals 1800 and expires_in is within 2 s of it {OBSERVED}
-[BODY] the payload claim set contains none of: password, passwordHash, securityStamp, phone, card or address data; it carries only iss, exp, iat, aud, scope, jti, sub, name, email, role, memberId, oi_au_id, oi_tkn_id {OBSERVED}
+[BODY] the payload claim set contains none of the forbidden claims: password, passwordHash, securityStamp, phone, card or address data; the claim http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod = ""Password"" is allowed for this password grant (a passkey sign-in carries ""Passkey"", KB-7A236504) {OBSERVED}
 [DATA] the baseline query returns the signed-in userName; every one of (a)-(d) answers 200 with userName=Anonymous - never the original user and never an elevated identity {OBSERVED}
 [STATUS] GET /api/platform/security/users answers 401 for the valid storefront token and for the tampered token {OBSERVED}
-[BODY] refresh_token is an opaque string, not a decodable JWT {OBSERVED}","[NETWORK] on the storefront the token travels in the Authorization header of /graphql requests, never in a query string {OBSERVED}
+[BODY] refresh_token is an encrypted JWE (header alg RSA-OAEP, enc A256CBC-HS512) whose payload the client cannot decode {OBSERVED} KB-6312F7C5","[NETWORK] on the storefront the token travels in the Authorization header of /graphql requests, never in a query string {OBSERVED}
 [CONSOLE] no token or password is logged","Edited-payload, alg=none, expired or garbage token still resolves to the original or an elevated identity; a secret claim (password hash, security stamp) in the payload; token lifetime far above 1800 s; refresh token decodable as a JWT; token present in a URL","none - read-only; the minted token expires by itself","Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression (Platform 3.1076.8, theme 2.59.0) with the lane-1 account: token decode, four forged variants, platform-API audience. KB-7DA9B0B7 (storefront-scoped token refused by platform REST with 401) is DISPUTED - not every REST route refuses it - so the case asserts only /api/platform/security/users.
 Where the browser keeps the token (storage vs memory) is NOT asserted - no storage inspection on the MCP lane; see SEC-PCI-005 for the storage method.
 Catches: signature or expiry validation bypass - mutants: skip signature check, accept alg=none, ignore exp.
-Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
+Business_Rule left empty: no BL-SEC-* family exists (oracle gap).
+2026-11-26 (Sprint 26-23 W1 triage): the exhaustive 'carries ONLY <list>' assertion replaced by a forbidden-claims check; the authenticationmethod claim = ""Password"" is allowed (KB-7A236504)","Draft"
 "SEC-AUTH-002","Logout Token Revocation - Refresh Token Dies At Logout","Authentication > Logout","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User is logged in to the storefront
 - The session under test is THIS browser session only: never use a ""sign out everywhere"" action
@@ -107,18 +108,21 @@ Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
 - Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts
 - BLOCKED, never FAIL, when LOCKOUT_TEST_EMAIL or LOCKOUT_TEST_PASSWORD is empty for the environment (empty on vcptcore and vcptcore_regression on 2026-11-05) - NEVER substitute a shared persona
 - The lockout threshold is read from the failed-attempt responses, not assumed","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, lockout_email={{LOCKOUT_TEST_EMAIL}}, lockout_password={{LOCKOUT_TEST_PASSWORD}}, wrong_password=random-data(AGENT-TEST- prefixed), store_id={{STORE_ID}}","[HTTP] POST {{FRONT_URL}}/connect/token (password grant, storeId={{STORE_ID}}) for {{LOCKOUT_TEST_EMAIL}} with the CORRECT password - baseline, expect a token
-[HTTP] POST the same grant with a wrong password 5 times in a row, record the response of each
-[HTTP] POST the same grant with the CORRECT password (6th attempt)
-[KEY] record code and lockoutEnd / lockoutSecondsRemaining of the 6th response
-[NAV] {{FRONT_URL}}/sign-in - sign in as {{LOCKOUT_TEST_EMAIL}} with the correct password and record the visible text of the error
+[HTTP] POST the same grant with a wrong password repeatedly (up to threshold + 1 attempts), record the code of each response and the attempt number at which the code changes
+[HTTP] POST the same grant with the CORRECT password
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/{id} with an administrator token and record lockoutEnd
+[NAV] {{FRONT_URL}}/sign-in - sign in as {{LOCKOUT_TEST_EMAIL}} with the correct password and record the visible text of the form alert
 [SETUP] unlock the account: POST {{BACK_URL}}/api/platform/security/users/{id}/unlock with an administrator token
-[HTTP] POST the grant with the CORRECT password again","[STATUS] attempts 1-5 with the wrong password answer 400 invalid_grant with code login_failed and a generic description {DOC} KB-0407F36E (observed on vcst_qa and vcptcore_qa 2026-10-29)
-[STATUS] the 6th attempt, with the CORRECT password, is still refused: 400 with code user_is_temporary_locked_out and a lockoutEnd about 15 minutes ahead {DOC} KB-8646A9CB, BL-AUTH-003 (threshold 5 is the platform default; read from the stand, not assumed)
-[DOM] the sign-in page shows its generic failure text, not a text that confirms the account exists or says it is locked {DOC} KB-8646A9CB
-[STATUS] after the unlock the correct password returns 200 and an access_token {DOC} KB-8646A9CB","[API] GET {{BACK_URL}}/api/platform/security/users/{id}/locked reports locked=true before the unlock and locked=false after {DOC} alias LOCKOUT_TEST_USERS contract (aliases.json changelog 1.5.9)
-[NETWORK] no 5xx on any attempt","No lockout after 5 wrong passwords; the correct password signs in while locked; the lockout response reveals account existence; the account stays locked after the unlock; a shared persona gets locked","Unlock the dedicated account (always, also on failure) via POST {{BACK_URL}}/api/platform/security/users/{id}/unlock","NOT RUN on vcptcore_regression (REG-2026-11-05-0023-W6R authoring): LOCKOUT_TEST_EMAIL is empty on this environment and a lockout attempt on any shared account is forbidden while another wave runs. Expectations come from KB-8646A9CB and KB-0407F36E (observed on other builds, platform 3.1073-3.1090) and BL-AUTH-003, not from this stand - ground on the first run with the dedicated account (vcst has agent-test-lockout-20260729@test-agent.com).
+[HTTP] POST the grant with the CORRECT password again","[STATUS] attempts below the threshold answer 400 invalid_grant with code login_failed and a generic description; the threshold-th attempt may already answer user_is_temporary_locked_out (observed: the 5th) - the threshold is read from the responses {OBSERVED} KB-0407F36E, KB-D77326CE
+[STATUS] the CORRECT password after the lockout is still refused: 400 with code user_is_temporary_locked_out; the token response carries no lockoutEnd {OBSERVED} KB-8646A9CB, BL-AUTH-003
+[BODY] the lock is asserted on the administrator's view of the user: GET /api/platform/security/users/{id} reports lockoutEnd about 15 minutes ahead {OBSERVED} (platform default per BL-AUTH-003)
+[DOM] the /sign-in form alert reads 'Your account has been temporarily locked. Please try again later.' {OBSERVED} KB-D77326CE
+[STATUS] after the unlock the correct password returns 200 and an access_token {OBSERVED} KB-8646A9CB","[API] GET {{BACK_URL}}/api/platform/security/users/{id}/locked reports locked=true before the unlock and locked=false after {DOC} alias LOCKOUT_TEST_USERS contract (aliases.json changelog 1.5.9)
+[NETWORK] no 5xx on any attempt","No lockout after the threshold of wrong passwords; the correct password signs in while locked; the form alert is missing or different after the lockout; the account stays locked after the unlock; a shared persona gets locked","Unlock the dedicated account (always, also on failure) via POST {{BACK_URL}}/api/platform/security/users/{id}/unlock","NOT RUN on vcptcore_regression (REG-2026-11-05-0023-W6R authoring): LOCKOUT_TEST_EMAIL is empty on this environment and a lockout attempt on any shared account is forbidden while another wave runs. Expectations come from KB-8646A9CB and KB-0407F36E (observed on other builds, platform 3.1073-3.1090) and BL-AUTH-003, not from this stand - ground on the first run with the dedicated account (vcst has agent-test-lockout-20260729@test-agent.com).
 Catches: lockout not enforced on the storefront token endpoint (VCST-4999 family); org members receiving the permanent lockout code (VCST-5374).
-Edge_Case_Refs corrected from ECL-3.1 (No Results) to ECL-4.3 (Account Takeover).","Draft"
+Edge_Case_Refs corrected from ECL-3.1 (No Results) to ECL-4.3 (Account Takeover).
+2026-11-26 (Sprint 26-23 W1 triage): attempts below the threshold return login_failed, the threshold-th may already lock (5th observed); lockoutEnd is asserted via the admin user, not the token response; the /sign-in alert reads 'Your account has been temporarily locked. Please try again later.' (KB-D77326CE); tags {DOC} -> {OBSERVED}.
+Generic-text lockout message is a product-owner question (account enumeration), not asserted here. | Promoted: REG-2026-11-26-1000-RB (2026-11-26)",Automated
 "SEC-INPUT-001","XSS Prevention - Search (merged into SEC-XSS-003)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-XSS-003. The header Search box only navigates to /search?q=<text>, so typing the payload and loading the URL are one reflection surface (verified live: both render identically); SEC-XSS-003 drives both entries.","[STATE] N/A - see SEC-XSS-003
 [DOM] N/A - covered by SEC-XSS-003","N/A - see SEC-XSS-003","N/A - see SEC-XSS-003
 N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-XSS-003. The header Search box only navigates to /search?q=<text>, so typing the payload and loading the URL are one reflection surface (verified live: both render identically); SEC-XSS-003 drives both entries.","Deprecated"
@@ -296,24 +300,26 @@ Business_Rule cleared (BL-CHK-003 is address validation by country, not XSS); Ed
 Catches: unescaped reflection of the search term - mutant: heading rendered with v-html.","Draft"
 "SEC-XSS-004","XSS Prevention - Stored XSS via Profile Name (Server-Side Rejection)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Customer signed in; /account/profile accessible
-- Writes only on the lane account; the original names are restored in Cleanup","front_url={{FRONT_URL}}, first_name_payload=<img src=x onerror=document.title='XSSFIRED'>, last_name_payload=<img src=x>, original_first_name=read in Steps, original_last_name=read in Steps","[NAV] {{FRONT_URL}}/account/profile
+- Writes only on the lane account; the original names are restored in Cleanup
+- The persona's last name must pass NameValidationPattern, otherwise the last name is rejected too and the first-name result is not isolated","front_url={{FRONT_URL}}, first_name_payload=<img src=x onerror=document.title='XSSFIRED'>, last_name_payload=<img src=x>, original_first_name=read in Steps, original_last_name=read in Steps","[NAV] {{FRONT_URL}}/account/profile
 [KEY] record the current First name and Last name values
 [ACT] clear First name, type first_name_payload and click Update
-[WAIT] the updateContact response arrives and the alert shows
-[KEY] capture the updateContact request and response and the visible alert
+[WAIT] the updateContact response arrives and the field message shows
+[KEY] capture the updateContact request and response and the visible field message
 [NAV] reload {{FRONT_URL}}/account/profile and read both name fields and the Account menu name in the header
 [ACT] repeat with Last name = last_name_payload (First name original)
 [GQL] query me { contact { firstName lastName } } [AUTH] role=USER_DEFAULT
 [NAV] guest {{FRONT_URL}}/sign-up: enter first_name_payload as First name with an AGENT-TEST- prefixed email (random-data) and submit (the registration surface of the merged SEC-INPUT-002)","[ERRORS] updateContact answers errors[0].extensions.code=VALIDATION and data.updateContact null for the payload {OBSERVED} (for first name; last name via xAPI see SEC-VALIDATION-001)
-[DOM] an error alert is shown and the form stays on the page; the alert is the generic ""Something went wrong. Please try again later."" with no field-level message {OBSERVED} (UX note: the user is not told the name is invalid)
+[DOM] the First name field is marked invalid with the text 'Contains invalid characters' under it; no script runs; the form stays on the page {OBSERVED} KB-4E0137BE
 [STATE] after the rejected save the stored names are unchanged: Query.me.contact still returns the original first and last name {OBSERVED} (for first name)
 [DOM] the payload is never displayed as HTML anywhere (header Account menu, profile form, dashboard) and document.title is unchanged {OBSERVED} (for the profile form and title)
-[ERRORS] the sign-up form either rejects the payload or no account carrying it shows as markup; any account created is removed in Cleanup {SPEC} - sign-up path NOT yet observed (it would create an account)","[API] Query.me.contact.firstName equals original_first_name
+[ERRORS] the sign-up form either rejects the payload or no account carrying it shows as markup; any account created is removed in Cleanup {OBSERVED}","[API] Query.me.contact.firstName equals original_first_name
 [CONSOLE] one ApolloError for the rejected mutation is expected; no script execution {OBSERVED}","The payload is saved or rendered as HTML; the form reports success; document.title changes; names changed after a rejected save","Restore First name and Last name to the originals via updateContact; delete any account created by the sign-up probe","Survivor of the SEC-INPUT-002 / SEC-XSS-004 merge (SEC-INPUT-002 ""forms"" = profile + registration; its name-rule half lives in SEC-VALIDATION-001, script payloads in free text in SEC-VALIDATION-002).
 Grounded: the profile path is {OBSERVED} on vcptcore_regression 2026-11-05 via the UI (alert, console ApolloError) and the updateContact response; names were restored afterwards. Sign-up path NOT grounded (it would create an account on a stand another wave is using); re-run after W7.
 The profile has no display-name or ""about"" field - only first name, last name, language and currency; the stub wording ""display name"" is mapped to the name fields.
 Business_Rule cleared (BL-CHK-003 is address validation by country, not XSS); Edge_Case_Refs cleared (ECL-4.1 is Email & Identity Variations).
-Catches: stored XSS via contact name - mutant: NameValidationPattern accepts angle brackets.","Draft"
+Catches: stored XSS via contact name - mutant: NameValidationPattern accepts angle brackets.
+2026-11-26 (Sprint 26-23 W1 triage): the [DOM] assertion is the field-level 'Contains invalid characters' message (no generic alert, UX remark removed); persona last-name precondition added; sign-up half retagged {SPEC} -> {OBSERVED} per triage (KB-4E0137BE)","Draft"
 "SEC-CSRF-002","CSRF Protection - Cross-Site Cart Mutation Is Refused (also the merged SEC-CSRF-001)","CSRF Protection","High",,"ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 - A cart exists for the user; its quantity is read in Steps
 - Requests are sent from a script with a foreign Origin (a browser cannot forge Origin); nothing in the cart changes when the case passes","evil_origin=https://csrf-probe.invalid, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, product=live-discover (in-stock product id)","[NAV] {{FRONT_URL}}/cart and [CAPTURE] one storefront /graphql request to read how it authenticates (Authorization header vs cookie)
@@ -433,18 +439,24 @@ Catches: script validation covering only some free-text fields or being switched
 [STATUS] Token-A answers 403 (session kept) OR 401 (either is acceptable: the xAPI changePassword handler terminates every session of the user except the SessionGroupId the caller passes; with none passed, Token-A is terminated too — vc-module-profile-experience-api ChangePasswordCommandHandler, VCST-4576)","[API] Token-B revoked after password change
 [NETWORK] No 5xx errors
 [ADMIN] Security > Users panel for the account shows no active authorizations for Token-B","Token-B still answers 403 (accepted) on /api/platform/security/users after password change (invalidation not working); 500 errors on password change endpoint; Password change endpoint returns 4xx; a 200 from /currentuser is NOT a failure signal (AllowAnonymous)","Restore original password via admin API; clean up AGENT-TEST- sessions","VCST-4531","Draft"
-"SEC-AUTH-005","Session Invalidation After Password Change — Storefront UX Warning Displayed","Security > Session Management > Password Change > UX","High","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
+"SEC-AUTH-005","Session Invalidation After Password Change - Success Notification After Submit","Security > Session Management > Password Change > UX","High","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_BUYER]
-- Storefront accessible; Change Password page available at /account
-- Authorization__EnablePersistentStorageTokenValidation=true configured","front_url={{FRONT_URL}}, email=@td(TECHFLOW_BUYER.email), password=@td(TECHFLOW_BUYER.password)","[NAV] {{FRONT_URL}}/sign-in
+- Storefront accessible; Change password page at /account/change-password
+- The persona's password is changed to a throwaway one and restored in Cleanup
+- Authorization__EnablePersistentStorageTokenValidation=true is a precondition ONLY for the other-sessions assertion; without it that assertion is SKIPPED, never FAIL","front_url={{FRONT_URL}}, email=@td(TECHFLOW_BUYER.email), password=@td(TECHFLOW_BUYER.password), new_password=random-data(AGENT-TEST- prefixed, policy-compliant)","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(TECHFLOW_BUYER.email)
 [ACT] Fill 'Password': @td(TECHFLOW_BUYER.password)
 [ACT] Click 'Sign In'
 [WAIT] Authenticated session established
-[NAV] {{FRONT_URL}}/account
-[WAIT] Account page loaded
-[ACT] Navigate to Change Password section
-[WAIT] Change Password form visible","[DOM] Information notice visible on Change Password page containing text warning about other sessions being signed out (e.g., 'sign you out of all other devices' or equivalent wording)
-[DOM] Change Password form fields visible: Current Password, New Password, Confirm Password
-[STATE] User remains on the current device after seeing the notice (no auto-logout at this point — notice is pre-action)","[NETWORK] No 4xx/5xx on page load
-[CONSOLE] No TypeError or JS errors","Information notice absent from Change Password page (UX regression from VCST-4531 implementation); page errors with 500; console TypeError","Restore password if changed via admin; [PRE:SIGNOUT]","VCST-4531","Draft"
+[HTTP] POST {{FRONT_URL}}/connect/token (password grant) for the same persona as a second session - keep its access_token
+[NAV] {{FRONT_URL}}/account/change-password
+[WAIT] Change password form visible
+[ACT] Fill 'Current password': @td(TECHFLOW_BUYER.password); 'New password' and 'Confirm new password': new_password
+[WAIT] 'Change' button enabled
+[ACT] Click 'Change'
+[WAIT] the success notification appears
+[GQL] query { me { userName } } with the second session's access_token","[DOM] Change password form fields visible: Current password, New password, Confirm new password; no sign-out notice on the form before submit {OBSERVED} KB-4BDF14A7
+[DOM] After a successful change a success notification reads 'Your password has been successfully changed. Changing your password will sign you out of all other devices and browsers.' {OBSERVED} (REG-2026-11-26-0900-W1F; VCST-4531 AC, vc-frontend PR #2275)
+[STATE] (only with EnablePersistentStorageTokenValidation=true) the second session signed in before the change no longer resolves the user: me.userName is Anonymous or the call answers 401 {SPEC} BL-AUTH-003","[NETWORK] No 4xx/5xx on page load
+[CONSOLE] No TypeError or JS errors","Success notification absent or different after a successful change; the other session still resolves the user after the change (with persistent token validation on); page errors with 500; console TypeError","Restore the persona's password: change it back through the same form or reset via the admin (POST /api/platform/security/users/{id}/resetpassword)
+[PRE:SIGNOUT]","VCST-4531 | 2026-11-26 (Sprint 26-23 W1 triage): no pre-submit form notice exists; the text is the post-submit success notification (KB-4BDF14A7, VCST-4531, PR #2275); EnablePersistentStorageTokenValidation kept as a precondition only for the other-sessions assertion | Promoted: REG-2026-11-26-1000-RB (2026-11-26)",Automated
