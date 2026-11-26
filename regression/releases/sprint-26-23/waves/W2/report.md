@@ -10,7 +10,7 @@ Owner Elena Kutasina · vcst · Platform 3.1101.0 · theme 2.63.0-alpha.2681 · 
 | 011 Checkout | 71 | 30 | 9 | 2 | 30 (28 manual, 2 deprecated) |
 | 014 Orders | 70 | 55 | 1 | 11 | 3 |
 
-**124 not run:** the suite is not in `config/test-suites.json` on `main` (it lives on an unmerged branch), and the subscription storefront is not on vcst (PLAN.md §Not delivered). Re-run after vc-frontend#2602 merges and a green alpha is deployed.
+**124 not run — out of scope by owner decision 2026-11-26 (subscriptions are not part of this regression).** Background: the suite is not in `config/test-suites.json` on `main` (it lives on an unmerged branch), and the subscription storefront is not on vcst (PLAN.md §Not delivered). Re-run after vc-frontend#2602 merges and a green alpha is deployed.
 
 ## Before morning triage (owner) — 54 FAIL/BLOCKED without a ledger row
 - **Likely real:** 011 CHK-089 (clearing the address search keeps the filter, KB-CC551D3B), CHK-096 (no-match shows "no addresses yet", KB-9C031F08), CHK-114 (first Address sort descending, VCST-6606); 028 CART-130/131 (quantity commits before blur, VCST-6768), CART-051 (currency switch drops delivery method, KB-9C0EC5AB); 014 ORD-105 (Filters button unnamed at 375px, VCST-6482); 120 ORD-DASH-010 (orders error without retry, KB-782E9FA3).

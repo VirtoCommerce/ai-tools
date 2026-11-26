@@ -1,43 +1,44 @@
 {
-  "runId": "REG-2026-11-26-0357-W2",
+  "runId": "REG-2026-11-26-1000-RB",
   "status": "completed",
-  "startedAt": "2026-11-26T00:57:33.177Z",
+  "startedAt": "2026-11-26T05:42:09.938Z",
   "env": "vcst",
-  "ticket": "VCST-7028",
-  "selection": "028,011,014,120 (sprint-26-23 W2, --no-promote; 124 NOT_DEPLOYED)",
+  "ticket": "VCST-7027",
+  "selection": "033,044,028 --ids AUTH-043,SEC-AUTH-001,SEC-AUTH-003,SEC-AUTH-005,CART-001,CART-006,CART-007,CART-133,CART-134 (re-run of W1/W2 cases blocked by missing runner API access)",
   "suites": {
-    "120": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 22,
-      "fail": 3,
-      "blocked": 10
-    },
     "028": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 31,
-      "fail": 4,
-      "blocked": 14
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-26T05:45:37Z",
+      "pass": 5,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T06:49:58.274Z"
     },
-    "011": {
+    "044": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-firefox",
-      "pass": 30,
-      "fail": 9,
-      "blocked": 2
+      "startedAt": "2026-11-26T05:45:37Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 1,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T06:49:58.279Z"
     },
-    "014": {
+    "033": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 55,
-      "fail": 1,
-      "blocked": 11
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-26T06:34:16Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T06:49:58.278Z"
     }
   },
-  "finishedAt": "2026-11-26T02:18:25.339Z"
+  "finishedAt": "2026-11-26T06:50:34.116Z"
 }
