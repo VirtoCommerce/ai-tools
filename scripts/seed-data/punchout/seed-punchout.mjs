@@ -13,9 +13,10 @@
  *   - UPSERTS roles AGENT-TEST-Punchout-Reader (customer:access+read, punchout:read) and
  *     AGENT-TEST-Punchout-None (customer:access+read only) and their Manager accounts
  *     (isAdministrator=false, password {{DEFAULT_TEST_PASSWORD}}).
- *   - CATALOG FIXTURES (VCST-5887, punchout-specs §5): two OWNED products in the category of the
+ *   - CATALOG FIXTURES (VCST-5887, punchout-specs §5): OWNED products in the category of the
  *     standard fixture PROD-001 (derived live — no catalog/category is written) — the
- *     UoM product (MeasureUnit "box") and its plain sibling (no MeasureUnit) — stocked on config 0's
+ *     UoM product (MeasureUnit "box"), its plain sibling (no MeasureUnit) and, for VCST-6764, five more
+ *     plain products C..G whose ids also land in the PUNCHOUT_COMBO_MULTISESSION combo — stocked on config 0's
  *     store main FFC, priced ONLY by two OWNED store-scoped lists AGENT-TEST-Punchout-USD (config 0 +
  *     config 1 stores) and AGENT-TEST-Punchout-EUR (config 0 store), then reindexed.
  *   - CONFIG-1 STORE FFC: sets config 1's store mainFulfillmentCenterId to config 0's store main FFC
@@ -67,6 +68,7 @@ import {
   VERIFY_PROBES, buildSetupRequest, cxmlStatusCode, cxmlHasStartPage, configPosition, SEED_PREFIX,
   PRODUCT_SPECS, PRODUCT_PLACEMENT, PRODUCT_MIN_STOCK, PRICELIST_SPECS, assignmentName, priceRows, productBody,
   STORE_FFC_SPEC, planStoreFfc, planStoreFfcRestore, diffStore, teardownProductTargets,
+  COMBO_SPECS, comboOverlayFields, comboIdFields,
 } from './punchout-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -534,12 +536,15 @@ async function ensureCatalogProducts() {
       ok(`${spec.alias}: product ${spec.code} created (${p.id}) in ${loc.name}`);
     }
     const full = await api('GET', `/api/catalog/products/${p.id}`, null, { expectStatus: [200] });
-    const drift = (full.measureUnit || '') !== spec.measureUnit || !full.isActive || !full.isBuyable || !full.trackInventory;
-    if (drift && VERIFY_ONLY) fail(`${spec.alias}: product drifted (measureUnit=${full.measureUnit}, active=${full.isActive}, buyable=${full.isBuyable})`);
+    // A simple product: no order-quantity rule (maxQuantity 0 = no limit, KB-11E3EE30) and no variations.
+    const qtyRule = (full.minQuantity || 0) > 1 || (full.maxQuantity || 0) > 0;
+    if (full.variations?.length) fail(`${spec.alias}: product has ${full.variations.length} variation(s) — must be a simple product`);
+    const drift = (full.measureUnit || '') !== spec.measureUnit || !full.isActive || !full.isBuyable || !full.trackInventory || qtyRule;
+    if (drift && VERIFY_ONLY) fail(`${spec.alias}: product drifted (measureUnit=${full.measureUnit}, active=${full.isActive}, buyable=${full.isBuyable}, min=${full.minQuantity}, max=${full.maxQuantity})`);
     else if (drift && !DRY_RUN) {
       const { variations, ...rest } = full; // KB-969D7E09: never POST variations back
-      await api('POST', '/api/catalog/products', { ...rest, measureUnit: spec.measureUnit || null, isActive: true, isBuyable: true, trackInventory: true }, { expectStatus: [200, 201, 204] });
-      ok(`${spec.alias}: product reconciled → measureUnit=${JSON.stringify(spec.measureUnit || null)}, active, buyable`);
+      await api('POST', '/api/catalog/products', { ...rest, measureUnit: spec.measureUnit || null, isActive: true, isBuyable: true, trackInventory: true, minQuantity: null, maxQuantity: null }, { expectStatus: [200, 201, 204] });
+      ok(`${spec.alias}: product reconciled → measureUnit=${JSON.stringify(spec.measureUnit || null)}, active, buyable, no quantity rule`);
     } else ok(`${spec.alias}: product ${spec.code} (${p.id}) measureUnit=${JSON.stringify(full.measureUnit ?? null)}`);
     if (!VERIFY_ONLY) {
       await api('PUT', '/api/inventory/plenty', [{ fulfillmentCenterId: ffcId, productId: p.id, inStockQuantity: spec.stock, reservedQuantity: 0, status: 'Enabled' }], { expectStatus: [200, 204] });
@@ -673,10 +678,12 @@ async function verifyCatalog(products) {
 }
 
 async function seedCatalog(writeback) {
-  log('\n  [catalog] UoM product pair + punchout price lists + config-1 store FFC');
+  log('\n  [catalog] punchout products (UoM pair + C..G) + combo ids + punchout price lists + config-1 store FFC');
   const products = await ensureCatalogProducts();
   if (!products) return;
   Object.assign(writeback, products);
+  // Combos carry the product ids too, so a case reads them through ONE alias (VCST-6764).
+  for (const combo of COMBO_SPECS) writeback[combo.alias] = comboOverlayFields(combo, products);
   Object.assign(writeback, await ensurePricelists(products));
   const ffc = await ensureStoreFfc();
   if (ffc) Object.assign(writeback, ffc);
@@ -720,6 +727,7 @@ async function teardownCatalog() {
     log(`✓ deleted ${ids.length} product(s)`);
   }
   for (const spec of PRODUCT_SPECS) clear[spec.alias] = { id: '', catalogId: '', categoryId: '', ffcId: '' };
+  for (const combo of COMBO_SPECS) clear[combo.alias] = Object.fromEntries(comboIdFields(combo).map((f) => [f, '']));
   writeEnvAliasOverride(clear);
   return verifyRemoved(async () => {
     let n = 0;

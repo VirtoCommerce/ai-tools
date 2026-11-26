@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-11-26",
-    "totalSuites": 187,
+    "totalSuites": 188,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -4136,7 +4136,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 36,
       "estimatedMinutes": 150,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -4264,8 +4264,35 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 51,
-      "estimatedMinutes": 150,
+      "testCount": 47,
+      "estimatedMinutes": 86,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "order-request",
+        "order",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5888 (Epic VCST-5154). Split from 113 (82 > 81 cases): the update / delete operations and the sequencing of OrderRequest documents (new vs update vs delete, orderVersion, concurrent purchase orders), PNCO-053..087. PNCO-053 is the [JOURNEY] case. Same data as 113: the dedicated buyer PUNCHOUT_MAPPING_REQUISITION, carts reset in Setup and Cleanup (npm run seed:punchout:reset-carts), shared with 109 and 113 and serialised with them by the exclusiveGroup. PNCO-071 and PNCO-079 change UpdatableOrderStatuses on the configuration: restored in Cleanup and re-read. The cXML answers need XML parsing, so the rows run on the agent lane. Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "113b",
+      "name": "Punchout — cXML OrderRequest update, delete and sequencing",
+      "file": "regression/suites/Backend/punchout/113b-punchout-order-update-delete.csv",
+      "domain": "auth-security",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 64,
       "agent": "qa-backend-expert",
       "tags": [
         "punchout",
@@ -4280,8 +4307,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "notes": "VCST-5888 (Epic VCST-5154). The ERP posts a signed cXML OrderRequest to /api/punchout/cxml and the platform turns the returned cart lines into a customer order (vc-module-punchout PR #6, x-cart #150, cart #199). PNCO-001 is the [JOURNEY] case, PNCO-034 the storefront observation. Env-scoped by requiresModules, so select it with `punchout`. Three configurations decide the data: configuration 0 (no default method codes, T17a), qa1-punchout-defaults (PUNCHOUT_CONFIG_DEFAULTS, codes of active store methods: PNCO-002, -005, -041) and qa1-punchout-badcodes (PUNCHOUT_CONFIG_BADCODES, codes that exist nowhere: PNCO-025); configuration 2 (nonexistent store) is PNCO-038. Every cart-touching case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so it shares that buyer with 109 and is serialised with it by the exclusiveGroup. PNCO-050 and PNCO-052 also use a second dedicated buyer, PUNCHOUT_MAPPING_SECOND, which only this suite owns (reset with npm run seed:punchout:second:reset-carts). PNCO-052 Setup runs npm run seed:punchout:second:renew, which DELETES and recreates that account (new user id), because a Returned punchout session cannot be deleted. So never run PNCO-050 and PNCO-052 in parallel with each other, and never run PNCO-052 after PNCO-050 without that renew. PNCO-023 flips the store-wide Punchout.Enabled of the configuration-0 store, PNCO-022 deactivates the buyer mapping, PNCO-027, -028 and -042 lower the stock of the plain product: all restored in Cleanup and re-read. The cXML answers need XML parsing, so the rows run on the agent lane. The stored PunchoutOrderRequest row has no REST read and no SQL on this stand: those clauses are NOT-OBSERVABLE notes, not assertions. Several expectations are the developer plan's (a 400 for a checkout validation failure, a payment sum equal to the order total on a partial order) and are known to differ from the build (PNCO-027, -028, -041); PNCO-029, -030, -032 and -043 only RECORD. Cases stay Draft until a run promotes them.",
-      "exclusiveGroup": "store-setting:Punchout.Enabled",
-      "clickDriven": true
+      "exclusiveGroup": "store-setting:Punchout.Enabled"
     },
     {
       "id": "114",
@@ -5106,7 +5132,8 @@
         "108",
         "107",
         "109",
-        "113"
+        "113",
+        "113b"
       ]
     },
     "next": {

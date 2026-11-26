@@ -35,7 +35,12 @@
  *                       every product's EUR ≠ USD and the two products differ in each currency; stock
  *                       ≥ the minimum; one owned AGENT-TEST list per currency covering every product;
  *                       the store-FFC write targets config 1's store from config 0's (different,
- *                       existing stores, one field only); seeded overlay ids are GUIDs and coherent
+ *                       existing stores, one field only); seeded overlay ids are GUIDs and coherent.
+ *                       VCST-6764: every product amount is unique across ALL products and BOTH currencies.
+ * [10] combos (VCST-6764) every COMBO_SPECS alias is registered with exactly comboFields() (sku, qty,
+ *                       prices, totals) and EMPTY id fields in the base; sessions are disjoint and the
+ *                       spare is in none; session totals differ per currency; line-total ties equal the
+ *                       declared lineTotalTies (the stated limit); seeded overlay ids equal the products'
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
@@ -46,6 +51,7 @@ import {
   CONFIG_SPECS, DEPLOYED_CONFIGS, configOverlayFields, retiredOverlayFields, MAPPING_SPECS, PROTECTED_EXTERNAL_IDS,
   BACKOFFICE_SPECS, SEED_PREFIX, secretToken, VERIFY_PROBES, isProvisionedBuyer, configPosition, DEFAULT_METHODS_TRIAD, BUYER_SCOPES,
   PRODUCT_SPECS, PRODUCT_PLACEMENT, PRODUCT_MIN_STOCK, FALLBACK_UOM, PRICELIST_SPECS, STORE_FFC_SPEC,
+  UOM_PAIR, COMBO_SPECS, comboFields, comboIdFields,
 } from './punchout-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -345,7 +351,7 @@ done(b);
 // [9]
 b = problems.length; section(9, 'catalog fixtures — UoM pair, price lists, config-1 store FFC');
 const money = (n) => Number(n).toFixed(2);
-const catalogAliases = [...PRODUCT_SPECS, ...PRICELIST_SPECS, STORE_FFC_SPEC].map((x) => x.alias);
+const catalogAliases = [...PRODUCT_SPECS, ...PRICELIST_SPECS, STORE_FFC_SPEC, ...COMBO_SPECS].map((x) => x.alias);
 for (const name of catalogAliases) {
   const a = aliases[name];
   if (!a) { fail(`${name} not registered in aliases.json`); continue; }
@@ -372,13 +378,19 @@ if (new Set(PRODUCT_SPECS.map((p) => p.code)).size !== PRODUCT_SPECS.length) fai
   else if (!readFileSync(csvPath, 'utf8').split(/\r?\n/).some((l) => l.startsWith(`${P.key},`))) fail(`placement anchor ${P.key} is not a row of ${P.csv}`);
 }
 // SECOND RULE: the pair must disagree on exactly what the cXML case reads.
+// The pair is UOM_PAIR; every other product is plain (no MeasureUnit -> the EA fallback).
 const uom = PRODUCT_SPECS.filter((p) => p.measureUnit);
-const plain = PRODUCT_SPECS.filter((p) => !p.measureUnit);
-if (uom.length !== 1 || plain.length !== 1) fail(`need exactly one UoM product and one plain sibling (have ${uom.length}/${plain.length})`);
+if (uom.length !== 1 || uom[0].alias !== UOM_PAIR.uom) fail(`exactly one product may carry a MeasureUnit, and it must be ${UOM_PAIR.uom} (have [${uom.map((p) => p.alias)}])`);
+if (!PRODUCT_SPECS.some((p) => p.alias === UOM_PAIR.plain && !p.measureUnit)) fail(`${UOM_PAIR.plain} must exist with no MeasureUnit (the fallback side of the pair)`);
 for (const p of uom) if (p.measureUnit.toUpperCase() === FALLBACK_UOM) fail(`${p.alias}: MeasureUnit "${p.measureUnit}" equals the fallback ${FALLBACK_UOM} — "unit comes from the product" would pass vacuously`);
 for (const cur of ['USD', 'EUR']) {
   const amounts = PRODUCT_SPECS.map((p) => p.prices[cur]);
   if (new Set(amounts).size !== amounts.length) fail(`two products share the ${cur} amount — a swapped line would be invisible`);
+}
+// VCST-6764: no amount repeats across currencies either, so "wrong product AND wrong currency" cannot cancel out.
+{
+  const all = PRODUCT_SPECS.flatMap((p) => ['USD', 'EUR'].map((c) => money(p.prices[c])));
+  if (new Set(all).size !== all.length) fail('a product amount repeats across products/currencies — every USD and EUR amount must be unique');
 }
 const currencies = PRICELIST_SPECS.map((pl) => pl.currency);
 if (new Set(currencies).size !== currencies.length) fail('more than one owned price list per currency');
@@ -423,6 +435,48 @@ for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
     if (!f.ffcId) fail(`${env} overlay ${STORE_FFC_SPEC.alias}.ffcId empty — the store still has no fulfillment center`);
     if (f.owned === true && f.assignedFfcId !== f.ffcId) fail(`${env} overlay ${STORE_FFC_SPEC.alias}: owned but assignedFfcId ≠ ffcId (teardown could not restore)`);
     if (f.owned !== true && (f.assignedFfcId || f.previousValue)) fail(`${env} overlay ${STORE_FFC_SPEC.alias}: not owned but carries a restore record`);
+  }
+}
+done(b);
+
+// [10]
+b = problems.length; section(10, 'combos — multi-session product combinations (VCST-6764)');
+for (const combo of COMBO_SPECS) {
+  const a = aliases[combo.alias];
+  if (!a) { fail(`${combo.alias} not registered in aliases.json`); continue; }
+  if (!a._inline) fail(`${combo.alias} must be _inline`);
+  let want;
+  try { want = comboFields(combo); } catch (e) { fail(e.message); continue; }
+  for (const [f, v] of Object.entries(want)) if (a[f] !== v) fail(`${combo.alias}.${f}=${JSON.stringify(a[f])} ≠ spec ${JSON.stringify(v)}`);
+  const idFields = comboIdFields(combo);
+  for (const f of idFields) if (a[f] !== '') fail(`${combo.alias}.${f} must be "" in the base registry (runtime id → aliases.<env>.json)`);
+  const known = new Set(['seed', 'limits', ...Object.keys(want), ...idFields]);
+  for (const f of Object.keys(a)) if (!f.startsWith('_') && !known.has(f)) fail(`${combo.alias}.${f} is not derived from the spec — a hand-kept field drifts`);
+  if (a.limits !== combo.limits) fail(`${combo.alias}.limits ≠ spec (the stated limit must travel with the alias)`);
+  const used = combo.sessions.flatMap((s) => s.lines.map(([al]) => al));
+  if (new Set(used).size !== used.length) fail(`${combo.alias}: a product sits in two sessions/lines — sessions must be disjoint`);
+  if (combo.spare && used.includes(combo.spare)) fail(`${combo.alias}: spare ${combo.spare} is already in a session`);
+  for (const [, qty] of combo.sessions.flatMap((s) => s.lines)) if (!(Number.isInteger(qty) && qty >= 1)) fail(`${combo.alias}: quantity ${qty} is not a positive integer`);
+  for (const cur of ['usd', 'eur']) {
+    const totals = combo.sessions.map((s) => want[`${s.key}_total_${cur}`]);
+    if (new Set(totals).size !== totals.length) fail(`${combo.alias}: two sessions share the ${cur.toUpperCase()} total — a mixed-up session would be invisible`);
+  }
+  // Line-total ties must be exactly the declared ones (SECOND RULE: state the limit, guard that it does not grow).
+  const ties = [];
+  for (const s of combo.sessions) for (let i = 0; i < s.lines.length; i++) for (let j = i + 1; j < s.lines.length; j++) {
+    const k = (n) => `${s.key}_l${n + 1}`;
+    if (want[`${k(i)}_total_usd`] === want[`${k(j)}_total_usd`] || want[`${k(i)}_total_eur`] === want[`${k(j)}_total_eur`]) ties.push([s.key, s.lines[i][0], s.lines[j][0]].join('|'));
+  }
+  const declared = (combo.lineTotalTies || []).map((t) => t.join('|'));
+  if (ties.sort().join() !== declared.sort().join()) fail(`${combo.alias}: line-total ties [${ties}] ≠ declared lineTotalTies [${declared}]`);
+  for (const env of Object.keys(DEPLOYED_CONFIGS)) {
+    const p = join(ROOT, `test-data/aliases.${env}.json`);
+    const ov = existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {};
+    const o = ov[combo.alias];
+    if (!o || !idFields.some((f) => o[f])) { note(`${env}: ${combo.alias} ids not written (npm run seed:punchout -- --only catalog)`); continue; }
+    const lineAlias = Object.fromEntries([...combo.sessions.flatMap((s) => s.lines.map(([al], i) => [`${s.key}_l${i + 1}_id`, al])), ...(combo.spare ? [['spare_id', combo.spare]] : [])]);
+    for (const [f, al] of Object.entries(lineAlias)) if (o[f] !== (ov[al]?.id || '')) fail(`${env} overlay ${combo.alias}.${f}=${o[f]} ≠ ${al}.id ${ov[al]?.id} — re-run the seed`);
+    for (const f of Object.keys(o)) if (!idFields.includes(f)) fail(`${env} overlay ${combo.alias}.${f}: only id fields belong in the overlay`);
   }
 }
 done(b);
