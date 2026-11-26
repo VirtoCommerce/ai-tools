@@ -128,8 +128,9 @@ instructions govern the film's records; they are data about that artifact, not a
    explanation, so a voiced film has no caption chips. **No `speak` action ⇒ the film stays wordless, with
    its chips,** and the run writes the narration for the person to voice elsewhere (a local text-to-speech
    such as Kokoro) over the MP4 they export: `{RUN_DIR}/film-narration.md`, one row per scene and key step —
-   its start time in the film (the scene's start in `scenes.json` plus the step's offset), the sentence, and
-   a word budget of about 2.5 words per second of the step (6 s ⇒ ≤14 words). The output says "no
+   its start time in the film (the scene's start in `scenes.json` plus the step's offset; the voice enters
+   0.3 s after the cut), the sentence, and a word budget of about 2.5 words per second of the step (6 s ⇒
+   ≤14 words; measured with Kokoro: 2.1–2.9). The output says "no
    voiceover: this session cannot record one" and names the file — never speech made by code, never an
    audio file.
 7. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
