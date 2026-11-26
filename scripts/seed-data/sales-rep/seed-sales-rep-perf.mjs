@@ -40,7 +40,7 @@ import {
   MAX_COUNT, perfOrderSpec, perfOrderTotal, buildPerfItems, datasetProfile, datasetShortfalls,
   parsePerfOrderIndex, percentile,
 } from './sales-rep-perf-specs.mjs';
-import { passwordFor, passwordVarFor, isGeneratedPassword, accountSet } from '../../lib/user-provision.mjs';
+import { passwordFor, passwordVarFor, isGeneratedPassword, accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 const argv = process.argv.slice(2);
 const argVal = (name, dflt = null) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : dflt);
@@ -346,6 +346,7 @@ async function teardown() {
   // 2. Rep BEFORE its orgs: deleting a served org first leaves it dangling in the rep record.
   const rep = await findRep();
   if (rep?.id) { await api('DELETE', `/api/sales-rep?ids=${rep.id}`, null, { expectStatus: [200, 204] }); log(DRY_RUN ? '  [DRY] would delete rep' : `  deleted rep ${PERF_REP.key}`); }
+  accountUnset(PERF_REP.email); // the rep delete takes its account with it
   // 3. Orgs.
   const orgIds = [];
   for (const name of PERF_ORG_NAMES) { const m = await findOrgByName(name); if (m?.id) orgIds.push(m.id); }

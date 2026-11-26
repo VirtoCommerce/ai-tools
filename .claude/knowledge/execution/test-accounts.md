@@ -16,7 +16,8 @@ ran it.
 | Command | What it answers | Writes |
 |---|---|---|
 | `npm run creds:check [-- <env>]` | which password names an env still lacks; a credential left in a `.env` file; which running lane is behind the store | nothing |
-| `npm run creds:verify [-- <env>...]` | does every account in the store still SIGN IN on its stand (one attempt per account, never locks one out) | nothing |
+| `npm run creds:verify [-- <env>...]` | does every account in the store still SIGN IN on its stand (one attempt per account, never locks one out); an account whose login no longer exists there is `GONE`, with the command that removes it; one refused with the right password (no failed attempt counted — a fixture on another store, refused on purpose) is reported, not failed | nothing |
+| `npm run creds:forget -- <env> <login\|KEY>... [--dry-run]` | removes a `GONE` entry: a login, or a retired persona by its KEY — that env's own entry only | store |
 | `npm run creds:migrate` | dry run: would moving the old `.env` credentials into the store change any value | nothing |
 | `npm run creds:migrate -- --apply` | the move itself, proven; deletes its backup when the proof is green (`--keep-backup` keeps it) | store, `.env.*`, `.mcp.json` |
 
@@ -62,6 +63,15 @@ A stand with `ENV_RISK=production` is never given to a lane, by design.
 - **Made by hand:** add it under `envs.<env>.accounts`. A role the suites call by name (`USER`, `ORG_USER`, …) is
   keyed by that name; a seeded fixture is keyed by its login with `{ "use": "<SHARED_NAME>" }`. A new
   `{{X_PASSWORD}}` in test-data: `npm run td:validate:credentials` says whether the store knows it.
+
+## An account deleted
+
+- **By a seeder's teardown:** nothing to do — the step that deleted the account removes its entry
+  (`envs.<env>.accounts.<login>`; `accountUnset`, also inside `deleteUserByEmail`). A `--dry-run` teardown says
+  which entries it would remove. A new seeder that deletes an account it recorded calls `accountUnset(login)` right
+  after the delete. A named account (`SR_REP_X`) is kept: a re-seed brings the account back under that name.
+- **Any other way** (by hand, a retired persona, a stand rebuilt): `npm run creds:verify -- <env>` reports it
+  `GONE` and prints the `npm run creds:forget -- <env> …` that removes it. Share the updated copy.
 
 ## What a session does — and never does
 

@@ -35,7 +35,7 @@ import {
   CALL_REP, CALL_ORGS, CALL_PREFIX, CALL_STORE, PAGE_SIZE,
   callShortfalls, expectedPhones, expectedPrimaryContact, expectedPhoneField, normalizePhone, defaultIsStatic,
 } from './sales-rep-call-specs.mjs';
-import { passwordFor, passwordVarFor, isGeneratedPassword, accountSet } from '../../lib/user-provision.mjs';
+import { passwordFor, passwordVarFor, isGeneratedPassword, accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 // The reps' password: SR_REP_PASSWORD, else TEST_USER_PASSWORD (the store's, for this env); with neither, one is
 // generated, and the store records it with the rep's login once a rep is created or reset with it (accountSet).
@@ -234,6 +234,7 @@ async function teardown() {
     await api('DELETE', `/api/sales-rep?ids=${rep.id}`, null, { expectStatus: [200, 204] });
     log(`deleted rep ${CALL_REP.aliasName} (${rep.id})`);
   }
+  accountUnset(CALL_REP.email);
   const ids = new Set();
   for (const spec of CALL_ORGS) {
     const o = overlay[spec.aliasName] || {};

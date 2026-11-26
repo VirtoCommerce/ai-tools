@@ -57,7 +57,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, verifyRemoved, writeEnvAliasOverride,
   DRY_RUN, TEARDOWN, ONLY, STORE_ID, BACK_URL, ROOT, buildStoreSeo, idsParam, loadCsv,
 } from '../../lib/seed-common.mjs';
-import { accountSet, resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, resolvePassword } from '../../lib/user-provision.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -353,6 +353,7 @@ async function deleteBuyer(email, alias) {
     await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] });
     log(`✓ deleted buyer account ${email} (+${carts.length} cart(s), ${ms.length} membership(s))`);
   }
+  accountUnset(email);
   if (contactId) {
     const c = await getMember(contactId);
     // Ownership = AGENT-TEST name AND the buyer's own email — never a contact a search merely surfaced.
@@ -782,6 +783,7 @@ async function teardown() {
       await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(spec.email)}`, null, { expectStatus: [200, 204, 404] });
       log(`✓ deleted account ${spec.email}`);
     }
+    accountUnset(spec.email);
     const s = await api('POST', '/api/platform/security/roles/search', { keyword: spec.role.name, take: 50 }, { expectStatus: [200] });
     const role = (s?.results || []).find((r) => r.name === spec.role.name);
     if (role) { await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(role.id)}`, null, { expectStatus: [200, 204, 404] }); log(`✓ deleted role ${spec.role.name}`); }

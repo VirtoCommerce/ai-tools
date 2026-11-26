@@ -56,7 +56,7 @@ import {
   customerRoleFor, isAuthorshipRow, AUTHORSHIP_MATRIX, ROLE_REP,
 } from './sales-rep-orders-specs.mjs';
 import { requiredProductSlots } from './sales-rep-stats-specs.mjs';
-import { hasStaleLockout, setLockoutVerified, __setApi, passwordFor, passwordVarFor, isGeneratedPassword, accountSet } from '../../lib/user-provision.mjs';
+import { hasStaleLockout, setLockoutVerified, __setApi, passwordFor, passwordVarFor, isGeneratedPassword, accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
 const OWNER_PHONE = '+1-206-555-0142';
@@ -596,11 +596,13 @@ async function teardown(orgs) {
     const stillThere = await resolveUserId(row.email);
     if (stillThere) log(`  WARN: login account for ${row.rep_key} (${row.email}) still exists after the rep delete`);
     else verbose(`login account for ${row.rep_key} removed with the rep`);
+    if (!stillThere || DRY_RUN) accountUnset(row.email);
   }
   // Restricted admin (Manager) users + their roles (suite 092 fixtures)
   for (const row of loadCsv('test-data/sales-rep/admin-users.csv').filter((r) => only(r.user_key))) {
     const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(row.email)}`, null, { expectStatus: [200, 404] });
     if (u?.id) { await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(row.user_name)}`, null, { expectStatus: [200, 204] }); log(`  deleted admin user ${row.user_key}`); }
+    accountUnset(row.email);
     const search = await api('POST', '/api/platform/security/roles/search', { keyword: row.role_name, take: 20 }, { expectStatus: [200, 201] });
     const role = (search?.results || search?.roles || []).find((r) => r.name === row.role_name);
     if (role?.id) { await api('DELETE', `/api/platform/security/roles?ids=${role.id}`, null, { expectStatus: [200, 204] }); log(`  deleted role ${row.role_name}`); }
