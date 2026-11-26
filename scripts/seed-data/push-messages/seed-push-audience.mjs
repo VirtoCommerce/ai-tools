@@ -161,12 +161,12 @@ async function teardown() {
   // 1) logins first (a security account outlives its member and keeps counting as a recipient)
   for (const p of PEOPLE) {
     const u = await findUser(p.email);
-    accountUnset(p.email);
-    if (!u) continue;
+    if (!u) { accountUnset(p.email); continue; }
     if (!DRY_RUN) {
       // The security delete query param is `names` (NOT ids / userNames — see user-provision.mjs).
       await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(p.email)}`, null, { expectStatus: [200, 204, 404] });
     }
+    accountUnset(p.email); // after the delete: a failed one throws above and keeps the entry
     log(`  ✗ login ${p.email}`);
   }
 
