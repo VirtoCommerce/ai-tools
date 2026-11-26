@@ -91,7 +91,7 @@
 [ACT] Fill remaining required fields with valid data
 [ACT] Click 'Create Account'","[DOM] Inline error under the Email field: 'This email is already registered with us' {OBSERVED}
 [STATE] No duplicate account created {OBSERVED}","[API] mutation errors[] is empty
-[CONSOLE] no TypeError or JS errors","Form accepts duplicate email and creates duplicate account; no error message shown; console TypeError","none","regression-qa-theme-26.csv | 2026-11-26 (Sprint 26-23 W1 triage): dropped the 'suggestion to log in or reset password' assertion - the error offers no sign-in or reset link (KB-4998B55A)","Draft"
+[CONSOLE] no TypeError or JS errors","Form accepts duplicate email and creates duplicate account; no error message shown; console TypeError","none","regression-qa-theme-26.csv | 2026-11-26 (Sprint 26-23 W1 triage): dropped the 'suggestion to log in or reset password' assertion - the error offers no sign-in or reset link (KB-4998B55A)","Automated"
 "AUTH-010","Validation - Email Format","Registration > Validation","Medium","BL-AUTH-001","","Registration form open. NOTE: 'missing@domain' (no TLD) is HTML5-valid and must NOT be used as an invalid-format value; only genuinely malformed values (no @, empty local/domain part) are tested here.","url={{FRONT_URL}}/sign-up","[NAV] Navigate to {{FRONT_URL}}/sign-up
 [ACT] Select 'Personal' account type
 [ACT] Fill 'Email': 'notanemail'
@@ -330,7 +330,7 @@ NOTE: a REFUSAL for a locked organization belongs only to an EXPLICIT org switch
 [STATE] Authenticated user profile shows original registered email
 [NAV] Signed in from plain /sign-in: the user lands on the home page '/' with the user's name in the header (not on /account) {OBSERVED} KB-12449647
 [NAV] Signed in from /sign-in?returnUrl=/account/profile: the user lands on /account/profile {OBSERVED} KB-12449647","[NETWORK] POST /connect/token returns HTTP 200 for all three sign-ins (uppercase, mixed case, returnUrl variant)
-[CONSOLE] no TypeError or JS errors","Login fails with different email casing; different behavior for uppercase vs lowercase; console TypeError","Logout after test","Behavior:auth.signin.password.input-normalisation | DataProfile:profile.auth.password-input-normalisation | 2026-11-26 (Sprint 26-23 W1 triage): [NAV] assertion re-based: plain /sign-in lands on '/', not /account; added the returnUrl variant (KB-12449647)","Draft"
+[CONSOLE] no TypeError or JS errors","Login fails with different email casing; different behavior for uppercase vs lowercase; console TypeError","Logout after test","Behavior:auth.signin.password.input-normalisation | DataProfile:profile.auth.password-input-normalisation | 2026-11-26 (Sprint 26-23 W1 triage): [NAV] assertion re-based: plain /sign-in lands on '/', not /account; added the returnUrl variant (KB-12449647)","Automated"
 "AUTH-055","Password with Leading and Trailing Spaces","Login > Password Handling","Medium","BL-AUTH-001","ECL-4.2","Valid user account with known password; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': ' {{USER_PASSWORD}} ' (with leading and trailing spaces)
