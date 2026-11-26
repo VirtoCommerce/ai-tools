@@ -122,15 +122,17 @@ A sprint film: [`sprint.md`](sprint.md) §Film.
 
 ## Hand-off
 
-The film travels as a link to its artifact: nothing is exported, downloaded or uploaded, and nothing waits.
+The film travels as a link to its artifact: nothing is exported, downloaded or uploaded.
 
 1. **The link.** At step 5 of [`SKILL.md`](SKILL.md) the film's URL (`film.url`, kept at §Film step 1)
    becomes the guide's `Video:` line — `Video: [<TICKET> — <feature> (film)](<film.url>)` — and step 6
    renders and posts it with the rest of the comment. It is a plain wiki link (`[text|url]`): no attachment,
    no `--attach-video`.
-2. **Sharing — the person's step.** A film is private until its owner shares it from its page, and a
-   private link opens nothing for the ticket's other readers. The skill cannot share it, so the step-6
-   question and the last line of the run both say so. A link shows the film as published:
+2. **Sharing — the person's step, asked for before the post.** A film is private until its owner shares it,
+   and a private link opens nothing for the ticket's other readers. No tool of Claude's changes an artifact's
+   sharing, so the step-6 question asks the person to share the film with their organization from its page
+   and to say when it is done, and the post waits for that answer. A person who will not share it gets the
+   comment without the `Video:` line; `--video` adds it later. A link shows the film as published:
    [`rules.md`](rules.md) §Payload hygiene binds it as it binds the stills.
 3. `/qa-docs <TICKET> --video [<film-link>]` puts the link into the comment already posted — the post came
    first (declined, or made before the film existed), the film was republished, or the person copied another

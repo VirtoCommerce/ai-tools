@@ -100,9 +100,11 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
    is an external write, and it is the run's one sanctioned documentation comment
    ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 4). A decline posts nothing.
-   The film is private until its owner shares it from its page, and a private link opens nothing for the
-   ticket's other readers — so the question says that and leaves the sharing to the person
-   ([`media.md`](media.md) §Hand-off).
+   The film is private until its owner shares it, and a private link opens nothing for the ticket's other
+   readers. No tool of Claude's changes an artifact's sharing, so the question asks the person to share the
+   film with their organization from its page and to say when it is done; the comment is posted after that
+   answer. A person who will not share it gets the comment without the `Video:` line (`film.linked` stays
+   `false`) — [`media.md`](media.md) §Hand-off.
 
    **The body is wiki markup, not the guide's Markdown.** With screenshots the comment goes through the v2
    API, where the whole body is wiki (tracker-ops.md §5c); a Markdown body shows literal `##` and renders no
@@ -145,7 +147,8 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    A `null` refusal with `published: false` happens only with `existing: true` (the person chose to leave the
    ticket's documentation as it is): otherwise either the document exists or the reason does.
 
-Then give the person the film link and the sharing reminder ([`media.md`](media.md) §Hand-off) and stop.
+Then give the person the film link — and `--video`, when the comment went without it ([`media.md`](media.md)
+§Hand-off) — and stop.
 
 ## What this skill never does
 
