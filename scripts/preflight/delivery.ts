@@ -47,11 +47,13 @@ export const MASS_REPOS = 4;
  * - INCOMPLETE — only later PRs of a repo whose earlier PRs are in are missing (the feature continues in a later build).
  * - MASS — more than MASS_REPOS repos: reported, never blocking.
  * - NOT_DELIVERED — none is in. NO_CODE — no merged PR in a repo this stand runs.
- * - UNKNOWN — a PR could not be decided and nothing above already holds.
+ * - UNKNOWN — a PR could not be decided and nothing above already holds, or the ticket's only merged PRs are
+ *   backports to another support line (its fix for the stand's line is not linked).
  */
 export function ticketVerdict(prs: PrDelivery[]): Verdict {
   const relevant = prs.filter((p) => p.state === "IN" || p.state === "OUT" || p.state === "UNKNOWN");
-  if (!relevant.length) return "NO_CODE";
+  // Only a backport on another support line: the fix for this line is not linked, so it is undecided, not code-free.
+  if (!relevant.length) return prs.some((p) => p.state === "OTHER_LINE") ? "UNKNOWN" : "NO_CODE";
   const byRepo = new Map<string, Set<PrState>>();
   for (const p of relevant) byRepo.set(p.repo.toLowerCase(), (byRepo.get(p.repo.toLowerCase()) ?? new Set()).add(p.state));
   const ins = relevant.some((p) => p.state === "IN"), outs = relevant.some((p) => p.state === "OUT");
@@ -270,7 +272,7 @@ export function deliveryChecks(rows: TicketDelivery[], accepted: string[] = [], 
         found: `${t.key} (sprint Done) is only partly in its repo's build: ${prList(t, ["OUT"])} not yet deployed`,
         do: "name it to the W0 owner; the cases of the missing PRs report NOT_DEPLOYED, never FAIL" });
     else if (t.verdict === "UNKNOWN")
-      checks.push({ id: `delivery:${t.key}`, status: "UNKNOWN", who: "me", diagnose: [], found: `${t.key}: ${t.prs.filter((p) => p.state === "UNKNOWN").map((p) => `${p.repo.replace("VirtoCommerce/", "")}#${p.number} ${p.note}`).join("; ")}`, do: "confirm by hand before the first wave" });
+      checks.push({ id: `delivery:${t.key}`, status: "UNKNOWN", who: "me", diagnose: [], found: `${t.key}: ${t.prs.filter((p) => p.state === "UNKNOWN" || p.state === "OTHER_LINE").map((p) => `${p.repo.replace("VirtoCommerce/", "")}#${p.number} ${p.note}`).join("; ")}`, do: "confirm by hand before the first wave" });
   }
   for (const n of notes) checks.push({ id: "delivery", status: "UNKNOWN", who: "me", diagnose: [], found: n, do: "confirm by hand" });
   if (!rows.some((t) => t.sources.includes("sprint")))

@@ -4,12 +4,12 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 34 · PASS 29 · FAIL 0 · BLOCKED 0** · ledger 0 rows
+**Executed 148 · PASS 81 · FAIL 5 · BLOCKED 33** · ledger 46 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 29 | 0 | 0 | 0 | 0 | REG-2026-11-26-0225-W0 REG-2026-11-26-0805-W0R |
-| W1 | Security & sign-in — session, RBAC, xAPI user and role mutations | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W1 | Security & sign-in — session, RBAC, xAPI user and role mutations | Elena Kutasina | TRIAGED | 114 | 114 | 52 | 5 | 33 | 0 | 46 | REG-2026-11-26-0300-W1 REG-2026-11-26-1100-W1R REG-2026-11-26-1330-W1D |
 | W2 | Subscriptions, cart, checkout & orders | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,5 +21,10 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 
 | Verdict | Rows |
 |---|---|
+| REAL_BUG | 1 |
+| TEST_DEFECT | 9 |
+| DATA | 5 |
+| ENV_CONFIG | 22 |
+| NOT_TESTABLE | 9 |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
