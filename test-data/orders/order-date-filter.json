@@ -1,0 +1,41 @@
+{
+  "_meta": {
+    "purpose": "Storefront /account/orders date-range filter (VCST-5097, suite 014 ORD-084..094): a dedicated personal buyer whose order list holds one calendar day with several orders (MULTI) and another day with exactly one order (SINGLE).",
+    "seeder": "scripts/seed-data/orders/seed-order-date-filter.mjs (npm run seed:order-date-filter)",
+    "guard": "scripts/seed-data/orders/validate-order-date-filter-data.mjs (npm run td:validate:order-date-filter)",
+    "createdDateLimit": "CustomerOrder.createdDate is server-assigned on POST and PUT (KB-971BC129, re-measured on vcst): an order cannot be back-dated. The two days are therefore REAL seed days: the seeder places the groups in dayOrder, one group per run, each at least minDayGapHours after the previous one, so the days differ in every time zone. Until the last group is placed the alias reports status pending and the instant the next run may place it.",
+    "monthRelation": "same: every group lies in one calendar month (a full-month range covers all of them). A month rollover before the last group is placed cannot be repaired in place: tear down and seed again.",
+    "noRuntimeIds": "No GUID, createdDate, date or order id lives here: they are written to test-data/aliases.<env>.json by the seeder."
+  },
+  "orderPrefix": "AGENT-TEST-ODF-",
+  "buyer": {
+    "email": "agent-test-ord-datefilter@test-agent.com",
+    "firstName": "AGENT-TEST",
+    "lastName": "ORD DateFilter",
+    "passwordVar": "DEFAULT_TEST_PASSWORD",
+    "store": "B2B-store",
+    "currency": "USD"
+  },
+  "dayOrder": ["MULTI", "SINGLE"],
+  "minDayGapHours": 24,
+  "monthRelation": "same",
+  "days": {
+    "MULTI": {
+      "role": "multi",
+      "orders": [
+        { "key": "M1", "total": 101.11, "status": "New" },
+        { "key": "M2", "total": 102.22, "status": "Completed" },
+        { "key": "M3", "total": 103.33, "status": "New" },
+        { "key": "M4", "total": 104.44, "status": "Completed" },
+        { "key": "M5", "total": 105.55, "status": "New" },
+        { "key": "M6", "total": 106.66, "status": "Completed" }
+      ]
+    },
+    "SINGLE": {
+      "role": "single",
+      "orders": [
+        { "key": "S1", "total": 201.11, "status": "Completed" }
+      ]
+    }
+  }
+}

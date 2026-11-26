@@ -1,7 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.74",
+    "version": "1.5.75",
+    "changelog_1_5_75": "ORD_DATE_FILTER_BUYER (seed:order-date-filter, guard td:validate:order-date-filter): dedicated personal buyer for the /account/orders date-range filter cases of suite 014 — a 6-order day and a 1-order day, placed on two real seed days.",
     "changelog_1_5_74": "SIZE_RUN_MASTER (seed:size-run, guard td:validate:size-run): single-group Size picker XS,S,M,L,XL on the B2C template for B2C-VAR-001 (suite 009); sibling of VARIANT_PICKER_MASTER, which is unchanged.",
     "changelog_1_5_73": "SB_THEME_B2B + SB_STORE_EDITOR + SB_THEME_EDITOR_NOPUBLISH (seed:site-builder), SB_LEGACY_HEADER_PAGE (seed:cms-pages), SB_WL_ORG_BUYER + SB_PERSONAL_BUYER (reuse combos): the Site Builder fixtures the VCST-6571/6572 runs lacked.",
     "changelog_1_5_72": "DEMO_RETURNS_BUYER + DEMO_NO_ORDERS_CUSTOMER: demo-profile storefront personas (virtostart). Login = the spec contact email, password = the {{SR_DEMO_BUYER_PASSWORD}} token. Spec DEMO_PERSONAS in sales-rep-demo-specs.mjs; guard td:validate:sales-rep-demo [8].",
@@ -12389,6 +12390,19 @@
     ],
     "is_administrator": false,
     "user_type": "Manager"
+  },
+  "ORD_DATE_FILTER_BUYER": {
+    "password_env": "DEFAULT_TEST_PASSWORD",
+    "json": "orders/order-date-filter",
+    "seed": "seed:order-date-filter",
+    "fields": {
+      "email": "buyer.email",
+      "passwordVar": "buyer.passwordVar",
+      "store": "buyer.store",
+      "currency": "buyer.currency",
+      "orderPrefix": "orderPrefix"
+    },
+    "notes": "VCST-5097 /account/orders date-range filter (suite 014 ORD-084/085/086/088/089/091/094). Dedicated personal buyer (no org) whose list is only this fixture: a MULTI day with 6 orders and a SINGLE day with exactly 1, >= 24 h apart, same calendar month. Sign in with the email + the password NAME in passwordVar. createdDate is server-assigned (KB-971BC129), so the days are real seed days placed one per run: aliases.<env>.json carries status (complete | pending), nextRunFrom, multiDay/singleDay (UTC YYYY-MM-DD), multiCount/singleCount/totalCount, multiOrderNumbers/singleOrderNumbers (comma-joined), month/monthFrom/monthTo, user_id, and days.<GROUP>.orders.<KEY>.{id,number,createdDate} — npm run seed:order-date-filter."
   },
   "BD_STATS": {
     "password_env": "DEFAULT_TEST_PASSWORD",

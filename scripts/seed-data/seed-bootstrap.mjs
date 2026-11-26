@@ -73,6 +73,9 @@ const TEARDOWN_STEPS = [
   // VCST-6078 buyer dashboard: its own AGENT-TEST-BD buyers, orgs, orders and layout preferences (+ the
   // temporary XTS currency) — orders reference products + users, so it goes with the order steps.
   { name: 'buyer-dashboard', script: 'orders/seed-buyer-dashboard.mjs', args: ['--teardown'], required: false },
+  // VCST-5097 /account/orders date-filter buyer (AGENT-TEST-ODF-* orders + its personal user). Teardown only:
+  // its two days are real seed days placed one per run, so it is seeded on purpose with seed:order-date-filter.
+  { name: 'order-date-filter', script: 'orders/seed-order-date-filter.mjs', args: ['--teardown'], required: false },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
   // VCST-6155 MCP back-office accounts — deletes the four AGENT-TEST-mcp-* users and the AGENT-TEST-MCP-* roles only.
