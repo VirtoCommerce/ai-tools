@@ -39,7 +39,7 @@ import {
   VIEW_PERMISSION, fullNameOf, emailOf, accountEmailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
   expectedCanView, validateOrgReturnsFixtureSet, spareOrderKeys, orderKeysOf, spareField, ORG_STATUS, orgDescriptionOf, orgDrift,
 } from './org-returns-specs.mjs';
-import { accountSet } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 const FRESH = process.argv.includes('--fresh');
 const VERIFY_ONLY = process.argv.includes('--verify');
@@ -599,6 +599,7 @@ async function teardown(personas, { orgs = ORGS, roles = ROLES, wide = !ONLY } =
       if (u.memberId) await api('DELETE', `/api/members?ids=${encodeURIComponent(u.memberId)}`, null, { expectStatus: [200, 204, 404] });
       log(`  ${X} ${p.alias}: account ${p.login} (${u.id}), contact ${u.memberId}, ${mems.length} membership(s) [${mems.map((x) => x.id).join(', ')}]`);
     }
+    accountUnset(p.login);
   }
   if (wide) {
     for (const o of orgs) {

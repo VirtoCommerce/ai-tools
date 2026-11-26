@@ -42,7 +42,7 @@ import {
 } from '../seed-data/b2b/membership-alias-specs.mjs';
 import { resolveAllRoles, roleByKey } from './user-roles.mjs';
 import { CSV_CREDENTIAL_SOURCES, collectDeclarations, findPasswordConflicts } from '../seed-data/credential-specs.mjs';
-import { STORE_FILE, generatePassword, recordAccount } from './test-accounts.mjs';
+import { STORE_FILE, forgetAccount, generatePassword, recordAccount } from './test-accounts.mjs';
 
 // --- Env: defaults → .env.{ENV} → .env.local, per-env suffix promotion, the QA_ENV_PATH files, the master password ---
 export const { testEnv: TEST_ENV } = loadEnv({ fallback: 'vcst' });
@@ -257,6 +257,21 @@ export function accountSet(login, value, name) {
   }
   if (VERBOSE) console.log(`    ✓ ${login} recorded in ${STORE_FILE} (${TEST_ENV}, password ${varName})`);
   return varName;
+}
+
+/**
+ * accountSet's opposite: a teardown has just deleted the account `login` on TEST_ENV's stand, so its entry goes from
+ * the store — `envs.<TEST_ENV>.accounts.<login>` only (test-accounts.mjs `forgetAccount`: never a shared password,
+ * the top level or another env; a NAMED account with that login is kept and said). Call it right after the delete,
+ * also when the account was already gone. On a dry run it says what it would remove and writes nothing; with a test's
+ * api in place (`__setApi`) it does nothing. Returns true when the entry was (or, dry, would be) removed.
+ */
+export function accountUnset(login) {
+  if (!login || !recordRoot) return false;
+  const { removed, named } = forgetAccount(recordRoot, TEST_ENV, login, { dryRun: DRY_RUN });
+  if (removed) console.log(`    ✗ ${login} ${DRY_RUN ? 'would be removed' : 'removed'} from ${STORE_FILE} (${TEST_ENV})`);
+  if (named) console.log(`    – ${login} is ${named} in ${STORE_FILE} (${TEST_ENV}): kept — suites read it by name; a re-seed restores the account, creds:verify reports it until then`);
+  return removed;
 }
 
 /**
@@ -1303,6 +1318,8 @@ export async function deleteUserByEmail(email, { api: http = api } = {}) {
     contact = true;
   }
   if (account || contact) console.log(`    ✗ ${email}`);
+  // The account is gone (or never was): its password in the store points at nothing.
+  accountUnset(email);
   return { account, contact };
 }
 

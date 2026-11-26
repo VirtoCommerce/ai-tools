@@ -47,7 +47,7 @@ import {
   SEED_PREFIX, PASSWORD_VAR, SEEDED_ACCOUNTS, RETIRED_ACCOUNTS, FOREIGN_STORE_ID,
   contactBody, accountBody, seededProblems, isSeededOuterId, planScope,
 } from './otp-signin-specs.mjs';
-import { accountSet } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 const argv = process.argv.slice(2);
 const VERIFY_ONLY = argv.includes('--verify-only');
@@ -252,6 +252,7 @@ async function teardown() {
       if (!DRY_RUN) await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(s.user.userName)}`, null, { expectStatus: [200, 204, 404] });
       log(`  ✗ account ${s.user.userName}${s.user.isAdministrator ? ' [ADMINISTRATOR]' : ''}`);
     }
+    accountUnset(s.spec.email);
     if (s.contactId) {
       if (!DRY_RUN) await api('DELETE', `/api/members?ids=${encodeURIComponent(s.contactId)}`, null, { expectStatus: [200, 204, 404] });
       log(`  ✗ contact ${s.contactId} (${s.spec.email})`);

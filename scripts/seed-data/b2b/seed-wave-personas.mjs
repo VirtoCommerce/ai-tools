@@ -137,8 +137,9 @@ if (args.includes('--teardown')) {
         const org = await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] });
         if (isCopy(org?.name)) copies.set(id, org.name);
       }
-      if (dry) { if (u?.id || c) users++; continue; }
+      if (dry) { up.accountUnset(login); if (u?.id || c) users++; continue; } // dry: says what it would remove
       if (u?.id) await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(u.userName)}`, null, { expectStatus: [200, 204] });
+      up.accountUnset(login); // after the delete: a failed one throws above and keeps the entry
       if (c) await api('DELETE', `/api/members?ids=${encodeURIComponent(c)}`, null, { expectStatus: [200, 204] });
       if (u?.id || c) users++;
     }

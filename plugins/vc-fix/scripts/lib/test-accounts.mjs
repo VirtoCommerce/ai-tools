@@ -28,7 +28,8 @@
 //
 // The loader (scripts/lib/env-layers.mjs `layered`) puts `storeValues` over every .env* file; the Playwright lanes read
 // them in memory (scripts/lanes/playwright-lane.mjs); a seeder that creates an account or sets its password records it
-// (`recordAccount`, through scripts/lib/user-provision.mjs `accountSet`). Design:
+// (`recordAccount`, through scripts/lib/user-provision.mjs `accountSet`), and a teardown that deletes it forgets it
+// (`forgetAccount`, through `accountUnset`); `creds:verify` reports the entries nobody forgot. Design:
 // docs/superpowers/specs/2026-11-17-test-accounts-store-design.md. Never prints or returns a value except to a caller
 // that asked for one.
 import { chmodSync, closeSync, existsSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -286,6 +287,39 @@ export function recordAccount(root, env, login, passwordName, password) {
     if (serialiseStore(store) === before) return false;
     writeStore(root, store);
     return true;
+  });
+}
+
+/**
+ * Forget an account a teardown has just deleted on `env`'s stand: removes `envs.<env>.accounts.<login>` — the entry a
+ * seeder recorded under that login — and nothing else: never a `shared` password (other accounts `use` it), never the
+ * top level, never another env. A NAMED account with that login (`SR_REP_X`) is kept: suites read it by its variable,
+ * and a re-seed would record the account under its login instead, so its `<KEY>_EMAIL` would be lost. `dryRun`: say
+ * what would change, write nothing. `byName`: `login` is a named account's KEY, removed from `envs.<env>.accounts`
+ * — a person retiring a persona (`creds:forget`), never a teardown. Re-reads the file under the lock. Never logs or
+ * returns a value. → { removed: boolean, named: string|null } — `named`: the named account kept for that login.
+ */
+export function forgetAccount(root, env, login, { dryRun = false, byName = false } = {}) {
+  if (!ENV.test(String(env))) throw new StoreError(`not an env name: ${JSON.stringify(env)}`);
+  const who = String(login ?? '').trim();
+  if (!who) throw new StoreError('refusing to forget an account with no login');
+  const look = (store) => {
+    const own = store.envs[env]?.accounts ?? {};
+    if (byName) return { key: isNamedKey(who) && Object.hasOwn(own, who) ? who : null, named: null };
+    const key = Object.keys(own).find((k) => !isNamedKey(k) && k.toLowerCase() === who.toLowerCase()) ?? null;
+    const view = envView(store, env);
+    const named = Object.keys(view.accounts).find((k) => isNamedKey(k) && String(view.accounts[k].login ?? '').toLowerCase() === who.toLowerCase()) ?? null;
+    return { key, named };
+  };
+  if (!existsSync(join(root, STORE_FILE))) return { removed: false, named: null };
+  if (dryRun) { const { key, named } = look(readStore(root)); return { removed: Boolean(key), named }; }
+  return withStoreLock(root, () => {
+    const store = readStore(root);
+    const { key, named } = look(store);
+    if (!key) return { removed: false, named };
+    delete store.envs[env].accounts[key];
+    writeStore(root, store);
+    return { removed: true, named };
   });
 }
 

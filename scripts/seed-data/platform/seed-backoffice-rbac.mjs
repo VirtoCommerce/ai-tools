@@ -69,7 +69,7 @@ import {
   IMP_OPERATOR_ROLE, IMP_OPERATOR_ACCOUNT, IMP_OPERATOR_REQUIRED_PERMISSIONS, assertImpOperatorRolePermissions, contactBodyFor,
 } from './backoffice-rbac-specs.mjs';
 import { STORE as BARCODE_STORE } from '../catalog/barcode-specs.mjs';
-import { passwordFor, accountSet } from '../../lib/user-provision.mjs';
+import { passwordFor, accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 const VERIFY = process.argv.includes('--verify');
 
@@ -495,6 +495,7 @@ async function teardownFixture(role, account) {
     await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] });
     log(`✗ deleted account ${email}`);
   } else verbose(`account ${email} already gone`);
+  accountUnset(email);
 
   // Storefront fixtures own a personal Contact: delete the linked one, or the one carrying the email.
   if (account.contact) {

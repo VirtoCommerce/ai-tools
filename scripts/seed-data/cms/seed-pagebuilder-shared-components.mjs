@@ -34,7 +34,7 @@
 
 import "../../lib/sync-stdio.mjs";
 import { readFileSync, existsSync } from 'node:fs';
-import { passwordFor, accountSet } from '../../lib/user-provision.mjs';
+import { passwordFor, accountSet, accountUnset } from '../../lib/user-provision.mjs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN,
@@ -333,6 +333,7 @@ async function teardown() {
     if (user?.id && !DRY_RUN) { await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ deleted account ${email}`); }
     else if (DRY_RUN) log(`  [DRY] would delete ${email} + role ${roleId(u)}`);
     else verbose(`account ${email} already gone`);
+    accountUnset(email);
     const r = await findRole(u);
     if (r?.id && !DRY_RUN) { await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(r.id)}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ deleted role ${r.id}`); }
   }

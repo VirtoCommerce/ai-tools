@@ -48,7 +48,7 @@ import {
   orgBody, contactBody, accountBody, accountProblems, isSeededOuterId, seedOuterId, resolveStoreId,
   FOREIGN_STORE_MARKER, pickForeignStore, foreignStoreRejection,
 } from './passkey-specs.mjs';
-import { accountSet } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset } from '../../lib/user-provision.mjs';
 
 const argv = process.argv.slice(2);
 const VERIFY_ONLY = argv.includes('--verify-only');
@@ -440,6 +440,7 @@ async function teardown() {
       if (!DRY_RUN) await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(s.user.userName)}`, null, { expectStatus: [200, 204, 404] });
       log(`  ✗ account ${s.user.userName} (+${s.mships.length} membership(s); its passkeys go with it)`);
     }
+    accountUnset(s.spec.email);
     if (s.contactId) {
       if (!DRY_RUN) await api('DELETE', `/api/members?ids=${encodeURIComponent(s.contactId)}`, null, { expectStatus: [200, 204, 404] });
       log(`  ✗ contact ${s.contactId} (${s.spec.email})`);

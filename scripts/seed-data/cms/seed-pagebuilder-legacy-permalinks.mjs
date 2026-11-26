@@ -26,7 +26,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, loadAliases, BACK_URL, ADMIN, ADMIN_PASSWORD,
   uploadAsset, writeEnvAliasOverride, verifyRemoved, resetSecurityPassword, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
-import { accountSet, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   TICKET_PREFIX, PAGE_ALIASES, USER_ALIAS, MODULE_ID, STATUS, EMPTY_CONTENT, pageSpecs, moduleExportJson, restoreManifest,
   buildStoredZip, roleBody, accountBody,
@@ -223,6 +223,7 @@ async function teardown() {
   const residuePages = await verifyRemoved(async () => leftovers(await allPages(), SPECS));
   const residueUser = WANT_USER && !DRY_RUN
     ? ((await api('GET', `/api/platform/security/users/${encodeURIComponent(USER.login)}`, null, { expectStatus: [200, 204, 404] }))?.id ? 1 : 0) : 0;
+  if (WANT_USER && !residueUser) accountUnset(USER.login); // only once the user is gone (dry: says what it would remove)
   const clear = {};
   for (const s of SPECS) clear[s.alias] = { id: '', page_id: '' };
   if (WANT_USER) clear[USER_ALIAS] = { id: '' };

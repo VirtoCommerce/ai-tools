@@ -13,8 +13,13 @@
  *     token each account is looked up before its sign-in is spent: an absent one is reported, not tried; a locked one
  *     (a lockout fixture is locked on purpose) and one already MAX_FAILED failed attempts from a lockout are skipped,
  *     so running this again never locks an account out.
+ * Each failure is one of two classes: GONE — the login no longer exists on the stand (the admin lookup says so; no
+ * sign-in is spent), so the entry is stale: a teardown that deleted it would have removed it (accountUnset), and the
+ * line gives the `npm run creds:forget` that does it now; or a failed sign-in (wrong password, locked, …). A refused
+ * sign-in that counted no failed attempt (re-read after it) had the right password — a fixture the stand refuses on
+ * purpose (another store, none) — and is reported as such, not as a failure.
  * Prints logins, password NAMES and the token endpoint's error code — never a value, and no token is kept.
- * A production stand (ENV_RISK=production) is left out unless named. Exit 1 when an account does not sign in.
+ * A production stand (ENV_RISK=production) is left out unless named. Exit 1 when an account is GONE or does not sign in.
  */
 import '../lib/sync-stdio.mjs';
 import { STORE_FILE, StoreError, readStore, storeAccounts } from '../lib/test-accounts.mjs';
@@ -104,6 +109,8 @@ async function verifyEnv(env) {
     const key = a.login.toLowerCase();
     const password = (a.passwordName && r.env[a.passwordName]) ?? a.password;
     if (!accounts.has(key)) accounts.set(key, { login: a.login, name: a.passwordName ?? `${a.key}_PASSWORD`, password, kind: null });
+    // Where the store holds it for this env — what creds:forget can remove (the env's own section only).
+    if (Object.hasOwn(store.envs[env]?.accounts ?? {}, a.key)) accounts.get(key).storeKey = a.key;
   }
   const list = [...accounts.values()];
   const header = `${backUrl}${r.master ? ' (master stand)' : ''} — ${list.length} account(s)`;
@@ -127,33 +134,56 @@ async function verifyEnv(env) {
     // Without the admin's token no account's lockout state can be read: trying them would spend unguarded failed sign-ins.
     if (adminSignIn && !token) return { ok: true, skipped: true, line: `– ${label}: not tried — the admin did not sign in, so its lockout state cannot be checked` };
     let sid = a.kind === 'admin' ? null : storeId;
+    let user = null;
     if (token) {
-      const user = await lookUp(backUrl, token, a.login);
-      if (user?.absent) return { ok: false, line: `✗ ${label}: no such account on the stand` };
+      user = await lookUp(backUrl, token, a.login);
+      if (user?.absent) return { ok: false, gone: true, line: `✗ GONE ${label}: no such account on the stand — ${goneFix(env, a)}` };
       if (user && isLockedOut(user)) return { ok: true, skipped: true, line: `– ${label}: locked until ${user.lockoutEnd} — not tried` };
       if ((user?.accessFailedCount ?? 0) >= MAX_FAILED) return { ok: false, line: `✗ ${label}: ${user.accessFailedCount} failed sign-ins already — not tried (fix the password, then reset the count by a good sign-in or a re-seed)` };
       if (user?.userType === 'Administrator') sid = null;
     }
     const s = await signIn(backUrl, a.login, a.password, sid);
     if (s.ok) return { ok: true, line: `✓ ${label}${sid ? ` storeId=${sid}` : ''}` };
+    // A refusal that counted no failed attempt is not a wrong password: the stand checked the password, accepted it and
+    // refused the sign-in for another reason — a fixture on another store, or on none, refused on purpose (OTP-024).
+    // Only where lockout is on: an account with it off never counts a failed attempt, wrong password or not.
+    if (!s.unreachable && user && !user.absent && user.lockoutEnabled !== false) {
+      const after = await lookUp(backUrl, token, a.login);
+      if (after && !after.absent && (after.accessFailedCount ?? 0) <= (user.accessFailedCount ?? 0)) {
+        return { ok: true, refused: true, line: `– ${label}: password right (no failed attempt counted), sign-in refused by the stand (${s.reason}) — account store ${JSON.stringify(user.storeId ?? null)}, tried with storeId=${sid ?? 'none'}` };
+      }
+    }
     return { ok: false, line: `✗ ${label}: ${s.unreachable ? 'unreachable ' : ''}${s.reason}` };
   });
   const failed = results.filter((x) => !x.ok).length;
+  const gone = results.filter((x) => x.gone).length;
   const skipped = results.filter((x) => x.skipped).length;
-  lines.push(`  ${header}: ${results.length - failed - skipped} sign in, ${failed} do not${skipped ? `, ${skipped} skipped` : ''}${token ? '' : admin ? ' (admin did not sign in — no lookup)' : ' (no admin account — no lookup)'}`);
-  for (const x of results) if (!x.ok || x.skipped || process.argv.includes('--all')) lines.push(`    ${x.line}`);
-  return { env, lines, failed };
+  const refused = results.filter((x) => x.refused).length;
+  lines.push(`  ${header}: ${results.length - failed - skipped - refused} sign in, ${failed - gone} do not${gone ? `, ${gone} GONE` : ''}${refused ? `, ${refused} refused with the right password` : ''}${skipped ? `, ${skipped} skipped` : ''}${token ? '' : admin ? ' (admin did not sign in — no lookup)' : ' (no admin account — no lookup)'}`);
+  for (const x of results) if (!x.ok || x.skipped || x.refused || process.argv.includes('--all')) lines.push(`    ${x.line}`);
+  return { env, lines, failed: failed - gone, gone };
+}
+
+/** The fix for a GONE account: remove its entry when it is this env's own, else re-seed (a role, the top level). */
+function goneFix(env, a) {
+  if (!a.storeKey) return `not an entry of this env's own (a role, or the store's top level) — re-seed it`;
+  if (a.storeKey.toLowerCase() === a.login.toLowerCase()) return `stale entry — remove: npm run creds:forget -- ${env} ${a.login}`;
+  return `re-seed it, or if ${a.storeKey} is retired: npm run creds:forget -- ${env} ${a.storeKey}`;
 }
 
 const ROLE_PW = new Map(USER_ROLES.map((r) => [r.key, r.passwordVar]));
 
 const results = await Promise.all(envs.map((e) => verifyEnv(e).catch((err) => ({ env: e, lines: [`  error: ${err.message}`], failed: 1 }))));
-let failed = 0;
+let failed = 0, gone = 0;
 for (const res of results) {
-  const mark = res.skipped ? '–' : res.failed ? '✗' : '✓';
+  const mark = res.skipped ? '–' : res.failed || res.gone ? '✗' : '✓';
   console.log(`${mark} ${res.env}`);
   for (const l of res.lines) console.log(l);
   failed += res.failed ?? 0;
+  gone += res.gone ?? 0;
 }
-console.log(failed ? `\n${failed} account(s) do not sign in. Wrong password: re-run the account's seeder (it records the new one) or fix the value in ${STORE_FILE}; no such account: seed it.` : '\nEvery checked account signs in.');
-process.exit(failed ? 1 : 0);
+const out = [];
+if (failed) out.push(`${failed} account(s) do not sign in: re-run the account's seeder (it records the new password) or fix the value in ${STORE_FILE}.`);
+if (gone) out.push(`${gone} account(s) GONE from their stand: each line says whether to remove the entry (npm run creds:forget) or re-seed the account.`);
+console.log(out.length ? `\n${out.join('\n')}` : '\nEvery checked account signs in.');
+process.exit(failed || gone ? 1 : 0);
