@@ -1,24 +1,18 @@
-// The write token, and why this file exists instead of `import './config.js'`.
+// The write token: from the environment (vc-secrets puts it there), else from `.env.local`.
 //
-// PLAN §6.4 says to resolve the token "through the layered loader … via `process.env` after
-// importing `config.js`, never off a single layer". The RULE is right and is obeyed here: a
-// variable's value can come from any of `.env.defaults`, `.env.${TEST_ENV}` or `.env.local`, so
-// reading one layer and concluding is how a working credential gets reported as absent. THE
-// MECHANISM IS NOT USABLE FROM THIS TOOL, and the reason is not stylistic:
+// WHY NOT `import './config.js'`, and the reason is not stylistic:
 //
 //   * `config.js` writes `[config] TEST_ENV=… ENV_RISK=…` to STDOUT at import. `kb push --json`
-//     would then emit a line before its JSON — and session 4's MCP server, whose stdout IS the
-//     JSON-RPC channel, would have its protocol corrupted by the import itself.
+//     would then emit a line before its JSON — and the MCP server, whose stdout IS the JSON-RPC
+//     channel, would have its protocol corrupted by the import itself.
 //   * `config.js` calls `process.exit(1)` when CORE env vars are missing. A knowledge base must not
 //     die because an unrelated variable for a different subsystem is unset; reading is free and
 //     tokenless by design (PLAN §6.4), and a tool that exits before answering has broken that.
-//   * it resolves `.env.defaults` and friends relative to `process.cwd()`, and `kb` is invoked from
-//     wherever the agent happens to be.
-//
-// So the LAYER ORDER is reproduced here, exactly as `config.js` applies it, against the repo root
-// resolved from this module's own location. Same precedence, no stdout, no exit, no cwd.
+//   * it resolves `.env.local` relative to `process.cwd()`, and `kb` is invoked from wherever the
+//     agent happens to be — so the file is found from this module's own location instead.
 
 import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -46,43 +40,50 @@ const readMap = (file) => {
   try { return parseEnvFile(readFileSync(file, 'utf8')); } catch { return new Map(); }
 };
 
+/** The names the push accepts, scoped one first: a token for one public repository beats the shared one. */
+const TOKEN_NAMES = ['KB_GITHUB_TOKEN', 'GITHUB_TOKEN'];
+
+const clean = (v) => (v && String(v).trim() ? String(v).trim() : null);
+
 /**
- * One variable, resolved across the layers in the repo's documented order.
+ * The token the push uses. TWO sources, in this order:
  *
- * `.env.defaults` and the legacy `.env` do NOT override what is already in the environment;
- * `.env.${TEST_ENV}` and `.env.local` do. That is `config.js`'s precedence, reproduced rather than
- * reinvented — if the two ever disagree, a credential that works for every other tool in the repo
- * would appear broken here alone, which is the most expensive way to be wrong about a token.
+ *   1. the process environment — where vc-secrets puts it (`node $VC_SECRETS run kb`, `... task kb-push`,
+ *      plugins/vc-secrets/README.md), and where CI passes one;
+ *   2. `.env.local` — the fallback for a machine without vc-secrets.
+ *
+ * The environment wins, so a token moved into vc-secrets is the one used even while an old copy is
+ * still in `.env.local`. No other `.env.*` layer is read: a token belongs in neither the committed
+ * per-env files nor the legacy `.env`. ABSENT IS NOT AN ERROR (PLAN §6.4): reading works without
+ * it, the queue is durable, and the first later session with a token pushes what this one queued.
  */
-export function resolveVar(name, env = process.env) {
-  const root = repoRoot(env);
-  const testEnv = env.TEST_ENV || 'vcst';
-  let value = env[name] ?? null;
-  for (const [file, override] of [
-    [join(root, '.env.defaults'), false],
-    [join(root, `.env.${testEnv}`), true],
-    [join(root, '.env.local'), true],
-    [join(root, '.env'), false],
-  ]) {
-    const v = readMap(file).get(name);
-    if (v == null || v === '') continue;
-    if (override || value == null || value === '') value = v;
+export function writeToken(env = process.env) {
+  for (const name of TOKEN_NAMES) {
+    const v = clean(env[name]);
+    if (v) return { token: v, from: `env:${name}` };
   }
-  return value && String(value).trim() ? String(value).trim() : null;
+  const local = readMap(join(repoRoot(env), '.env.local'));
+  for (const name of TOKEN_NAMES) {
+    const v = clean(local.get(name));
+    if (v) return { token: v, from: `.env.local:${name}` };
+  }
+  return { token: null, from: null };
 }
 
 /**
- * The token the push uses.
- *
- * `KB_GITHUB_TOKEN` first, so an operator can point the knowledge base at a least-privilege token
- * scoped to one public repository without touching the shared `GITHUB_TOKEN` every other tool here
- * depends on. ABSENT IS NOT AN ERROR (PLAN §6.4): reading works without it, the queue is durable,
- * and the first later session with a token pushes what this one queued.
+ * Does a vc-secrets declaration name this `servers` / `tasks` entry? Then the token reaches the kb
+ * through the launcher (`node $VC_SECRETS run kb`, `... task kb-push`), not through a file — the
+ * repo's rule for every token (CLAUDE.md §Project Overview, `plugins/vc-secrets/README.md`).
+ * Existence only: the launcher, not this, validates the declaration and resolves the secret.
  */
-export function writeToken(env = process.env) {
-  for (const name of ['KB_GITHUB_TOKEN', 'GITHUB_TOKEN']) {
-    const v = resolveVar(name, env);
-    if (v) return { token: v, from: name };
+export function vcSecretsDeclares(kind, name, env = process.env) {
+  const home = env.HOME || env.USERPROFILE || homedir();
+  for (const file of [
+    join(repoRoot(env), '.claude', 'vc-secrets.local.json'),
+    join(repoRoot(env), '.claude', 'vc-secrets.json'),
+    join(home, '.claude', 'vc-secrets.json'),
+  ]) {
+    try { if (JSON.parse(readFileSync(file, 'utf8'))?.[kind]?.[name]) return true; } catch { /* absent or unreadable */ }
   }
-  return { token: null, from: null };
+  return false;
 }
