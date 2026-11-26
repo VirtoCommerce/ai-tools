@@ -197,9 +197,23 @@ for (const o of defs.accounts.flatMap(originals)) {
       const names = orgAliases.get(id) ?? [];
       mergeSetAliases(set, Object.fromEntries(names.map((a) => [a, { platform_id: c.id, name: c.name }])));
     }
-    if ((await up.findUserByEmail(login))?.id) { reused++; console.log(`  ↻ ${name} ${set}: ${login} exists — left as it is`); continue; }
+    const user = await up.findUserByEmail(login);
+    if (user?.id) {
+      reused++;
+      // Clones seeded before 2026-11-26 carry the set in the last name ("Doe S1"); a digit fails the storefront name
+      // pattern (KB-7339F16F), so profile edits on the clone are refused. Strip it; the set stays in fullName.
+      // The full contact (not a search hit) goes back, so the PUT cannot drop its addresses or phones.
+      const old = user.memberId ? await up.findContactById(user.memberId) : null;
+      const fixed = old?.lastName?.replace(new RegExp(`\\s*${set}$`), '');
+      if (old?.id && fixed && fixed !== old.lastName) {
+        if (!dry) await api('PUT', '/api/members', { ...old, lastName: fixed }, { expectStatus: [200, 204] });
+        console.log(`  ✎ ${name} ${set}: ${login} last name "${old.lastName}" → "${fixed}"${dry ? ' [DRY]' : ''}`);
+      } else console.log(`  ↻ ${name} ${set}: ${login} exists — left as it is`);
+      continue;
+    }
     const body = {
-      memberType: 'Contact', firstName: contact.firstName, lastName: `${contact.lastName ?? ''} ${set}`.trim(),
+      // The set goes into fullName only: a digit in lastName fails the storefront name pattern (KB-7339F16F).
+      memberType: 'Contact', firstName: contact.firstName, lastName: contact.lastName ?? '',
       fullName: `${contact.fullName ?? `${contact.firstName} ${contact.lastName}`} ${set}`, emails: [login],
       organizations: (contact.organizations ?? []).map((id) => orgMap.get(id)?.id ?? id),
       defaultLanguage: contact.defaultLanguage, currencyCode: contact.currencyCode,

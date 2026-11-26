@@ -105,7 +105,9 @@ npx playwright install chromium firefox   # Edge uses the system msedge channel
 
 Then, in Claude Code in that folder: install the plugins as in Quick Start (`vc-init` first, then `vc-fix` and
 `vc-test` — the tracked `.claude/settings.json` enables them, installing is per machine) → restart →
-`/project-init` → restart → `/project-init --check`. `/project-init` writes `.mcp.json` too. Step by step:
+`/project-init` → `npm run kb:install` (puts the `kb` knowledge-base server back into the `.mcp.json` that
+`/project-init` just wrote) → restart → `/project-init --check`. Reading the kb needs no token; writing to it needs
+push access to `VirtoCommerce/vc-knowledge` (`KB_GITHUB_TOKEN` in `.env.local`). Step by step:
 [`docs/onboarding.md`](docs/onboarding.md) §VC QA team quick start. New here? Start at
 [`.claude/ROUTING.md`](.claude/ROUTING.md).
 
