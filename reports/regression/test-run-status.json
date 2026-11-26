@@ -1,65 +1,62 @@
 {
-  "runId": "REG-2026-11-26-0425-W3",
+  "runId": "REG-2026-11-26-0512-W4",
   "status": "completed",
-  "startedAt": "2026-11-26T02:22:18.239Z",
+  "startedAt": "2026-11-26T03:12:36.268Z",
   "env": "vcst",
-  "ticket": "VCST-7029",
-  "selection": "001,002,003,004,005,036 (sprint-26-23 W3, --no-promote; [EXCLUSIVE] cases left for WX)",
+  "ticket": "VCST-7030",
+  "selection": "089,091,093,093b,116 (sprint-26-23 W4, --no-promote; [EXCLUSIVE] cases left for WX)",
   "suites": {
-    "036": {
+    "116": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "pass": 31,
-      "fail": 2,
-      "blocked": 8,
-      "skipped": 12
-    },
-    "002": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-firefox",
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-26T03:13:52.233Z",
       "pass": 14,
       "fail": 2,
-      "blocked": 16,
-      "skipped": 1
+      "blocked": 13,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T04:54:31.617Z"
     },
-    "005": {
+    "089": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "pass": 11,
-      "fail": 1,
-      "blocked": 8,
-      "skipped": 28
-    },
-    "003": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 6,
-      "fail": 0,
-      "blocked": 0,
-      "skipped": 24
-    },
-    "004": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "pass": 37,
+      "startedAt": "2026-11-26T03:13:52.232Z",
+      "pass": 58,
       "fail": 2,
-      "blocked": 19,
-      "skipped": 6
+      "blocked": 10,
+      "skipped": 1,
+      "finishedAt": "2026-11-26T04:54:31.619Z"
     },
-    "001": {
+    "091": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-firefox",
-      "pass": 15,
+      "startedAt": "2026-11-26T03:13:52.233Z",
+      "pass": 60,
       "fail": 1,
-      "blocked": 6,
-      "skipped": 8
+      "blocked": 10,
+      "skipped": 2,
+      "finishedAt": "2026-11-26T04:54:31.620Z"
+    },
+    "093": {
+      "status": "done",
+      "lane": "browser",
+      "pass": 58,
+      "fail": 0,
+      "blocked": 19,
+      "skipped": 1,
+      "finishedAt": "2026-11-26T04:54:31.621Z"
+    },
+    "093b": {
+      "status": "done",
+      "lane": "browser",
+      "pass": 6,
+      "fail": 0,
+      "blocked": 10,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T04:54:31.622Z"
     }
   },
-  "finishedAt": "2026-11-26T03:08:30.410Z"
+  "finishedAt": "2026-11-26T04:59:07.144Z"
 }
