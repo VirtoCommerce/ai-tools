@@ -1,8 +1,20 @@
 {
   "wave": "W1",
   "owner": "Elena Kutasina",
-  "status": "RUNNING",
-  "runIds": [],
+  "status": "RUN_DONE",
+  "runIds": [
+    "REG-2026-11-26-0300-W1"
+  ],
   "updatedAt": "2026-11-26",
-  "personas": "persona set S1 (npm run persona:use -- S1): clones agent-test-wave-s1-* of the shared accounts"
+  "personas": "persona set S1 (npm run persona:use -- S1): clones agent-test-wave-s1-* of the shared accounts",
+  "totals": {
+    "planned": 114,
+    "executed": 114,
+    "pass": 44,
+    "fail": 8,
+    "blocked": 38,
+    "skipped": 24,
+    "ambiguous": 0
+  },
+  "untriaged": 46
 }
