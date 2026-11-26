@@ -118,7 +118,7 @@ A store menu changed in the Content module shows on the storefront without publi
 
 ![Give products their own template](../../../test-results/chrome/docs/VCST-6571/product-template-rule.gif)
 
-Video: VCST-6571-site-builder.mp4 (attached to this ticket).
+Video: [Site Builder film, 74 s](https://claude.ai/artifact/GcpV6toFGUSH2qxJYWGdJJ) · [short version, 30 s (MP4)](https://virtocommerce.atlassian.net/secure/attachment/87725/VCST-6571-site-builder.mp4) (attached to this ticket).
 
 Not documented: installing Site Builder and moving from Page Builder (not tested) · History versions,
 restore, one version per save and every GitHub flow (no GitHub organization on vcst) · a store with
