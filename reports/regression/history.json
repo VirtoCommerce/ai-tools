@@ -7326,5 +7326,53 @@
     "pass_rate": 100,
     "duration_minutes": 60.96,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-26-1100-W1R",
+    "date": "2026-11-26",
+    "suiteId": "032",
+    "suiteName": "Auth Session & RBAC",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 3.25,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-26-1100-W1R",
+    "date": "2026-11-26",
+    "suiteId": "033",
+    "suiteName": "Auth Company & Account Menu",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 13.67,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-26-1100-W1R",
+    "date": "2026-11-26",
+    "suiteId": "044",
+    "suiteName": "Security Tests",
+    "environment": "vcst",
+    "browser": "playwright-firefox",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 4.17,
+    "mode": "interactive"
   }
 ]

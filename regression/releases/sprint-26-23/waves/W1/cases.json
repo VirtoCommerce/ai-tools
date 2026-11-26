@@ -167,8 +167,8 @@
    "run": "REG-2026-11-26-0300-W1"
   },
   "032|AUTH-048": {
-   "status": "FAIL",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1100-W1R"
   },
   "032|AUTH-049": {
    "status": "BLOCKED",
@@ -263,12 +263,12 @@
    "run": "REG-2026-11-26-0300-W1"
   },
   "033|AUTH-036": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1100-W1R"
   },
   "033|AUTH-037": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1100-W1R"
   },
   "033|AUTH-038": {
    "status": "BLOCKED",
@@ -315,12 +315,12 @@
    "run": "REG-2026-11-26-0300-W1"
   },
   "033|AUTH-083": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1100-W1R"
   },
   "033|AUTH-084": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1100-W1R"
   },
   "033|AUTH-085": {
    "status": "PASS",
@@ -423,8 +423,8 @@
    "run": "REG-2026-11-26-0300-W1"
   },
   "044|SEC-XSS-004": {
-   "status": "FAIL",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1100-W1R"
   },
   "044|SEC-CSRF-002": {
    "status": "PASS",
