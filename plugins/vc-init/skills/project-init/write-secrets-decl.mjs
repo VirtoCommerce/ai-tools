@@ -116,7 +116,7 @@ export function nextPasswords(declaredMap, { addEnvs = [], addNames = [], roles 
  *   passwords?: Record<string,string[]>, lanes?: Record<string,{command:string,args:string[]}> }} inputs
  *   passwords / lanes: undefined keeps what the file declares (lib/passwords.mjs)
  *   uses: the project's own launchables bound to an axis secret (lib/secret-uses.mjs); declared while the
- *   axis is a PAT, removed when it is not
+ *   axis is a PAT, removed when it is not (only as this writer declared them)
  */
 export function buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes, uses = [] }) {
   const base = existing && typeof existing === "object" ? existing : {};
@@ -170,7 +170,8 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
     for (const [kind, target] of [["servers", servers], ["tasks", orderedTasks]]) {
       for (const [name, entry] of Object.entries(entries[kind])) {
         if (pat[use.axis]) target[name] = entry;
-        else delete target[name];
+        // No secret to bind: drop what an earlier run declared, never an entry a person wrote by hand.
+        else if (JSON.stringify(target[name]) === JSON.stringify(entry)) delete target[name];
       }
     }
   }

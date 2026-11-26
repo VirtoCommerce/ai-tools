@@ -12,7 +12,6 @@
 //     agent happens to be — so the file is found from this module's own location instead.
 
 import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -70,22 +69,4 @@ export function writeToken(env = process.env) {
     if (f) return { token: f, from: `.env.local:${name}` };
   }
   return { token: null, from: null };
-}
-
-/**
- * Does a vc-secrets declaration name this `servers` / `tasks` entry? Then the token reaches the kb
- * through the launcher (`node $VC_SECRETS run kb`, `... task kb-push`), not through a file — the
- * repo's rule for every token (CLAUDE.md §Project Overview, `plugins/vc-secrets/README.md`).
- * Existence only: the launcher, not this, validates the declaration and resolves the secret.
- */
-export function vcSecretsDeclares(kind, name, env = process.env) {
-  const home = env.HOME || env.USERPROFILE || homedir();
-  for (const file of [
-    join(repoRoot(env), '.claude', 'vc-secrets.local.json'),
-    join(repoRoot(env), '.claude', 'vc-secrets.json'),
-    join(home, '.claude', 'vc-secrets.json'),
-  ]) {
-    try { if (JSON.parse(readFileSync(file, 'utf8'))?.[kind]?.[name]) return true; } catch { /* absent or unreadable */ }
-  }
-  return false;
 }

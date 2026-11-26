@@ -34,11 +34,11 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
 import {
-  accessBlock, accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
+  accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
-import { pushTaskEnv, viaSecrets } from '../../scripts/kb/core/via-secrets.mjs';
+import { pushDenial, pushTaskEnv, viaSecrets } from '../../scripts/kb/core/via-secrets.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -102,7 +102,7 @@ function main() {
   // printed, so a crash costs the notice, never a repeat.
   // Only while the denial holds for the token this machine pushes with (round 2): a switched token is not
   // told it cannot write.
-  const notice = accessBlock(process.env, writeToken(process.env).token) ? claimDeniedNotice(process.env) : null;
+  const notice = pushDenial(process.env) ? claimDeniedNotice(process.env) : null;
   if (notice) process.stdout.write(JSON.stringify({ systemMessage: accessWhy(notice.code, process.env) }));
 
   // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:
@@ -170,7 +170,7 @@ function main() {
   if (pushConfirmRequired(process.env)) return;
   // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,
   // so no process is started. A changed token, or the re-check interval passing, lets the next one go.
-  if (accessBlock(env, writeToken(env).token)) return;
+  if (pushDenial(env)) return;
   // OUT OF REQUESTS until GitHub's retry time (VCST-6378): the push would only be held, so none starts.
   if (rateHold(env)) return;
 

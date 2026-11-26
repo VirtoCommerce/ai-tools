@@ -19,15 +19,14 @@
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
-import { accessBlock, accessWhy, liveRateHold, pushConfirmRequired, queueDir } from './core/queue.mjs';
+import { accessWhy, liveRateHold, pushConfirmRequired, queueDir } from './core/queue.mjs';
 
 /** Minutes after which a still-queued line means the queue is not draining (`stat`, VCST-6378). */
 const STALE_QUEUE_MIN = 6 * 60;
 import { resolveWho } from './core/who.mjs';
-import { writeToken } from './core/token.mjs';
-import { HOP, RELAYED_PUSH_FLAGS, pushTaskEnv, relayedPushFlags, viaSecrets } from './core/via-secrets.mjs';
+import { repoRoot, writeToken } from './core/token.mjs';
+import { HOP, RELAYED_PUSH_FLAGS, pushDenial, pushTaskEnv, relayedPushFlags, viaSecrets } from './core/via-secrets.mjs';
 import { spawnSync } from 'node:child_process';
-import { repoRoot } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
@@ -207,7 +206,7 @@ async function main(argv) {
     const p = r.push ?? {};
     if (liveRateHold(p.rateLimitedUntil)) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);
     // Said only while the denial holds for the token this machine would push with (review round 1).
-    const denied = accessBlock(process.env, writeToken().token);
+    const denied = pushDenial(process.env);
     if (denied) out(`  NO WRITE ACCESS since ${denied.at} — ${accessWhy(denied.code)}`);
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.

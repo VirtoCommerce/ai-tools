@@ -19,22 +19,42 @@
 // HOP is the loop guard: the launcher passes the inherited environment to its child
 // (plugins/vc-secrets/README.md), so the relaunched server sees it and serves directly.
 
-import { spawn as nodeSpawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 
 import { defaultShimPath } from '../../../plugins/vc-secrets/scripts/shim-path.mjs';
-import { repoRoot, vcSecretsDeclares, writeToken } from './token.mjs';
+import { DENIED_RECHECK_MS, accessBlock, readPushStatus } from './queue.mjs';
+import { repoRoot, writeToken } from './token.mjs';
 
 export const HOP = 'KB_VIA_VC_SECRETS';
+
+/**
+ * Does a vc-secrets declaration (local, project or user scope — plugins/vc-secrets/README.md
+ * §Declarations) name this `servers` / `tasks` entry? Existence only: the launcher, not this, validates
+ * the declaration, checks trust and resolves the secret — and a refusal costs only the write.
+ */
+export function vcSecretsDeclares(kind, name, env = process.env) {
+  const home = env.HOME || env.USERPROFILE || homedir();
+  for (const file of [
+    join(repoRoot(env), '.claude', 'vc-secrets.local.json'),
+    join(repoRoot(env), '.claude', 'vc-secrets.json'),
+    join(home, '.claude', 'vc-secrets.json'),
+  ]) {
+    try { if (JSON.parse(readFileSync(file, 'utf8'))?.[kind]?.[name]) return true; } catch { /* absent or unreadable */ }
+  }
+  return false;
+}
 
 /**
  * The launcher's shim: `$VC_SECRETS` (what `/project-init` puts into the settings `env`), else the
  * plugin's documented default location. Null when neither file exists — no vc-secrets on this machine.
  */
-export function shimPath(env = process.env, exists = existsSync) {
+export function shimPath(env = process.env) {
   for (const p of [env.VC_SECRETS, defaultShimPath(env)]) {
-    if (p && !p.includes('${') && exists(p)) return p;
+    if (p && !p.includes('${') && existsSync(p)) return p;
   }
   return null;
 }
@@ -44,11 +64,28 @@ export function shimPath(env = process.env, exists = existsSync) {
  * is not already the launcher's child, a declaration names the entry, and the shim is on disk.
  * @returns {{ shim: string } | null}
  */
-export function viaSecrets(kind, name, env = process.env, { exists = existsSync } = {}) {
+export function viaSecrets(kind, name, env = process.env) {
   if (env[HOP] || writeToken(env).token) return null;
   if (!vcSecretsDeclares(kind, name, env)) return null;
-  const shim = shimPath(env, exists);
+  const shim = shimPath(env);
   return shim ? { shim } : null;
+}
+
+/**
+ * The recorded "this token cannot write" denial (VCST-6378) that holds for the token this machine
+ * pushes with — `accessBlock` for a token this process can see. A token kept in vc-secrets it cannot
+ * see, so its fingerprint cannot be compared; it is the only token the relayed pushes use, so the
+ * recorded denial is taken as its own until the usual re-check. Without this, a vc-secrets token
+ * refused with 403 would be retried silently on every turn and never reported: the incident
+ * `accessBlock` exists to end.
+ */
+export function pushDenial(env = process.env, now = Date.now()) {
+  const { token } = writeToken(env);
+  if (token) return accessBlock(env, token, now);
+  if (!viaSecrets('tasks', 'kb-push', env)) return null;
+  const d = readPushStatus(env).denied;
+  const at = Date.parse(String(d?.at ?? ''));
+  return d && Number.isFinite(at) && now - at < DENIED_RECHECK_MS ? d : null;
 }
 
 /**
@@ -58,7 +95,7 @@ export function viaSecrets(kind, name, env = process.env, { exists = existsSync 
  */
 export function relayThroughSecrets({
   shim, env = process.env, input = process.stdin, output = process.stdout, errput = process.stderr,
-  fallback, spawn = nodeSpawn, exit = (code) => process.exit(code),
+  fallback,
 }) {
   const note = (s) => { try { errput.write(`[kb-mcp] ${s}\n`); } catch { /* stderr is a courtesy */ } };
   const child = spawn(process.execPath, [shim, 'run', 'kb'], {
@@ -99,7 +136,7 @@ export function relayThroughSecrets({
   child.on('error', (err) => { if (!alive && kept) fallBack(err?.message ?? String(err)); });
   // 'close', not 'exit': it fires after the child's stdout has drained, so no last frame is lost.
   child.on('close', (code, signal) => {
-    if (alive) { exit(code ?? (signal ? 1 : 0)); return; }
+    if (alive) { process.exit(code ?? (signal ? 1 : 0)); return; }
     if (kept) fallBack(signal ? `signal ${signal}` : `exit ${code}`);
   });
   return child;
