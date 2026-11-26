@@ -12,7 +12,7 @@ White Labeling module installed; Admin access to backend","admin={{BACK_URL}}, a
 [ASSERT] 9. Verify favicons generated in multiple sizes","[DOM] Thumbnail job status shows Enabled
 [DOM] whiteLabelingSettings.favicons array contains entries for 16x16, 32x32, 180x180, 192x192, 512x512
 [STATE] Job run completes without errors","[ADMIN] job run status shows Success
-[CONSOLE] no uncaught JS errors","Favicons not generated; Thumbnail job fails to run; Sizes missing from favicons array","restore original job state","C389425","Manual"
+[CONSOLE] no uncaught JS errors","Favicons not generated; Thumbnail job fails to run; Sizes missing from favicons array","restore original job state","C389425",Draft
 "FWL-002","Store and organization have no whitelabeling settings - default branding displayed","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings tab
@@ -48,7 +48,7 @@ Store has White Labeling enabled with custom logo/favicon/theme; Organization ha
 [DOM] Store favicon displayed in browser tab
 [STATE] Coffee theme colors applied
 [DOM] No org-specific branding overrides present","[CONSOLE] no uncaught JS errors
-[NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634","Manual"
+[NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634",Draft
 "FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002",,"[EXCLUSIVE:the store's White Labeling (logo, favicon, theme preset)] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings
@@ -62,7 +62,7 @@ Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 ha
 [ASSERT] 10. Inspect favicon
 [ASSERT] 11. Inspect theme","[DOM] Default platform branding displayed (NOT Company1 custom branding)
 [STATE] Organization settings ignored when store-level WL is OFF
-[DOM] Default logo and favicon shown","[CONSOLE] no uncaught JS errors","Org branding shown when store WL is OFF; Store WL OFF not acting as master switch","restore store White Labeling = ON","C389429","Manual"
+[DOM] Default logo and favicon shown","[CONSOLE] no uncaught JS errors","Org branding shown when store WL is OFF; Store WL OFF not acting as master switch","restore store White Labeling = ON","C389429",Draft
 "FWL-011","Add parent footer links for organization - displayed in storefront footer","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) exists; White Labeling enabled; Link list feature available","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Marketing > Link Lists
 [ACT] 2. Create new link list: footer-org1

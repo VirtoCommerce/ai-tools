@@ -26,7 +26,7 @@ Store has White Labeling with store-level logo/favicon/theme; Organization has c
 [STATE] Coffee theme applied (NOT Default)
 [DOM] Org-specific main menu links visible
 [DOM] Org-specific footer links visible","[CONSOLE] no uncaught JS errors
-[NETWORK] org logo image loads with HTTP 200","Store logo shown instead of org logo; Store theme applied instead of org theme; Org footer/menu links missing","restore org settings to pre-test state; restore store settings","C390297 VCST-1634","Manual"
+[NETWORK] org logo image loads with HTTP 200","Store logo shown instead of org logo; Store theme applied instead of org theme; Org footer/menu links missing","restore org settings to pre-test state; restore store settings","C390297 VCST-1634",Draft
 "FWL-005","Set non-existent theme preset - default theme applied as fallback","Theme Preset","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Store/Organization White Labeling configured; Access to backend","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Test Org
 [ACT] 2. Open White Labeling settings
