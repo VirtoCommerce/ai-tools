@@ -3,18 +3,19 @@
   "owner": "Elena Kutasina",
   "status": "RUN_DONE",
   "runIds": [
-    "REG-2026-11-26-0955-W5"
+    "REG-2026-11-26-0955-W5",
+    "REG-2026-11-26-1200-RC"
   ],
   "updatedAt": "2026-11-26",
   "personas": "none — original shared accounts (persona:use --clear)",
   "totals": {
     "planned": 189,
     "executed": 189,
-    "pass": 134,
-    "fail": 10,
-    "blocked": 25,
+    "pass": 141,
+    "fail": 12,
+    "blocked": 16,
     "skipped": 20,
     "ambiguous": 0
   },
-  "untriaged": 35
+  "untriaged": 28
 }

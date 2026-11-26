@@ -16,3 +16,11 @@ Owner Elena Kutasina · vcst · Platform 3.1101.0 · theme 2.63.0-alpha.2681 · 
 - **Runner / premise:** LIST-035/082 (getComputedStyle), ORG-070 (route interception), ORG-034/037/040, LIST-016/043 (single-recipient share design is stale).
 - **Incidental, unconfirmed:** raw i18n `Sales_rep.navigation.link` flashes in `/company/members`; list-row remove announced as "Remove from cart"; "1 items selected" in every locale; two unnamed icon buttons in the 375px menu; org-switcher filter returns all orgs for "Fill-Fil" (KB-55B05609).
 - **Stand:** BUILDRIGHT_ADMIN temporarily locked out ~07:01Z; PERSONAL_USER_VIRTO no longer signs in; IMPERSONATE_TARGET_BLOCKED is unlocked (re-lock before 082); `starmarket-platform.demo.govirto.com` images unresolvable.
+
+## Re-run REG-2026-11-26-1200-RC (008, after the B2B-store role whitelist was restored)
+11 member cases blocked by the empty whitelist: 7 pass, 2 fail, 2 blocked.
+- **B2C-MBR-019 → VCST-7038** (Change role dialog preselects "Organization employee" instead of the member's role; Save disabled).
+- B2C-MBR-037: stale — a revoked invite stays as an Inactive row (KB-F0E06A8A); case text fixed, re-run pending.
+- B2C-MBR-033/038 blocked: BUILDRIGHT_ADMIN (test-carlos) cannot sign in. B2C-MBR-008 passed with an adapted check (same account).
+- Invite e-mails are not delivered on vcst: SendGrid "Maximum credits exceeded" (MBR-006 verified on the notification journal).
+- Promoted to Automated: B2C-MBR-006, 023, 036.

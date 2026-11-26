@@ -614,24 +614,24 @@
    "run": "REG-2026-11-26-0955-W5"
   },
   "008|B2C-MBR-004": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-005": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-006": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-007": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-008": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-009": {
    "status": "PASS",
@@ -674,8 +674,8 @@
    "run": "REG-2026-11-26-0955-W5"
   },
   "008|B2C-MBR-019": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "FAIL",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-020": {
    "status": "PASS",
@@ -690,8 +690,8 @@
    "run": "REG-2026-11-26-0955-W5"
   },
   "008|B2C-MBR-023": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-024": {
    "status": "PASS",
@@ -727,7 +727,7 @@
   },
   "008|B2C-MBR-033": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-034": {
    "status": "PASS",
@@ -738,16 +738,16 @@
    "run": "REG-2026-11-26-0955-W5"
   },
   "008|B2C-MBR-036": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-037": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "status": "FAIL",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-038": {
    "status": "BLOCKED",
-   "run": "REG-2026-11-26-0955-W5"
+   "run": "REG-2026-11-26-1200-RC"
   },
   "008|B2C-MBR-039": {
    "status": "PASS",
