@@ -149,24 +149,24 @@
    "run": "REG-2026-11-26-0425-W3"
   },
   "002|CAT-030": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-031": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-032": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-033": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-034": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-038": {
    "status": "PASS",
@@ -213,44 +213,44 @@
    "run": "REG-2026-11-26-0425-W3"
   },
   "002|CAT-COMP-001": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-002": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-003": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-004": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-005": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-006": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-007": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-COMP-008": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-AURL-001": {
    "status": "BLOCKED",
    "run": "REG-2026-11-26-0425-W3"
   },
   "002|CAT-COMP-009": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0425-W3"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1200-RC"
   },
   "002|CAT-080": {
    "status": "BLOCKED",

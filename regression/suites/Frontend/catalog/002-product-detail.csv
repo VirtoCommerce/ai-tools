@@ -268,7 +268,7 @@ A product with low inventory (at or below the configured low-stock warning thres
 [ACT] Click 'Add to Compare' on the PDP
 [WAIT] Wait for the success toast and header badge to update","[DOM] PDP 'Add to Compare' button toggles to 'Remove from Compare' with aria-pressed=true
 [STATE] Product added to compare list (button reflects selected state; transient success toast shown)
-[DOM] The header 'Compare' nav link (href=/compare) badge shows 1 — there is NO floating/sticky compare widget at the bottom of the page","[API] no GraphQL errors during compare operation (localStorage-backed)
+[DOM] The header 'Compare' nav link (href=/compare) badge shows 1 — there is NO floating/sticky compare widget at the bottom of the page","[API] no GraphQL errors during compare operation (the list is saved server-side: saveProductsToCompareList / removeCompareListItems) {OBSERVED}
 [CONSOLE] no uncaught JS errors","'Add to Compare' button missing or disabled on PDP; button does not toggle to 'Remove from Compare'; header Compare badge does not reach 1",Open /compare and click 'Clear all',Coverage Gap Analysis; vc-frontend add-to-compare-catalog.vue | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-20),Automated
 "CAT-COMP-002","Add Second Product and Header Compare Count Reaches 2","Catalog > Product Comparison","High",,"ECL-7.1",One product already in the compare list (from CAT-COMP-001); compare is saved on the server (guest or signed-in),"url={{FRONT_URL}}","[NAV] Navigate to a different product detail page
 [WAIT] PDP fully loaded
@@ -281,7 +281,7 @@ A product with low inventory (at or below the configured low-stock warning thres
 [DOM] The /compare page lists both products side-by-side with their properties, each under its own category tab whose count reflects its products (a category holds at most 5) {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)
 [DOM] The /compare page offers an 'All' / 'Differences' toggle for the property rows and the 'Clear all' and 'Clear category' buttons — there is no 'Show differences only' checkbox and no 'Clear list' button in theme 2.59 {OBSERVED} (vcptcore 2026-11-20, REG-2026-11-20-1202)","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","Header Compare badge does not reach 2; second product not added; /compare page does not show both products","Open /compare, click 'Clear all' and confirm 'OK'","Coverage Gap Analysis; vc-frontend compare-products.vue · Repaired 2026-10-14 (Stable 16 regression VCST-6042): theme 2.59 compare redesign: 'Show differences only' became an All / Differences toggle, 'Clear list' became 'Clear all' + 'Clear category', compare is per-category tabs, max 5 per category; behaviour (second product added, count 2) unchanged. Mechanism per VirtoOZ StorefrontUserGuide Compare Products (differences only, clear with one click, 5 products max), exact labels {OBSERVED} | Synced: VCST-5918 (2026-11-20) | Promoted: REG-2026-11-20-1202 (2026-11-22)",Automated
-"CAT-COMP-003","Navigate to Compare Page","Catalog > Product Comparison","High",,,"User logged in; 2+ products in compare bar","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] Click 'Compare' button in the compare bar
+"CAT-COMP-003","Navigate to Compare Page","Catalog > Product Comparison","High",,,"User logged in; 2+ products added to compare (header 'Compare' link shows the count)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] Click the 'Compare' link in the header (there is no compare bar) {OBSERVED}
 [WAIT] Compare page loads
 [ASSERT] Verify compare page displays products side-by-side","[NAV] URL contains /compare or similar comparison path
 [DOM] Products displayed in columns with images and non-empty names
@@ -300,12 +300,12 @@ A product with low inventory (at or below the configured low-stock warning thres
 [CONSOLE] no uncaught JS errors","Properties misaligned between products; missing product images; prices not displayed; empty property rows","Clear compare selection",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-COMP-005","Remove Product from Comparison","Catalog > Product Comparison","High",,,"User on compare page with 2+ products","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to compare page with 3 products
 [WAIT] All 3 products displayed
-[ACT] Click 'Remove' or 'X' on any one product
+[ACT] Click 'Remove from compare' on any one product column
 [WAIT] Product removed from comparison grid","[DOM] Removed product no longer shown in compare grid
 [STATE] 2 remaining products still displayed correctly
 [DOM] Properties re-aligned for remaining products
-[DOM] Compare bar updated to show 2 items","[API] no GraphQL errors
-[CONSOLE] no uncaught JS errors","Removed product still visible; remaining products misaligned; page crashes on remove; compare bar count not updated","Clear compare selection",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
+[DOM] The header 'Compare' count and the '2 of 5 added' counter show 2 items {OBSERVED}","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Removed product still visible; remaining products misaligned; page crashes on remove; header compare count not updated","Clear compare selection",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-COMP-006","Max Products Limit Enforcement","Catalog > Product Comparison","Medium",,,"User logged in; catalog has sufficient products to reach the compare limit","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to a category listing on {{FRONT_URL}}
 [ACT] Add products to compare via the 'Add to Compare' buttons on PDPs or listing cards until the header 'Compare' link badge shows the maximum allowed count (5 per category by default)
 [WAIT] The header badge shows the maximum count
@@ -326,9 +326,9 @@ A product with low inventory (at or below the configured low-stock warning thres
 [DOM] Header 'Compare' nav link badge shows 2 (count lives in the header link; there is NO floating compare bar)","[API] no GraphQL errors
 [CONSOLE] no uncaught JS errors","'Add to Compare' button missing on product cards; header Compare badge does not reach 2 after selecting 2 products",Open /compare and click 'Clear all',Coverage Gap Analysis; vc-frontend add-to-compare-catalog.vue | Promoted: REG-2026-08-25-1128 (2026-08-26) | Synced: VCST-5918 (2026-11-20),Automated
 "CAT-COMP-008","Compare from Catalog Listing - Navigate to Compare Page","Catalog > Product Comparison","High",,,"User on category page with 2 products selected for compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to any category page
-[ACT] Select 2 products for compare via checkboxes
-[WAIT] Compare bar visible with 2 products
-[ACT] Click 'Compare' button in compare bar
+[ACT] Click 'Add to Compare' on 2 product cards
+[WAIT] The header 'Compare' link shows 2
+[ACT] Click the 'Compare' link in the header
 [WAIT] Compare page loads","[NAV] URL navigates to compare page
 [DOM] Both selected products displayed on compare page with non-empty names
 [DOM] Properties aligned for comparison","[API] no GraphQL errors
@@ -357,12 +357,12 @@ A product with low inventory (at or below the configured low-stock warning thres
 [STATE] Layout remains intact — only imagery fails to load (broken-image icon/placeholder on '.vc-product-image img' / '.image-gallery__img--active'), no layout shift or crash","[NETWORK] product/PDP page requests return HTTP 200 for the page itself (image sub-requests may 404/ERR_NAME_NOT_RESOLVED — expected)
 [CONSOLE] no uncaught JS TypeError/ReferenceError (ERR_NAME_NOT_RESOLVED console entries for the unmapped CDN are expected and not a failure signal)
 [API] GraphQL products/product query underlying the page returns imgSrc with the configured host (confirms the storefront is not caching a stale pre-rewrite image URL)","Listing/PDP image src still shows the platform host instead of the configured CDN host (rewrite not reaching the storefront-facing query); theme logo incorrectly rewritten to the CDN host (over-broad rewrite bug); page itself returns 4xx/5xx (not just the image sub-request); JS TypeError/crash (not just an image load failure)","Config reset to empty is the LAST step of this case's own Steps — if the run aborts before that step, manually clear 'Store asset URL' via Admin SPA > Stores > @td(STORE_PRIMARY.id) > URLs before leaving the shared environment",VCST-5089; tests/Sprint-current/VCST-5089/storefront-check.md (AC9) | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
-"CAT-COMP-009","Clear All from Compare","Catalog > Product Comparison","Medium",,,"User has 2+ products in compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] With products in compare bar click 'Clear All' or 'Remove All'
-[WAIT] Compare bar clears
-[ASSERT] Verify no products in compare","[DOM] Compare bar disappears or shows empty state
+"CAT-COMP-009","Clear All from Compare","Catalog > Product Comparison","Medium",,,"User has 2+ products in compare","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] With products in compare, open /compare and click 'Clear all', then 'OK' in the confirmation dialog
+[WAIT] The empty state is shown
+[ASSERT] Verify no products in compare","[DOM] /compare shows the empty state ('Your compare list is empty'; signed in: a 'Restore products' button, KB-47A4FE64) and the header compare count is gone {OBSERVED}
 [STATE] No products in compare list
 [DOM] Compare indicators removed from all product cards/PDPs","[API] no GraphQL errors
-[CONSOLE] no uncaught JS errors","Compare bar still shows products after clear; compare indicators persist on cards; clear button missing","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
+[CONSOLE] no uncaught JS errors","/compare still shows products after clear; compare indicators persist on cards; clear button missing","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 CAT-080,In-Wishlist Marker Isolated to Current Store — Product Detail Page (Cross-Store Wishlist Regression),Catalog > Product Detail > Wishlist Marker,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:WISH_TWO_STORE_CUSTOMER]
 state from CAT-79 (customer holds a wishlist in the current store containing @td(WISH_TWO_STORE_CUSTOMER.storeAProductSku), and a separate wishlist in a second store containing @td(WISH_TWO_STORE_CUSTOMER.storeBProductSku), which is NOT on the current store's wishlist). The WISH_TWO_STORE_CUSTOMER fixture does not exist yet — see the handoff report; it must be seeded before this case is runnable. VACUOUS ON A SINGLE-STORE DEPLOYMENT: record SKIPPED, not PASS, in that case. Regression target: VCST-5705.","front_url={{FRONT_URL}}, email=@td(WISH_TWO_STORE_CUSTOMER.email), password=@td(WISH_TWO_STORE_CUSTOMER.password), store_a_url=@td(WISH_TWO_STORE_CUSTOMER.storeAProductUrl), store_b_url=@td(WISH_TWO_STORE_CUSTOMER.storeBProductUrl)","1. [NAV] {{FRONT_URL}}@td(WISH_TWO_STORE_CUSTOMER.storeBProductUrl)

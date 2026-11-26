@@ -20,3 +20,6 @@ Owner Elena Kutasina · vcst · Platform 3.1101.0 · theme 2.63.0-alpha.2681 · 
 - **Environment / runner:** `[EXCLUSIVE]` → WX (BOPIS-104..107, SRCH-014/016..023, SRCH-FSORT-001..004/006, CAT-AURL-001); no `evaluate`/route (004 SRCH-011/012/024..027/029..031/033, 001 CAT-040/041/049); lane limits (BOPIS-013/018; BOPIS-108 needs 151 locations, stand has 115); fixtures — `agent-test-wish-twostore` cannot sign in and has no vcst entry in `test-accounts.local.json` (CAT-079/080), no configurable/variation product (CAT-045/082), HOODIE fixture images 404 (SRCH-NEW-040), BOPIS-006 persona always has a pinned location.
 - **Runner note:** the lanes hold `AGENT_SLOT<N>_PASSWORD_VCST`, not `AGENT_POOL_SLOT_<N>_…`.
 - **Cleanup left:** order CO261126-00006 (BOPIS-026) not cancelled — the chrome lane has no Admin access.
+
+## Re-run REG-2026-11-26-1200-RC (002 compare, after `VirtoCommerce.ProductComparison` 3.1000.0 was installed)
+14/14 pass (CAT-030..034, CAT-COMP-001..009). Compare works on vcst. Case text updated to the live UI: no compare bar (header "Compare" link), "Add to Compare" buttons on cards, "Clear all" + OK, list saved server-side, "Restore products" after a signed-in clear (KB-47A4FE64). AGENT-TEST-CMP-* product images 404 (seed images missing).
