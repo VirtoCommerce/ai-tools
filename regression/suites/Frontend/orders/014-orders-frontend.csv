@@ -353,10 +353,12 @@ Admin access available at {{ADMIN_URL}}; at least one completed order exists; in
 [NAV] navigate to Orders module and open a completed order's detail
 [ASSERT] verify 'Print Invoice' / 'Download Invoice' action visible in Admin order detail
 [ACT] click 'Print Invoice' / 'Download Invoice' in Admin
-[WAIT] wait for the invoice response
-[ASSERT] the response is 200 application/pdf and its body is non-empty; the PDF opens inline in a new tab (no Content-Disposition attachment) {OBSERVED}
+[WAIT] wait for download to initiate
+[ASSERT] verify file download begins (browser download prompt or file saved)
+[ASSERT] verify downloaded file has .pdf extension
+[ASSERT] verify downloaded file is non-empty (file size > 0 bytes)
 [NAV] switch to storefront at {{FRONT_URL}}; navigate to /account/orders and open the same order's detail","[DOM] 'Print Invoice'/'Download Invoice' action present in Admin order detail
-[STATE] clicking the action in Admin opens the PDF in a new tab and the order blade stays open {OBSERVED}
+[STATE] clicking action in Admin triggers file download without navigation away from the blade
 [FORMAT] downloaded file has .pdf extension
 [STATE] file size > 0 bytes (non-empty PDF)
 [STATE] storefront order detail page has no invoice download control (Admin-only by design)",[ADMIN] Invoice PDF action available and functional on order detail blade; [NETWORK] PDF download request returns 2xx with Content-Type: application/pdf; [CONSOLE] no JS errors on download initiation,'Download Invoice' action absent in Admin on completed order; clicking action shows error message instead of downloading; downloaded file is 0 bytes or corrupted; file extension is not .pdf; storefront unexpectedly exposes an invoice download control,none,Coverage Gap Analysis,Draft
