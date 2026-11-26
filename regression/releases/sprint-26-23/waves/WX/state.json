@@ -1,9 +1,10 @@
 {
   "wave": "WX",
   "owner": "Elena Mutykova",
-  "status": "RUNNING",
+  "status": "CLAIMED",
   "runIds": [
-    "REG-2026-11-26-1540-WXE"
+    "REG-2026-11-26-1540-WXE",
+    "REG-2026-11-26-1702-WXM"
   ],
   "updatedAt": "2026-11-26",
   "personas": "none — original shared accounts (persona:use --clear); runs alone after W1–W6 (Elena Kutasina confirmed done)"
