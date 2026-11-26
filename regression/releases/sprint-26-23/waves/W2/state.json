@@ -11,11 +11,20 @@
   "totals": {
     "planned": 242,
     "executed": 242,
-    "pass": 143,
+    "pass": 128,
     "fail": 17,
-    "blocked": 32,
+    "blocked": 47,
     "skipped": 50,
     "ambiguous": 0
   },
-  "untriaged": 0
+  "untriaged": 0,
+  "notRun": [
+    {
+      "suites": [
+        "124"
+      ],
+      "cases": 20,
+      "reason": "out of scope by owner decision 2026-11-26: subscriptions are not part of this regression (storefront not on vcst, suite not in the manifest on main)"
+    }
+  ]
 }

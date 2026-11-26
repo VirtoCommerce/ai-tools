@@ -7438,21 +7438,5 @@
     "pass_rate": 100,
     "duration_minutes": 1.57,
     "mode": "interactive"
-  },
-  {
-    "runId": "REG-2026-11-26-0225-W0",
-    "date": "2026-11-26",
-    "suiteId": "042",
-    "suiteName": "Smoke Tests",
-    "environment": "vcst",
-    "browser": "playwright-chrome",
-    "total": 34,
-    "passed": 28,
-    "failed": 0,
-    "blocked": 1,
-    "skipped": 5,
-    "pass_rate": 100,
-    "duration_minutes": 31.38,
-    "mode": "interactive"
   }
 ]
