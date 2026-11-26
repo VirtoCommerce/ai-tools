@@ -8,7 +8,7 @@ Owner: Elena Mutykova. Stand vcst (Platform 3.1101.0). Stopped early — the own
 | REG-2026-11-26-1540-WXE | the 28 `[EXCLUSIVE]` cases of 002, 004, 005, 036, 044, 070, 071, 089, 093, 093b (`regression:plan --exclusive`) | 24 PASS, 0 FAIL, 0 BLOCKED, 4 SKIPPED (FWL-001/003/004/009, then `Manual`) |
 | REG-2026-11-26-1702-WXM | those 4 FWL cases, flipped `Manual` → `Draft` (all of 070 is `Manual`, 17/18 of 071: a TestRail import) and run live | FWL-001 BLOCKED, FWL-003 FAIL, FWL-009 FAIL, FWL-004 FAIL (step 18 only) |
 
-`release:split` cannot record these runs: it assigns a run to a wave by suite, and these cases sit in suites of other waves. So `cases.json` is empty for WX and the numbers above are from the runs' own results (`suite-<id>-cases.jsonl`). Both runs' store settings were restored (before/after snapshots in the run folders); the WXM fixtures were deleted except the org White Labeling record `6c8aac99-2a1c-480c-a107-f79cada6884a`, which has no REST delete.
+`release:split` cannot record these runs: it assigns a run to a wave by suite, and these cases sit in suites of other waves. So `cases.json` is empty for WX and the numbers above are from the runs' own results (`suite-<id>-cases.jsonl`). Both runs' store settings were restored (before/after snapshots in the run folders); the WXM fixtures were deleted except two orphaned org White Labeling records, `6c8aac99-2a1c-480c-a107-f79cada6884a` and `d9d9baa9-5837-4205-9a90-f0786e11fbd1` (no REST delete; they survive the org delete, KB-52D2F554). The store setting `WhiteLabeling.WhiteLabelingEnabled` was restored to `true` by a full-body PUT, so it is now stored explicitly (it may have been inherited before; the snapshot cannot show that).
 
 ## Triage of the WXM run (not in ledger.csv: it only takes rows for WX's own suites, and 070/071 belong to other waves)
 | Case | Status | Verdict | Why | Follow-up |
@@ -28,6 +28,10 @@ Owner: Elena Mutykova. Stand vcst (Platform 3.1101.0). Stopped early — the own
 ## State left on vcst (all intentional, none touches another wave)
 - Punchout 3.1001.0 installed and configured (vc-deploy-dev#7167, #7160); Punchout and sales-rep fixtures seeded; mapping `AGENT-TEST-PO-100` created for 107 (owned by the run; delete it when 107 is done).
 - Credentials: `SR_REP_PRIMARY` cannot sign in (400 invalid_grant, password changed 2026-11-26 03:09Z by someone else); `WL_USER_ELECTRONICS` stale (FWL-001). Neither was changed by this wave.
+
+## Why none of the 4 FWL cases is live as written
+- FWL-001: there is no Settings > Jobs; the control is Settings > Thumbnail > General > "Enable image processing job" (false on vcst). The favicon task makes 16/32/96/128/196, the assertion expects 16/32/180/192/512. FWL-004 step 8 ("Enabled = ON") is false for a new org: its blade opens OFF.
+- FWL-003/004/009: .ico is rejected by the admin favicon widget, "Org Without Branding", "Branded Org", "Company1" and the link lists org-footer-links / org-main-menu do not exist; the menu path is Contacts > Manage > White labeling. All four need rewriting, not only a status flip.
 
 ## Real bugs
 None confirmed. Unconfirmed, from the WXE runners, not filed: mobile search overlay shows the raw key `common.labels.close`; pickup-locations "Load more" shown when all are listed; deactivated pickup locations stay on the storefront until a manual reindex; `/api/files/<id>_sm` 404 on the PDP.
