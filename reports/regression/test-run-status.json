@@ -1,43 +1,65 @@
 {
-  "runId": "REG-2026-11-26-0357-W2",
+  "runId": "REG-2026-11-26-0425-W3",
   "status": "completed",
-  "startedAt": "2026-11-26T00:57:33.177Z",
+  "startedAt": "2026-11-26T02:22:18.239Z",
   "env": "vcst",
-  "ticket": "VCST-7028",
-  "selection": "028,011,014,120 (sprint-26-23 W2, --no-promote; 124 NOT_DEPLOYED)",
+  "ticket": "VCST-7029",
+  "selection": "001,002,003,004,005,036 (sprint-26-23 W3, --no-promote; [EXCLUSIVE] cases left for WX)",
   "suites": {
-    "120": {
+    "036": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "pass": 22,
-      "fail": 3,
-      "blocked": 10
-    },
-    "028": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
       "pass": 31,
-      "fail": 4,
-      "blocked": 14
+      "fail": 2,
+      "blocked": 8,
+      "skipped": 12
     },
-    "011": {
+    "002": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-firefox",
-      "pass": 30,
-      "fail": 9,
-      "blocked": 2
+      "pass": 14,
+      "fail": 2,
+      "blocked": 16,
+      "skipped": 1
     },
-    "014": {
+    "005": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "pass": 55,
+      "pass": 11,
       "fail": 1,
-      "blocked": 11
+      "blocked": 8,
+      "skipped": 28
+    },
+    "003": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "pass": 6,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 24
+    },
+    "004": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "pass": 37,
+      "fail": 2,
+      "blocked": 19,
+      "skipped": 6
+    },
+    "001": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "pass": 15,
+      "fail": 1,
+      "blocked": 6,
+      "skipped": 8
     }
   },
-  "finishedAt": "2026-11-26T02:18:25.339Z"
+  "finishedAt": "2026-11-26T03:08:30.410Z"
 }

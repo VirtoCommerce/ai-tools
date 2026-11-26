@@ -1,8 +1,20 @@
 {
   "wave": "W3",
   "owner": "Elena Kutasina",
-  "status": "RUNNING",
-  "runIds": [],
+  "status": "RUN_DONE",
+  "runIds": [
+    "REG-2026-11-26-0425-W3"
+  ],
   "updatedAt": "2026-11-26",
-  "personas": "persona set S3 (npm run persona:use -- S3): clones agent-test-wave-s3-* of the shared accounts"
+  "personas": "persona set S3 (npm run persona:use -- S3): clones agent-test-wave-s3-* of the shared accounts",
+  "totals": {
+    "planned": 258,
+    "executed": 258,
+    "pass": 114,
+    "fail": 8,
+    "blocked": 57,
+    "skipped": 79,
+    "ambiguous": 0
+  },
+  "untriaged": 65
 }
