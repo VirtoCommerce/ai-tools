@@ -35,8 +35,8 @@
 [NETWORK] Old token returns 401 on subsequent API call
 [CONSOLE] no TypeError or JS errors","Logout does not call /revoke/token; old token still valid after logout; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.session.signout.token-revoked | DataProfile:profile.auth.signout-token-revoked,"Manual"
 "AUTH-048","Session Expiry During Checkout - Cart Preserved After Re-Auth","Session > Checkout Recovery","Critical","BL-AUTH-001","ECL-1.2, ECL-4.2","User logged in; product in stock; guest checkout store (B2B-store): /cart and /checkout have no login gate","email={{USER_EMAIL}};password={{USER_PASSWORD}};sku=@td(BUYABLE_PRICED_PRODUCT.sku) (a simple buyable product; TEST_SKU is a configurable one);front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
-[ACT] Click 'Sign in with a password instead' (the form opens in one-time-code mode)
-[WAIT] Wait for the Password field
+[ACT] If the one-time-code form is shown, click 'Sign in with a password instead'
+[WAIT] Password field visible
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
@@ -56,7 +56,7 @@
 [NAV] Reload {{FRONT_URL}}/cart
 [WAIT] Wait for the cart page to settle
 [ASSERT] /cart renders anonymous: 'Your cart is empty' state, the signed-out header with its 'Sign in' link, no user name in the header, URL stays /cart {OBSERVED}
-[ACT] Click 'Sign in' in the header, click 'Sign in with a password instead', fill 'Email': {{USER_EMAIL}} and 'Password': {{USER_PASSWORD}}, click 'Sign In'
+[ACT] Click 'Sign in' in the header; if the one-time-code form is shown, click 'Sign in with a password instead'; fill 'Email': {{USER_EMAIL}} and 'Password': {{USER_PASSWORD}}, click 'Sign In'
 [WAIT] Wait for redirect after re-authentication
 [NAV] Navigate to {{FRONT_URL}}/cart
 [WAIT] Wait for cart page to load","[STATE] After session loss /cart renders anonymous (signed-out header with its Sign in link, 'Your cart is empty' state) and does NOT redirect to /sign-in on a guest-checkout store {OBSERVED} KB-A5347A19

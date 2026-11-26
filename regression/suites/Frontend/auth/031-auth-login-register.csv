@@ -185,6 +185,8 @@
 [CONSOLE] no TypeError or JS errors","Login succeeds with wrong password; no error shown; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.signin.password.wrong-credentials | DataProfile:profile.auth.password-wrong-credentials,"Automated"
 "AUTH-019","Login - Email Verification Required","Login > Validation","Medium","BL-AUTH-001","ECL-6.1","Store with mandatory email verification enabled; the unverified user is created in the case by sign-up (AGENT-TEST- prefixed email), not seeded","url={{FRONT_URL}}/sign-in;email=a user created in-case by sign-up (AGENT-TEST- prefixed random-data email) and not confirmed;password={{USER_PASSWORD}}","[SETUP] Sign up a new user on {{FRONT_URL}}/sign-up with an AGENT-TEST- prefixed random-data email and {{USER_PASSWORD}}; do not confirm the email - capture the email as $UNVERIFIED_EMAIL
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown, click 'Sign in with a password instead'
+[WAIT] Password field visible
 [ACT] Fill 'Email': $UNVERIFIED_EMAIL
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
@@ -305,6 +307,8 @@ NOTE: a REFUSAL for a locked organization belongs only to an EXPLICIT org switch
 [DOM] No error message revealing 'user not found'","[NETWORK] POST to password reset endpoint returns HTTP 200 (same as valid email)
 [CONSOLE] no TypeError or JS errors","Different response for non-existent email vs valid email (user enumeration vulnerability); error message reveals user existence; console TypeError","none",E2E-AUTH-004 | Behavior:auth.password-reset.unknown-email | DataProfile:profile.auth.password-reset-unknown-email,"Automated"
 "AUTH-054","Email Case Sensitivity - Login with Different Case","Login > Email Handling","Medium","BL-AUTH-001","ECL-4.1","Valid user account with known email; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown, click 'Sign in with a password instead'
+[WAIT] Password field visible
 [ACT] Fill 'Email': {{USER_EMAIL}} converted to UPPERCASE
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
@@ -313,15 +317,18 @@ NOTE: a REFUSAL for a locked organization belongs only to an EXPLICIT org switch
 [ACT] Click the account button in the top header (data-test-id=""account-button"") to open the account-menu popup, then click Logout inside it (BL-AUTH-007; data-test-id=""sign-out-button"")
 [WAIT] Wait for logout to complete and redirect
 [NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown, click 'Sign in with a password instead'
+[WAIT] Password field visible
 [ACT] Fill 'Email': {{USER_EMAIL}} with mIxEd CaSe
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
 [WAIT] Wait for login response
 [ASSERT] Login succeeds with mixed-case email; the user lands on '/' with the user's name in the header
-[ACT] Click user name in top header to open account-menu popup, then click Logout inside popup
+[ACT] Click the account button in the top header (data-test-id=""account-button""), then click Logout inside the popup (data-test-id=""sign-out-button"")
 [WAIT] Wait for logout to complete
 [NAV] Navigate to {{FRONT_URL}}/sign-in?returnUrl=/account/profile
 [ACT] If the one-time-code form is shown, click 'Sign in with a password instead'
+[WAIT] Password field visible
 [ACT] Fill 'Email': {{USER_EMAIL}} converted to UPPERCASE
 [ACT] Fill 'Password': {{USER_PASSWORD}}
 [ACT] Click 'Sign In'
@@ -430,24 +437,26 @@ NOTE: a REFUSAL for a locked organization belongs only to an EXPLICIT org switch
 [CONSOLE] no TypeError or JS errors
 [API] No new organization exists with script tag in name","Registration succeeds with script tags in org name; XSS stored as org name; no validation error shown; org created with executable payload","none","VCST-4691 PR #130","Manual"
 "AUTH-069","Session Invalidation After Password Change - Success Notification After Submit (No Pre-Submit Notice)","Password Change > Session Invalidation > UX","High","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:TECHFLOW_BUYER]
+[PRE:DISPOSABLE_CUSTOMER:orgMember]
 Storefront /account/change-password accessible; VCST-4531 frontend PR #2275 deployed
-The persona's password is changed to a throwaway one and restored in Cleanup; if the policy refuses reusing the old password, reset it through the admin (POST /api/platform/security/users/{id}/resetpassword)","front_url={{FRONT_URL}};email=@td(TECHFLOW_BUYER.email);password=@td(TECHFLOW_BUYER.password);new_password=random-data(AGENT-TEST- prefixed, policy-compliant)","[NAV] {{FRONT_URL}}/sign-in
-[ACT] Fill 'Email': @td(TECHFLOW_BUYER.email)
-[ACT] Fill 'Password': @td(TECHFLOW_BUYER.password)
+Runs on a DISPOSABLE org-member customer created for this case (npm run td:customer -- create --kind orgMember) and deleted in Cleanup: the case changes the password, which revokes every other session of the account, so it never runs on a shared persona (FIFTH RULE)","front_url={{FRONT_URL}};email=DISPOSABLE_CUSTOMER (email printed by td:customer create);password=the DEFAULT_TEST_PASSWORD name (passwordKey);new_password=random-data(AGENT-TEST- prefixed, policy-compliant)","[NAV] {{FRONT_URL}}/sign-in
+[ACT] If the one-time-code form is shown, click 'Sign in with a password instead'
+[WAIT] Password field visible
+[ACT] Fill 'Email': the disposable customer's email
+[ACT] Fill 'Password': the DEFAULT_TEST_PASSWORD name
 [ACT] Click 'Sign In'
 [WAIT] Authenticated session established
 [NAV] {{FRONT_URL}}/account/change-password
 [WAIT] Change password form visible with Current password, New password, Confirm new password fields and the Change button
 [KEY] search the page for any notice about other devices, sessions or being signed out
-[ACT] Fill 'Current password': @td(TECHFLOW_BUYER.password); 'New password' and 'Confirm new password': new_password
+[ACT] Fill 'Current password': the DEFAULT_TEST_PASSWORD name; 'New password' and 'Confirm new password': new_password
 [WAIT] 'Change' button enabled
 [ACT] Click 'Change'
 [WAIT] the success notification appears","[DOM] Current password, New password and Confirm new password fields are visible and enabled {OBSERVED}
 [DOM] No notice about other devices, sessions or sign-out is present on the page before submit - the form carries none by design {OBSERVED} KB-4BDF14A7
 [DOM] After a successful change a success notification reads 'Your password has been successfully changed. Changing your password will sign you out of all other devices and browsers.' {OBSERVED} (REG-2026-11-26-0900-W1F; VCST-4531 AC, vc-frontend PR #2275) (pages.change_password.success_message)","[NETWORK] No 4xx/5xx on page load or on submit
-[CONSOLE] No TypeError or JS errors during page load, form rendering and submit","Success notification absent or worded differently after a successful change; the password is not changed; console TypeError; page fails to load (500); the Change password page is not reachable","Restore the persona's password: change it back through the same form (Current password: new_password, New password: @td(TECHFLOW_BUYER.password)) or reset it via the admin
-[PRE:SIGNOUT]","VCST-4531 | 2026-11-26 (Sprint 26-23 W1 triage): no pre-submit notice exists on /account/change-password; the text is the post-submit success notification, so the case asserts the fields and the notification after a change with a throwaway password, restored in Cleanup (KB-4BDF14A7, VCST-4531, vc-frontend PR #2275) | Promoted: REG-2026-11-26-0900-W1F (2026-11-26)",Automated
+[CONSOLE] No TypeError or JS errors during page load, form rendering and submit","Success notification absent or worded differently after a successful change; the password is not changed; console TypeError; page fails to load (500); the Change password page is not reachable","Delete the disposable customer (npm run td:customer -- delete --email <email>), also when the case failed or was blocked
+[PRE:SIGNOUT]","VCST-4531 | 2026-11-26 (Sprint 26-23 W1 triage): no pre-submit notice exists on /account/change-password; the text is the post-submit success notification, so the case asserts the fields and the notification after a change with a throwaway password on a disposable customer deleted in Cleanup; passed in REG-2026-11-26-1330-W1D (KB-4BDF14A7, VCST-4531, vc-frontend PR #2275) | Promoted: REG-2026-11-26-0900-W1F (2026-11-26)",Automated
 "AUTH-070","Account Lockout — Storefront Login Blocked After Threshold Failed Attempts","Login > Security > Lockout","Critical","BL-AUTH-003","ECL-3.1","[PRE:CLEAR_SESSION]
 Storefront login page accessible; a DEDICATED lockout-test user exists (never use agent pool slot accounts — use test-specific AGENT-TEST- user created for this test); lockout policy configured (default 5 failed attempts); VCST-5074/5149 fix deployed (platform >=3.1007.12)","front_url={{FRONT_URL}};lockout_user_email=AGENT-TEST-lockout-sf@test.virtocommerce.com;lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in
 [ACT] If the one-time-code form is shown (the store has OTP sign-in on), click 'Sign in with a password instead' (data-test-id=""otp-email-switch-to-password-link"")

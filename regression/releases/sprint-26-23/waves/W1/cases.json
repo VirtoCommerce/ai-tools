@@ -131,8 +131,8 @@
    "run": "REG-2026-11-26-0300-W1"
   },
   "031|AUTH-069": {
-   "status": "FAIL",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1330-W1D"
   },
   "031|AUTH-070": {
    "status": "PASS",
@@ -459,8 +459,8 @@
    "run": "REG-2026-11-26-0300-W1"
   },
   "044|SEC-AUTH-005": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0300-W1"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1330-W1D"
   }
  }
 }
