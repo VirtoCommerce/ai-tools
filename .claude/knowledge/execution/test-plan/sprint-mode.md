@@ -236,6 +236,10 @@ layer — runs first and alone; every other wave depends on W0 only**, so once W
    profiles, personas per owner, env settings), §Not in scope. The rest stays in the plan; never copy it.
 3. **`waves/<W>/state.json`** for every wave (`NOT_STARTED`, `owner: null`), then
    `npm run release:status -- sprint-{XX-YY} --write` and `npm run release:check -- sprint-{XX-YY}` — must be green.
+   Then **`npm run release:delivery -- sprint-{XX-YY} --write`**: is every Done ticket's code — and every ticket the
+   stand picked up this sprint — in the build the stand runs ([`waves.md`](../../../skills/qa-run/waves.md) Step 0
+   item 4). Put its `PARTIAL`, `NOT_DELIVERED` and `INCOMPLETE` tickets in `PLAN.md` §Not delivered and **say them in
+   the hand-out message as its first line**, never as a note inside the plan: a `PARTIAL` means no wave may start.
 4. **Hand it out — one question, both gated:** the PR to `main` with the plan and the release folder (branch
    `claude/qa-release/sprint-{XX-YY}-plan`, the user's git identity, body in English: the wave grid, prerequisites, how
    to claim; **never merge**), and one tracker sub-task per wave under `--ticket`

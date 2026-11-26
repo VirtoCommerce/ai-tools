@@ -4,7 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as m from "../vc-secrets.mjs";
-import { tmpDirs } from "../test-support.mjs";
+import { UNREACHABLE_POWERSHELL, tmpDirs } from "../test-support.mjs";
+import { pathPresent } from "./util.mjs";
 import {
     launcherEnv, denyFs, CAN_DENY_BY_MODE, scopedPaths, trustedStateFor, seedTrust, CROSSING_SHAPE, crossingReport,
     vaultPaths, OAUTH_TENANT_ID, OAUTH_DECL, REGISTRATION_BLOCK, OAUTH_CLIENT_ID, EMPTY_DECL, authorizedOauthPaths,
@@ -131,44 +132,6 @@ test("doctorReport: a clash is a finding, so the run cannot also say it has noth
     assert.doesNotMatch(lines.join("\n"), /nothing to report/);
 });
 
-test("doctorReport: an oversize access entry is a WARN beside the status, not instead of it", () => {
-    // The two are independent facts and both have to be said. The status line reads "needs-refresh"
-    // and is honestly an OK -- the next launch WILL renew. What it cannot say is that it will do so
-    // EVERY time and pay a refresh-token rotation for it, which is the only thing the developer
-    // could act on. So the WARN must accompany the OK rather than replace it.
-    //
-    // WARN and not FAIL: nothing is broken, nothing is lost, and a FAIL exits 1 -- it would redden
-    // every run on an affected machine over a condition with no local remedy.
-    const cfg = { projectId: "p", servers: {}, secrets: {},
-        oauth: { "ado-dev": { scope: "user", home: "user" } } };
-    const lines = m.doctorReport(cfg, {
-        env: {}, platform: "win32", enableLists: { enabled: [], disabled: [], envKeys: [] },
-        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(),
-        oauthStatus: { "ado-dev": "needs-refresh" },
-        oauthOversize: { "ado-dev": { backend: "wcm", bytes: 2588, limit: 2560 } },
-    });
-    const text = lines.join("\n");
-    assert.match(text, /^OK oauth "ado-dev" \(user\) signed in -- the access token is stale/m,
-        "the status line must survive");
-    assert.match(text, /^WARN oauth "ado-dev": the access entry does not fit Credential Manager \(2588 bytes, limit 2560\)\./m);
-    assert.match(text, /rotates the refresh token/, "and must say what it is costing");
-    assert.doesNotMatch(text, /^FAIL/m, "an unactionable condition may not exit 1");
-    // The store named in words. "wcm" is an internal id and this line is read by whoever decides
-    // whether the DPAPI contingency is now worth building.
-    assert.doesNotMatch(text, /\bwcm\b/);
-});
-
-test("doctorReport: no marker means no line, so a healthy machine reads exactly as before", () => {
-    const cfg = { projectId: "p", servers: {}, secrets: {},
-        oauth: { "ado-dev": { scope: "user", home: "user" } } };
-    const lines = m.doctorReport(cfg, {
-        env: {}, platform: "win32", enableLists: { enabled: [], disabled: [], envKeys: [] },
-        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(),
-        oauthStatus: { "ado-dev": "needs-refresh" },
-    });
-    assert.doesNotMatch(lines.join("\n"), /does not fit/);
-});
-
 test("doctorReport: a colliding oauth entry key is a WARN and does not fail the run", () => {
     const cfg = m.loadConfig(scopedPaths({ project: { projectId: "proj-x",
         oauth: { ado: OAUTH_DECL },
@@ -288,7 +251,7 @@ test("probeKeystoreWrite: gpg is not rehearsed, and that is a decision rather th
     assert.equal(await m.probeKeystoreWrite({ backend: "gpg",
         write: async () => { wrote = true; } }), null);
     assert.equal(wrote, false);
-    assert.deepEqual(m.WRITE_PROBED_BACKENDS, ["keychain", "wcm"], "the scope is pinned, not incidental");
+    assert.deepEqual(m.WRITE_PROBED_BACKENDS, ["keychain", "wcm", "dpapi"], "the scope is pinned, not incidental");
 });
 
 test("probeKeystoreWrite: the value it actually writes is the boundary-sized one", async () => {
@@ -350,19 +313,52 @@ test("doctorReport: the write-probe lines name the backend they probed", () => {
     const base = { env: {}, enableLists: { enabled: [], disabled: [], envKeys: [] },
         resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), configDirOverride: false };
     const okLine = m.doctorReport({ secrets: {}, servers: {}, oauth: {} },
-        { ...base, platform: "win32", writeProbe: "ok" }).find((l) => l.includes("accepts a write"));
+        { ...base, platform: "win32", writeProbes: [{ backend: "wcm", result: "ok" }] }).find((l) => l.includes("accepts a write"));
     assert.match(okLine, /wcm/, `must name the backend, got: ${okLine}`);
     const failLine = m.doctorReport({ secrets: {}, servers: {}, oauth: {} },
-        { ...base, platform: "win32", writeProbe: { oversize: true, message: "win32err=1783" } })
+        { ...base, platform: "win32", writeProbes: [{ backend: "wcm", result: { oversize: true, message: "win32err=1783" } }] })
         .find((l) => l.includes("rejected a write"));
     assert.match(failLine, /^FAIL wcm .*1783/, `must name the backend and the cause, got: ${failLine}`);
     // The size wording is reserved for the size refusal. Any other cause reaches the same branch, and
     // claiming the ceiling there sends the reader after a number that was never the problem.
     const lockedLine = m.doctorReport({ secrets: {}, servers: {}, oauth: {} },
-        { ...base, platform: "win32", writeProbe: { oversize: false, message: "user interaction is not allowed" } })
+        { ...base, platform: "win32", writeProbes: [{ backend: "wcm", result: { oversize: false, message: "user interaction is not allowed" } }] })
         .find((l) => l.startsWith("FAIL wcm"));
     assert.doesNotMatch(lockedLine, /size limit/, `got: ${lockedLine}`);
     assert.match(lockedLine, /user interaction/, `must still carry the cause, got: ${lockedLine}`);
+});
+
+test("doctorReport: on Windows both probes are printed, each saying what it proves", () => {
+    // Credential Manager holds a `set` secret and the DPAPI files hold the sign-in, so a probe of one
+    // certifies nothing about the other. The two lines are asserted whole: the claim each makes is the
+    // contract, and a rewording that drops the store's own claim would pass any looser match.
+    const lines = m.doctorReport({ secrets: {}, servers: {}, oauth: {} }, {
+        env: {}, platform: "win32", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), configDirOverride: false,
+        writeProbes: [{ backend: "wcm", result: "ok" }, { backend: "dpapi", result: "ok" }],
+    });
+    const wcm = lines.indexOf('OK wcm accepts a write at the size limit -- "vc-secrets set" can store a value up to 2560 bytes');
+    const dpapi = lines.indexOf("OK dpapi stores and reads back an 8192-byte value -- login and renewal can store a token");
+    assert.ok(wcm >= 0, lines.join("\n"));
+    assert.ok(dpapi > wcm, `the local store is reported first, then the OAuth store:\n${lines.join("\n")}`);
+});
+
+test("doctorReport: a failed probe says what its own store is for, and no probe is a silent one", () => {
+    // The consequence of a refused write depends on the store: a Credential Manager refusal is about
+    // `set`, which is all it holds now, and must not tell the reader a sign-in is at risk.
+    const base = { env: {}, platform: "win32", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), configDirOverride: false };
+    const cfg = { secrets: {}, servers: {}, oauth: {} };
+    const wcm = m.doctorReport(cfg, { ...base,
+        writeProbes: [{ backend: "wcm", result: { oversize: true, message: "win32err=1783" } }] }).find((l) => l.startsWith("FAIL"));
+    assert.equal(wcm, 'FAIL wcm rejected a write at the size limit -- "vc-secrets set" may not be able to store a value: win32err=1783');
+    const dpapi = m.doctorReport(cfg, { ...base,
+        writeProbes: [{ backend: "dpapi", result: { oversize: false, message: "the value read back differs from the value written" } }] })
+        .find((l) => l.startsWith("FAIL"));
+    assert.equal(dpapi,
+        'FAIL dpapi refused a write -- "vc-secrets login" may not be able to store a token: the value read back differs from the value written');
+    const silent = m.doctorReport(cfg, { ...base, writeProbes: [{ backend: "dpapi", result: null }] });
+    assert.equal(silent.some((l) => /dpapi/.test(l)), false, silent.join("\n"));
 });
 
 test("the probe writes AND deletes under the scope the config declares, in both directions", async () => {
@@ -414,6 +410,187 @@ test("probeKeystoreWrite: a failing cleanup does not turn a good write into a ba
     const status = await m.probeKeystoreWrite({ backend: "keychain",
         write: async () => {}, remove: async () => { throw new m.VcSecretsError("delete failed"); } });
     assert.equal(status, "ok", "the probe's verdict is about the write, not the cleanup");
+});
+
+// The dpapi probe is the one that touches the disk and a child process, so every test of it hands in a
+// temp environment and a stand-in PowerShell: the default `env` is the developer's own and the default
+// `run` is the real powershell.exe, and a test that reached either would write to a live store.
+function dpapiProbeEnv() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-doctor-dpapi-"));
+    tmpDirs.push(dir);
+
+    return { dir, env: { XDG_CONFIG_HOME: dir, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL } };
+}
+
+test("dpapiProbeEnv: a call made with the default runner cannot start the real PowerShell", async () => {
+    const { env } = dpapiProbeEnv();
+    const failure = await m.unprotectManyIo({ blobs: new Map([[PROBE_USER, Buffer.from("x")]]), env }).then(() => null, (e) => e);
+    assert.ok(failure?.message.includes(UNREACHABLE_POWERSHELL), `the start was ${failure?.message}, not the guard's path`);
+});
+
+const toHex = (text) => Buffer.from(text, "utf8").toString("hex");
+
+// The three PowerShell scripts a dpapi probe can run, told apart by the script they were handed. Protect
+// "encrypts" by prefixing the plaintext; unprotect hands each blob to `unprotect`, which maps the
+// plaintext to the script's `{ ok: hex }` / `{ err }` outcome. Anything else is a mistake the probe must
+// not make.
+function fakeDpapiRun({ unprotect = (plain) => ({ ok: toHex(plain) }), failProtect = null, calls = [] } = {}) {
+    return async (spec, opts) => {
+        const script = Buffer.from(spec.args[spec.args.indexOf("-EncodedCommand") + 1], "base64").toString("utf16le");
+        calls.push({ script, spec, opts });
+        if (script === m.PS_DPAPI_PROTECT) {
+            if (failProtect !== null) {
+                throw failProtect;
+            }
+
+            return Buffer.from(`cipher:${opts.stdinValue}`).toString("base64");
+        }
+        if (script === m.PS_DPAPI_UNPROTECT_MANY) {
+            const out = {};
+            for (const [key, blob] of Object.entries(JSON.parse(opts.stdinValue))) {
+                out[key] = unprotect(Buffer.from(blob, "base64").toString("utf8").replace(/^cipher:/, ""));
+            }
+
+            return JSON.stringify(out);
+        }
+        if (script === m.PS_CRED_DELETE) {
+            // The legacy Credential Manager delete deleteEntryIo("dpapi") also owes: nothing there.
+            throw Object.assign(new m.VcSecretsError("no stored entry"), { toolExitCode: 3 });
+        }
+        throw new Error("a dpapi probe ran a script it has no business running");
+    };
+}
+
+test("probeKeystoreWrite: dpapi reads back what it wrote", async () => {
+    // The probe's claim is that a stored value comes back, not that PowerShell exited 0. So it decrypts the
+    // file it wrote -- through the same blob path a launch reads -- and compares, and it takes its own
+    // entry away afterwards: a probe file left in the sign-in's store is clutter nothing else would clear.
+    const { env } = dpapiProbeEnv();
+    const calls = [];
+    const file = m.dpapiKeyToPath(PROBE_USER, env);
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun({ calls }) });
+
+    assert.equal(status, "ok");
+    const protect = calls.find((c) => c.script === m.PS_DPAPI_PROTECT);
+    assert.equal(Buffer.byteLength(protect.opts.stdinValue), 8192, "well past the Credential Manager limit, which is the point");
+    assert.deepEqual(protect.spec.extraEnv, { VC_SECRETS_NAME: PROBE_USER }, "under the probe's own key, which no real entry shares");
+    const unprotect = calls.find((c) => c.script === m.PS_DPAPI_UNPROTECT_MANY);
+    assert.deepEqual(Object.keys(JSON.parse(unprotect.opts.stdinValue)), [PROBE_USER], "the file it wrote is the one it read back");
+    assert.equal(pathPresent(file, "the probe file"), false, "the probe took its entry away");
+    // The scope directory did not exist, so the probe created it and removes it; rmdir refuses a directory
+    // with anything in it, so its absence also means no tmp file was left behind.
+    assert.equal(pathPresent(path.dirname(file), "the scope directory"), false, "and the directory it created, with no tmp file in it");
+});
+
+test("probeKeystoreWrite: a dpapi scope directory that was already there survives the probe, with what it holds", async () => {
+    // Never the probe's to remove: a login may have stored its pair there, and an empty directory that
+    // predates the probe is not the probe's either.
+    for (const neighbour of [null, "oauth-a-refresh.dpapi"]) {
+        const { env } = dpapiProbeEnv();
+        const dir = path.dirname(m.dpapiKeyToPath(PROBE_USER, env));
+        fs.mkdirSync(dir, { recursive: true });
+        if (neighbour !== null) {
+            fs.writeFileSync(path.join(dir, neighbour), "kept");
+        }
+        const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun() });
+
+        assert.equal(status, "ok");
+        assert.deepEqual(fs.readdirSync(dir), neighbour === null ? [] : [neighbour], `neighbour=${neighbour}`);
+        if (neighbour !== null) {
+            assert.equal(fs.readFileSync(path.join(dir, neighbour), "utf8"), "kept");
+        }
+    }
+});
+
+test("probeKeystoreWrite: a dpapi probe on a machine with no entries leaves the root exactly as it found it", async () => {
+    // The write creates `vc-secrets/secrets/<scope>` in one recursive mkdir, so removing only the scope directory
+    // left two empty ones behind on a machine that had never stored an entry.
+    const { dir, env } = dpapiProbeEnv();
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun() });
+
+    assert.equal(status, "ok");
+    assert.deepEqual(fs.readdirSync(dir), [], "no directory the probe created is left");
+});
+
+test("probeKeystoreWrite: a dpapi probe removes only the directories it created, never one that was there", async () => {
+    // Each level may predate the probe, and a directory that holds anything is not the probe's to take.
+    for (const existing of [["vc-secrets"], ["vc-secrets", "secrets"], ["vc-secrets", "secrets", "other-scope"]]) {
+        const { dir, env } = dpapiProbeEnv();
+        fs.mkdirSync(path.join(dir, ...existing), { recursive: true });
+        const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun() });
+
+        assert.equal(status, "ok");
+        const remaining = fs.readdirSync(dir, { recursive: true }).map((p) => p.split(path.sep).join("/")).sort();
+        const expected = existing.map((_, i) => existing.slice(0, i + 1).join("/"));
+        assert.deepEqual(remaining, expected, `existing=${existing.join("/")}`);
+    }
+});
+
+test("probeKeystoreWrite: a file a login puts into a directory the probe created survives the cleanup, with its whole chain", async () => {
+    // The probe removes with rmdir, which refuses a directory that holds anything. A recursive remove would take a
+    // sign-in that landed there between the probe's write and its cleanup.
+    const { dir, env } = dpapiProbeEnv();
+    const scopeDir = path.dirname(m.dpapiKeyToPath(PROBE_USER, env));
+    const neighbour = path.join(scopeDir, "oauth-a-refresh.dpapi");
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun(),
+        write: async (key, value, opts) => {
+            await m.writeSecretValue(key, value, opts);
+            fs.writeFileSync(neighbour, "kept");
+        } });
+
+    assert.equal(status, "ok");
+    assert.equal(fs.readFileSync(neighbour, "utf8"), "kept", "the other process's file is still there");
+    assert.deepEqual(fs.readdirSync(scopeDir), ["oauth-a-refresh.dpapi"], "and the probe's own entry is gone");
+    assert.deepEqual(fs.readdirSync(dir), ["vc-secrets"], "the chain above it was not removed either");
+});
+
+test("probeKeystoreWrite: a dpapi write that left no file is reported as that, not as a value that differs", async () => {
+    // "Differs" sends the reader after corruption. Here the write returned and nothing is at the path the
+    // read looked in, which is a different problem with a different remedy.
+    const { env } = dpapiProbeEnv();
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, write: async () => {}, remove: async () => {},
+        run: fakeDpapiRun() });
+
+    assert.deepEqual(status, { oversize: false, message: "no file was found where the value was written" });
+});
+
+test("probeKeystoreWrite: a dpapi value read back different is a FAIL", async () => {
+    const { env } = dpapiProbeEnv();
+    const file = m.dpapiKeyToPath(PROBE_USER, env);
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env,
+        run: fakeDpapiRun({ unprotect: () => ({ ok: toHex("some other value") }) }) });
+
+    assert.deepEqual(status, { oversize: false, message: "the value read back differs from the value written" });
+    assert.equal(pathPresent(file, "the probe file"), false, "a failed verdict still cleans up");
+});
+
+test("probeKeystoreWrite: a dpapi blob DPAPI refuses is a FAIL naming the code, and the entry is still removed", async () => {
+    const { env } = dpapiProbeEnv();
+    const file = m.dpapiKeyToPath(PROBE_USER, env);
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env,
+        run: fakeDpapiRun({ unprotect: () => ({ err: 13 }) }) });
+
+    assert.equal(status.oversize, false);
+    assert.match(status.message, /win32 error 13/);
+    assert.doesNotMatch(status.message, /pppp/, "never the value");
+    assert.equal(pathPresent(file, "the probe file"), false);
+});
+
+test("probeKeystoreWrite: a dpapi write PowerShell refuses is reported, not swallowed, and leaves nothing behind", async () => {
+    const { env } = dpapiProbeEnv();
+    const file = m.dpapiKeyToPath(PROBE_USER, env);
+    const failProtect = Object.assign(new m.VcSecretsError("CryptProtectData failed win32err=5"), { toolExitCode: 1 });
+    const status = await m.probeKeystoreWrite({ backend: "dpapi", env, run: fakeDpapiRun({ failProtect }) });
+
+    assert.deepEqual(status, { oversize: false, message: "CryptProtectData failed win32err=5" });
+    assert.equal(pathPresent(file, "the probe file"), false);
+});
+
+test("writeProbeValue: the dpapi probe writes 8192 bytes", () => {
+    const value = m.writeProbeValue({ secrets: {}, oauth: {} }, {}, "dpapi");
+    // The literal, not the constant: the number is the contract, and asserting against the constant
+    // passes for any value of it.
+    assert.equal(Buffer.byteLength(value), 8192);
 });
 
 // cmdDoctor driven in-process through its `deps` seam. The repository is found the way a run finds it, the
@@ -507,12 +684,16 @@ test("doctorReport: the write probe is reported in both directions, naming the b
     const cfg = { secrets: {}, servers: {}, oauth: {} };
     const base = { env: {}, platform: "linux", enableLists: { enabled: [], disabled: [], envKeys: [] },
         resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), configDirOverride: false };
-    const ok = m.doctorReport(cfg, { ...base, platform: "darwin", oauthStatus: {}, writeProbe: "ok" });
+    const ok = m.doctorReport(cfg, { ...base, platform: "darwin", oauthStatus: {},
+        writeProbes: [{ backend: "keychain", result: "ok" }] });
     assert.ok(ok.some((l) => l.startsWith("OK keychain accepts")), ok.join("\n"));
+    assert.match(ok.find((l) => l.startsWith("OK keychain accepts")), /-- set, login and renewal can reach the store/,
+        "`set` writes through the path the probe rehearses, so the line names it");
     const bad = m.doctorReport(cfg, { ...base, platform: "darwin",
-        writeProbe: { oversize: false, message: "interaction required" } });
+        writeProbes: [{ backend: "keychain", result: { oversize: false, message: "interaction required" } }] });
     const fail = bad.find((l) => l.startsWith("FAIL"));
     assert.match(fail, /login/, "the line must say what the developer loses, not just that a write failed");
+    assert.match(fail, /"vc-secrets set" and "vc-secrets login" may not be able to store a value/, "and on the keychain that includes `set`");
     // A platform where the probe does not run must stay SILENT rather than report a passing check it
     // never made -- the difference between "verified" and "not applicable". base is linux, so gpg.
     assert.equal(m.doctorReport(cfg, base)
@@ -1045,6 +1226,97 @@ test("cmdDoctor: the oauth status read passes cfg through to oauthLaunchDeps, no
     assert.equal(calls[0][0], "ado");
     assert.equal(calls[0][2], repo.cfg,
         "the oauth status loop must pass cfg -- oauthEntryKeys needs it to build the namespaced key");
+});
+
+test("cmdDoctor: OAuth status is read from the OAuth backend, not the local one", async () => {
+    // On Windows `set` secrets are in Credential Manager (wcm) while the sign-in is in DPAPI files. A read
+    // that took the local backend would look for a pair where a login no longer puts it, and report "not
+    // signed in" for a developer who is. The backend and the run's environment both have to reach the read:
+    // the files are found through the environment, so a different one reads a different store.
+    const repo = doctorOauthRepo();
+    const env = { ...repo.env, VC_SECRETS_LOCAL_BACKEND: "wcm" };
+    const calls = [];
+    const oauthLaunchDeps = (...args) => {
+        calls.push(args);
+
+        return { readCache: async () => ({ state: "valid" }) };
+    };
+
+    const { text } = await runDoctor({ cfg: repo.cfg, env }, { backend: "wcm", oauthLaunchDeps });
+
+    assert.equal(calls.length, 1, "one entry, one read");
+    assert.equal(calls[0][3].backend, "dpapi", "the OAuth store, though the local backend is wcm");
+    assert.equal(calls[0][3].env, env, "read through the run's own environment");
+    assert.match(text, /OK oauth "ado" \(project\) signed in/, text);
+
+    // The seam a test uses to name the store: it wins over the platform's answer.
+    calls.length = 0;
+    await runDoctor({ cfg: repo.cfg, env }, { backend: "wcm", oauthBackend: "keychain", oauthLaunchDeps });
+    assert.equal(calls[0][3].backend, "keychain");
+});
+
+test("cmdDoctor: each store the run writes to is probed once, the local one first", async () => {
+    const repo = doctorRepo({ projectId: "proj-x" });
+    seedTrust(repo.env, repo.root);
+    const winEnv = { ...repo.env, VC_SECRETS_LOCAL_BACKEND: "wcm" };
+    const seen = [];
+    const probeKeystoreWrite = async (options) => {
+        seen.push(options);
+
+        return "ok";
+    };
+
+    const { text } = await runDoctor({ cfg: repo.cfg, env: winEnv }, { backend: "wcm", probeKeystoreWrite });
+    assert.deepEqual(seen.map((o) => o.backend), ["wcm", "dpapi"], "Credential Manager for `set`, then the DPAPI files for the sign-in");
+    assert.ok(seen.every((o) => o.cfg === repo.cfg && o.env === winEnv), "each is handed the config and the run's environment");
+    assert.equal((text.match(/^OK (wcm|dpapi) /gm) ?? []).length, 2, text);
+
+    // Where the two stores are one, there is one probe: keychain and gpg hold both kinds of entry.
+    seen.length = 0;
+    await runDoctor(repo, { probeKeystoreWrite });
+    assert.deepEqual(seen.map((o) => o.backend), ["keychain"]);
+});
+
+test("cmdDoctor: the PowerShell it checks for is the one the probe would spawn, from the run's environment", async () => {
+    // The tool check and the spawn must name one binary: psCommand() reads process.env while the probe's
+    // psCommand(env) reads the run's, so with VC_SECRETS_POWERSHELL set only in the run's environment a
+    // check against the process's would pass for a binary the probe never starts -- or fail for one it does.
+    const repo = doctorRepo({ projectId: "proj-x" });
+    const env = { ...repo.env, VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-doctor-stub" };
+    const asked = [];
+    const probed = [];
+
+    await runDoctor({ cfg: repo.cfg, env }, { backend: "wcm",
+        commandOnPath: (tool) => { asked.push(tool); return true; },
+        probeKeystoreWrite: async (options) => { probed.push(options.backend); return "ok"; } });
+    assert.ok(asked.includes("vc-ps-doctor-stub"), `asked: ${asked.join(", ")}`);
+    assert.equal(asked.includes("powershell.exe"), false, `asked: ${asked.join(", ")}`);
+
+    // And the verdict follows: that binary missing is named, and neither probe runs.
+    probed.length = 0;
+    const { text } = await runDoctor({ cfg: repo.cfg, env }, { backend: "wcm",
+        commandOnPath: (tool) => tool !== "vc-ps-doctor-stub",
+        probeKeystoreWrite: async (options) => { probed.push(options.backend); return "ok"; } });
+    assert.match(text, /^FAIL required tool "vc-ps-doctor-stub" not found on PATH$/m, text);
+    assert.deepEqual(probed, []);
+});
+
+test("cmdDoctor: a missing PowerShell is one FAIL, and neither Windows probe runs", async () => {
+    // Credential Manager and DPAPI both go through it, so the tool is named once and no probe adds a second
+    // FAIL for the same cause.
+    const repo = doctorRepo({ projectId: "proj-x" });
+    const env = { ...repo.env, VC_SECRETS_LOCAL_BACKEND: "wcm" };
+    const seen = [];
+    const probeKeystoreWrite = async (options) => {
+        seen.push(options.backend);
+
+        return "ok";
+    };
+
+    const { text } = await runDoctor({ cfg: repo.cfg, env }, { backend: "wcm", commandOnPath: () => false, probeKeystoreWrite });
+
+    assert.deepEqual(seen, []);
+    assert.equal((text.match(/^FAIL required tool /gm) ?? []).length, 1, text);
 });
 
 test("readEnableLists: the two arrays plus env key NAMES; missing file tolerated", () => {

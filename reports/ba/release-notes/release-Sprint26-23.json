@@ -1,0 +1,215 @@
+{
+  "sprint": "sprint26-23",
+  "jira_sprint": "Sprint 26-23",
+  "chosen": {
+    "notes": false,
+    "slides": true,
+    "film": true
+  },
+  "preflight": {
+    "tracker": "ok (195+ -> 207 issues, 3 pages)",
+    "ticket_documents": "ok (2 of the 11 stories have one)",
+    "jira_attachments": "to be checked at download",
+    "code_host": "ok (gh)",
+    "stand_walks": "ok (lanes + accounts; stands writable)",
+    "client_project": "no (platform)",
+    "style": "set (style.designSystem)"
+  },
+  "stories": [
+    {
+      "key": "VCST-6861",
+      "title": "Subscriptions — Product page: buy once or subscribe",
+      "stand": "vcptcore_qa1",
+      "versions": {
+        "productsubscription": "3.1000.0-pr-1-f6ff",
+        "theme": "2.63.0-pr-2695-89b8-89b8fadd"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done"
+    },
+    {
+      "key": "VCST-6862",
+      "title": "Subscriptions — Cart: change or turn off a subscription on a line",
+      "stand": "vcptcore_qa1",
+      "versions": {
+        "productsubscription": "3.1000.0-pr-1-f6ff",
+        "theme": "2.63.0-pr-2695-89b8-89b8fadd"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done",
+      "observation": "A subscribed line is priced with the plan's 10% discount, although VCST-6861 lists subscription discounts as out of scope for Cycle 1."
+    },
+    {
+      "key": "VCST-6909",
+      "title": "Subscriptions — How subscriptions work page",
+      "stand": "vcptcore_qa1",
+      "versions": {
+        "theme": "2.63.0-pr-2695-89b8-89b8fadd"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done"
+    },
+    {
+      "key": "VCST-6946",
+      "title": "Admin Shell: Dashboard Editor",
+      "stand": "vcptcore_qa1",
+      "versions": {
+        "adminshell": "3.1101.0"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done",
+      "observation": "The view of a user in a hidden role was not captured: no back-office account in that role."
+    },
+    {
+      "key": "VCST-6670",
+      "title": "Sales Rep hub: customers multi-select in Send a message",
+      "stand": "vcst",
+      "versions": {
+        "salesrep": "3.1028.0-pr-40-87bf",
+        "theme": "2.63.0-pr-2676-f03c-f03c41eb"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "not-included: differs on the stand (no Select all in the Customers dropdown)",
+      "qa_state": "Tested"
+    },
+    {
+      "key": "VCST-6255",
+      "title": "Sales Rep Hub: Rep dashboard chart",
+      "stand": "vcst",
+      "versions": {
+        "salesrep": "3.1028.0-pr-40-87bf"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done",
+      "observation": "The page is served at /company/customer-sales, not at /company/reporting as the ticket says."
+    },
+    {
+      "key": "VCST-6256",
+      "title": "Sales Rep Hub: Call a customer",
+      "stand": "vcst",
+      "versions": {
+        "salesrep": "3.1028.0-pr-40-87bf"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done"
+    },
+    {
+      "key": "VCST-6258",
+      "title": "User dashboard: chart",
+      "stand": "vcst",
+      "versions": {
+        "theme": "2.63.0-pr-2676-f03c-f03c41eb"
+      },
+      "material": {
+        "slides": "walk",
+        "film": "walk"
+      },
+      "outcome": "shown",
+      "qa_state": "Done"
+    },
+    {
+      "key": "VCST-6639",
+      "title": "MCP: client self-registration",
+      "stand": "vcptcore_dev",
+      "versions": {
+        "mcp": "3.1003.0-alpha.14"
+      },
+      "material": {
+        "slides": "none — skipped by the person (acceptance criteria not showable in a browser)",
+        "film": "none — skipped by the person"
+      },
+      "outcome": "not-included: no frame — skipped by the person (speed)",
+      "qa_state": "Done"
+    },
+    {
+      "key": "VCST-6571",
+      "title": "Page Builder / Site Builder",
+      "stand": "vcst",
+      "versions": {
+        "sitebuilder": "3.1000.0-pr-1-644f"
+      },
+      "material": {
+        "slides": "jira",
+        "film": "none — Jira crop, no full frame"
+      },
+      "outcome": "shown",
+      "qa_state": "Done"
+    },
+    {
+      "key": "VCST-5918",
+      "title": "Product Compare (server-side)",
+      "stand": "vcptcore",
+      "versions": {
+        "productcomparison": "3.1000.0-pr-1-7403"
+      },
+      "material": {
+        "slides": "jira",
+        "film": "none — Jira crop, no full frame"
+      },
+      "outcome": "shown",
+      "qa_state": "Done"
+    }
+  ],
+  "slides": [
+    {
+      "slug": "Hjqb9NP84RhAWe4Kwsg5z6",
+      "url": "https://claude.ai/artifact/Hjqb9NP84RhAWe4Kwsg5z6",
+      "owner": "same",
+      "created": "2026-11-25"
+    }
+  ],
+  "film": [
+    {
+      "slug": "1PKVzdTzYGcNsDidJXvb7U",
+      "url": "https://claude.ai/artifact/1PKVzdTzYGcNsDidJXvb7U",
+      "owner": "same",
+      "created": "2026-11-25",
+      "exported": false
+    }
+  ],
+  "runs": [
+    {
+      "date": "2026-11-25",
+      "runner": "same",
+      "reached": "Film"
+    }
+  ],
+  "demo_data": {
+    "vcptcore_qa1": {
+      "ledger": "test-results/docs/Sprint26-23/demo-data/vcptcore_qa1.json",
+      "left_in_place": true
+    },
+    "vcst": {
+      "ledger": "test-results/docs/Sprint26-23/demo-data/vcst.json",
+      "left_in_place": true,
+      "note": "126 historical orders re-attributed to the demo customers; each old value is in the ledger"
+    }
+  }
+}

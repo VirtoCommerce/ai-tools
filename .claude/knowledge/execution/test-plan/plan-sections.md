@@ -154,7 +154,8 @@ time and nobody waits for anybody:
    owner's day — a domain too big for that is split into two independent waves by suite, never by tier. Numbers only
    from that output.
 6. **Prerequisites per wave:** seed profiles (`npm run models:check -- --plan <profile>`,
-   [`/qa-seed-data`](../../../skills/qa-seed-data/SKILL.md)), personas per owner (contract §7.1), env settings.
+   [`/qa-seed-data`](../../../skills/qa-seed-data/SKILL.md)), a `personaSet` per wave — every wave that may run
+   beside another a different one, W0 and the exclusive wave may reuse any (contract §7.1) — env settings.
 
 ## Rules
 
