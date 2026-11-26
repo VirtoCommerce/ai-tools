@@ -196,8 +196,77 @@ PRF-GQL-038,xProfile — createContact Phone Field Validation,GraphQL > xProfile
   }
 [GQL-EXEC create_bad_phone]","[ERRORS label=create_bad_phone] errors[] non-empty — NoHtmlTags phone validator rejects (BL-GQL-001)
 [DATA label=create_bad_phone] data.createContact is null",[EVIDENCE] errors[].message references phone field validation; no stack traces leaked,errors[] empty (phone accepted silently); HTTP 500; NewContact created with HTML in phone,none — contact not created,xAPI; graphql-schema.md — Mutation.createContact phone validator,Automated
-PRF-GQL-039,xProfile — requestRegistration Personal Account Happy Path,GraphQL > xProfile > Registration,Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,BLOCKED: Creates a real user account. Email must be unique per run — graphql-runner has no built-in dynamic-timestamp/UUID primitive. Runs once successfully then hits DuplicateEmail on re-runs. UNBLOCK STEPS: (1) Extend scripts/lib/graphql-case-parser.ts to recognize a {{NOW_MS}} or {{RUN_UUID}} built-in {{VAR}} that the runner injects at parse time (Date.now() / crypto.randomUUID()); (2) Author email as 'AGENT-TEST-prfgql039-{{NOW_MS}}@test-agent.com'; (3) Add inline Cleanup [REST DELETE /api/platform/security/users/{captured-id}] to delete the created account after assertions. Per-run unique fixture pattern documented in feedback memory random-data. OWNER: runner maintainer.,—,[MANUAL-BLOCKED] See Preconditions for unblock steps.,[MANUAL] blocked on runner dynamic-email support,[EVIDENCE] Track as Draft,Account not created on first run; HTTP 500,Admin cleanup to delete the test account,xAPI; legacy 050d PRF-GQL-039; BL-AUTH-002; runner-feature: built-in-timestamp-var,Draft
-PRF-GQL-040,xProfile — requestRegistration Organization Account Happy Path,GraphQL > xProfile > Registration,Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"BLOCKED: Same blocker as PRF-GQL-039 (runner needs {{NOW_MS}} / {{RUN_UUID}} built-in primitive) PLUS this case creates a real organization, so cleanup must also delete the org via DELETE /api/members/{org-id}. UNBLOCK STEPS: (1) Implement built-in {{NOW_MS}} in runner (see PRF-GQL-039 unblock step 1); (2) Author email='AGENT-TEST-prfgql040-{{NOW_MS}}@test-agent.com' AND organizationName='AGENT-TEST-Org-{{NOW_MS}}'; (3) Inline Cleanup must delete BOTH user and org via REST endpoints. OWNER: runner maintainer + QA cleanup automation.",—,[MANUAL-BLOCKED] See Preconditions for unblock steps.,[MANUAL] blocked on runner dynamic primitives,[EVIDENCE] Track as Draft,Account/org not created on first run,Admin cleanup,xAPI; legacy 050d PRF-GQL-040; runner-feature: built-in-timestamp-var,Draft
+PRF-GQL-039,xProfile — requestRegistration Personal Account Happy Path,GraphQL > xProfile > Registration,Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"Runner-native. Creates a real account: the static AGENT-TEST-prfgql039@yopmail.com is deleted before and after (the runner has no unique-value primitive; this suite's convention is a static name plus pre-clean and REST cleanup, as in PRF-GQL-075). requestRegistration needs storeId, contact and account (introspected live); requireEmailVerification follows the store setting and is not asserted.",email=AGENT-TEST-prfgql039@yopmail.com,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP pre_clean]
+DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-prfgql039@yopmail.com
+[REST-EXEC pre_clean]
+[AUTH role=ANONYMOUS]
+[GQL-OP register]
+mutation {
+  requestRegistration(command: {
+    storeId: ""{{STORE_ID}}""
+    contact: { firstName: ""AGENT-TEST"" lastName: ""PrfGql039"" }
+    account: { username: ""{{email}}"" email: ""{{email}}"" password: ""{{DEFAULT_TEST_PASSWORD}}"" }
+  }) {
+    result { succeeded requireEmailVerification errors { code } }
+    account { id email }
+    contact { id }
+  }
+}
+[GQL-EXEC register]
+[GQL-CAPTURE register.data.requestRegistration.contact.id → MEMBER_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_user]
+GET {{BACK_URL}}/api/platform/security/users/{{email}}
+[REST-EXEC get_user]","[ERRORS label=register] errors[] empty {SPEC}
+[DATA label=register] data.requestRegistration.result.succeeded = true {SPEC} (BL-AUTH-002 docs: registration creates the account; Platform docs user-email-verification)
+[DATA label=register] data.requestRegistration.account.email = {{email}} {SPEC}
+[DATA label=register] data.requestRegistration.contact.id is non-null {SPEC}
+[DATA label=get_user] body.userType = Customer {SPEC}",[EVIDENCE] Track as Draft,result.succeeded false on a fresh email; account or contact null; HTTP 500; a leftover account after cleanup,"[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql039@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]",xAPI; legacy 050d PRF-GQL-039; BL-AUTH-002 | Synced: VCST-6498 (2026-11-23) PR vc-module-profile-experience-api#154,Draft
+PRF-GQL-040,xProfile — requestRegistration Organization Account Happy Path,GraphQL > xProfile > Registration,Critical,BL-AUTH-002,ECL-10.2; ECL-2.1,"Runner-native. Same pattern as PRF-GQL-039 plus a real organization: the static AGENT-TEST-prfgql040@yopmail.com is deleted before and after and the organization AGENT-TEST-Org-PrfGql040 is deleted after (by the id read from the contact). InputRegisterOrganizationType: name!, description, phoneNumber, address, addresses (introspected live). requireEmailVerification follows the store setting and is not asserted.",email=AGENT-TEST-prfgql040@yopmail.com,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP pre_clean]
+DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-prfgql040@yopmail.com
+[REST-EXEC pre_clean]
+[AUTH role=ANONYMOUS]
+[GQL-OP register]
+mutation {
+  requestRegistration(command: {
+    storeId: ""{{STORE_ID}}""
+    contact: { firstName: ""AGENT-TEST"" lastName: ""PrfGql040"" }
+    account: { username: ""{{email}}"" email: ""{{email}}"" password: ""{{DEFAULT_TEST_PASSWORD}}"" }
+    organization: { name: ""AGENT-TEST-Org-PrfGql040"" }
+  }) {
+    result { succeeded requireEmailVerification errors { code } }
+    account { id email }
+    contact { id }
+  }
+}
+[GQL-EXEC register]
+[GQL-CAPTURE register.data.requestRegistration.contact.id → MEMBER_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_user]
+GET {{BACK_URL}}/api/platform/security/users/{{email}}
+[REST-EXEC get_user]
+[REST-OP get_contact]
+GET {{BACK_URL}}/api/members/{{MEMBER_ID}}
+[REST-EXEC get_contact]
+[REST-CAPTURE get_contact.body.organizations[0] → ORG_ID]
+[REST-OP find_org]
+POST {{BACK_URL}}/api/members/search
+Content-Type: application/json
+Body: {""keyword"": ""AGENT-TEST-Org-PrfGql040"", ""memberTypes"": [""Organization""], ""take"": 20}
+[REST-EXEC find_org]","[ERRORS label=register] errors[] empty {SPEC}
+[DATA label=register] data.requestRegistration.result.succeeded = true {SPEC} (BL-AUTH-002 docs: registration creates the account; Platform docs user-email-verification)
+[DATA label=register] data.requestRegistration.account.email = {{email}} {SPEC}
+[DATA label=register] data.requestRegistration.contact.id is non-null {SPEC}
+[DATA label=get_user] body.userType = Customer {SPEC}
+[DATA label=get_contact] body.organizations is non-empty {SPEC} (InputRegisterOrganizationType: the registration creates the organization of the contact)
+[DATA label=find_org] body.results[0].name = AGENT-TEST-Org-PrfGql040 {SPEC}",[EVIDENCE] Track as Draft,"result.succeeded false on a fresh email; account, contact or organization null; HTTP 500; the organization missing, or left behind after cleanup","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql040@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]",xAPI; legacy 050d PRF-GQL-040 | Synced: VCST-6498 (2026-11-23) PR vc-module-profile-experience-api#154,Draft
 PRF-GQL-041,xProfile — requestRegistration Duplicate Email Rejected,GraphQL > xProfile > Registration,Critical,BL-AUTH-003,ECL-10.2; ECL-5.1,Runner-native. Anonymous requestRegistration with a known-existing email (ORG_USER_EMAIL from .env). Expects result.succeeded=false with DuplicateEmail/DuplicateUserName errors.,dup_email={{ORG_USER_EMAIL}},"[GQL-OP dup_register]
   mutation {
     requestRegistration(command: {
@@ -798,52 +867,70 @@ Body: {""userId"": ""{{ORG_USER_ID}}""}
 [DATA label=verify_rejected] body.results[?organizationId={{ORG_ID}}].status = ""Rejected"" {SPEC} (REST cross-layer confirmation of the xAPI mutation's effect)","[REST] verify_rejected above IS the cross-layer check — REST search confirms the GraphQL mutation's write is visible outside the GraphQL layer, and that ORG_USER's ORIGINAL org membership is unaffected","errors[] non-empty (mutation rejected); the membership row stays ""Invited"" after the mutation (reject had no effect — masks as success but does not block org access); verify_rejected shows a status other than Rejected (xAPI/REST inconsistency); ORG_USER's ORIGINAL org membership is altered by this case","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/members?ids={{ORG_ID}}]",VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; checklist item 13/15,Draft
-PRF-GQL-073,[VCST-5281] xProfile — An Invited Membership Is NOT Reinvitable; resendOrganizationInvite Is the Only Path (State-Transition Boundary),GraphQL > xProfile > OrganizationMembership > Invite,High,BL-B2B-009,ECL-2.1,"Runner-native. Same ORG_USER + throwaway-org pattern. Status oracle: ReinvitableStatuses = {Rejected, Deleted} — an already-Invited membership is deliberately excluded. Establishes a fresh Invited membership, attempts a SECOND inviteUser for the same email+org (should be refused/no-op since Invited is not reinvitable), then confirms resendOrganizationInvite (the correct action for an Invited membership) succeeds instead. NOTE: InputInviteUserType has NO cultureName field (schema: storeId!, organizationId, urlSuffix, emails!, message, roleIds, customerOrderId) — omitted here after a schema-validation catch during authoring.",org_id=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT]
-[GQL-OP create_org]
-mutation CreateOrganization($input: InputCreateOrganizationType!) {
-  createOrganization(command: $input) { id name }
-}
-[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-PrfGql073""}}
-[GQL-EXEC create_org]
-[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
-[REST-OP get_org_user]
-GET {{BACK_URL}}/api/platform/security/users/{{ORG_USER_EMAIL}}
-[REST-EXEC get_org_user]
-[REST-CAPTURE get_org_user.body.id → ORG_USER_ID]
-[REST-CAPTURE get_org_user.body.memberId → ORG_USER_MEMBER_ID]
+PRF-GQL-073,[VCST-5281] xProfile — An Invited Membership Is NOT Reinvitable; resendOrganizationInvite Is the Only Path (State-Transition Boundary),GraphQL > xProfile > OrganizationMembership > Invite,High,BL-B2B-009,ECL-2.1,"Runner-native. A throwaway Contact + account (AGENT-TEST, static name, pre-cleaned) holds an Invited membership of ORG_TECHFLOW. resendOrganizationInvite takes the organization from the CALLER's token (InputResendOrganizationInviteType has memberId, urlSuffix and message only; no organizationId) and needs the my-organization-edit permission, so the resend runs as TECHFLOW_ADMIN (an organization maintainer, org-scoped by its alias); the org-less ADMIN_DEFAULT answers OrganizationIdRequired, which is the correct product answer. Status oracle: ReinvitableStatuses = {Rejected, Deleted}: an already-Invited membership is deliberately excluded. NOTE: InputInviteUserType has NO cultureName field (schema: storeId!, organizationId, urlSuffix, emails!, message, roleIds, customerOrderId). BLOCKED on a stand without the TECHFLOW_ADMIN alias (vcst has none): an environment finding, not a case defect.",org_id=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP pre_clean]
+DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-prfgql073@yopmail.com
+[REST-EXEC pre_clean]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""PrfGql073"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-prfgql073@yopmail.com"", ""email"": ""AGENT-TEST-prfgql073@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""B2B-store"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-prfgql073@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
 [REST-OP create_membership]
 POST {{BACK_URL}}/api/customer/organization-memberships
 Content-Type: application/json
-Body: {""userId"": ""{{ORG_USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-PrfGql073"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""@td(ORG_TECHFLOW.platform_id)"", ""organizationName"": ""TechFlow"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
 [REST-EXEC create_membership]
 [REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
 [GQL-OP reinvite_attempt]
 mutation {
-  inviteUser(command: { storeId: ""{{STORE_ID}}"", organizationId: ""{{ORG_ID}}"", emails: [""{{ORG_USER_EMAIL}}""] }) {
+  inviteUser(command: { storeId: ""{{STORE_ID}}"", organizationId: ""@td(ORG_TECHFLOW.platform_id)"", emails: [""AGENT-TEST-prfgql073@yopmail.com""] }) {
     succeeded
     errors { code description }
   }
 }
 [GQL-EXEC reinvite_attempt]
+[GQL-OP resend_no_org]
+mutation {
+  resendOrganizationInvite(command: { memberId: ""{{MEMBER_ID}}"" }) {
+    succeeded
+    errors { code description }
+  }
+}
+[GQL-EXEC resend_no_org]
+[AUTH role=TECHFLOW_ADMIN]
 [GQL-OP resend_attempt]
 mutation {
-  resendOrganizationInvite(command: { memberId: ""{{ORG_USER_MEMBER_ID}}"" }) {
+  resendOrganizationInvite(command: { memberId: ""{{MEMBER_ID}}"" }) {
     succeeded
     errors { code description }
   }
 }
 [GQL-EXEC resend_attempt]
+[AUTH role=ADMIN_DEFAULT]
 [REST-OP verify_still_invited]
 POST {{BACK_URL}}/api/customer/organization-memberships/search
 Content-Type: application/json
-Body: {""userId"": ""{{ORG_USER_ID}}""}
-[REST-EXEC verify_still_invited]","[ERRORS label=create_org] errors[] empty {OBSERVED}
-[EVIDENCE] reinvite_attempt: either errors[] non-empty OR data.inviteUser.succeeded = false — a fresh inviteUser for an already-Invited membership must not silently duplicate/reset it {SPEC} (ModuleConstants.ReinvitableStatuses = {Rejected, Deleted}, deliberately excludes Invited)
-[ERRORS label=resend_attempt] errors[] empty {SPEC} (resendOrganizationInvite(command: InputResendOrganizationInviteType!) is the documented action for an already-Invited membership)
+Body: {""userId"": ""{{USER_ID}}""}
+[REST-EXEC verify_still_invited]","[DATA label=reinvite_attempt] data.inviteUser.succeeded = false {SPEC} (ModuleConstants.ReinvitableStatuses = {Rejected, Deleted}, deliberately excludes Invited)
+[DATA label=reinvite_attempt] data.inviteUser.errors[0].code = AlreadyMemberOfOrganization {OBSERVED} (vcst 2026-11-23, REG-2026-11-23-1952)
+[DATA label=resend_no_org] data.resendOrganizationInvite.errors[0].code = OrganizationIdRequired {OBSERVED} (vcst 2026-11-23, REG-2026-11-23-1952; the resolver takes the organization from the caller's current organization, KB-31460C77)
+[ERRORS label=resend_attempt] errors[] empty {SPEC} (resendOrganizationInvite(command: InputResendOrganizationInviteType!) is the documented action for an already-Invited membership; the organization comes from the caller's token)
 [DATA label=resend_attempt] data.resendOrganizationInvite.succeeded = true {SPEC}
-[DATA label=verify_still_invited] body.results[?organizationId={{ORG_ID}}].status = ""Invited"" -- unchanged by either attempt {BL} (BL-B2B-009: resend does not transition status, only re-dispatches the notification)",[REST] verify_still_invited above cross-checks that neither the blocked reinvite nor the successful resend altered the membership's Status value,"reinvite_attempt succeeds cleanly (data.inviteUser.succeeded = true, errors[] empty) for an already-Invited membership (ReinvitableStatuses boundary not enforced); resend_attempt errors[] non-empty (the one documented correct action for Invited fails); verify_still_invited shows a status other than Invited (either mutation had an unexpected side effect on state)","[AUTH role=ADMIN_DEFAULT]
+[DATA label=verify_still_invited] body.results[?organizationId=@td(ORG_TECHFLOW.platform_id)].status = ""Invited"" {BL} -- unchanged by either attempt (BL-B2B-009: resend does not transition status, only re-dispatches the notification)",[REST] verify_still_invited above cross-checks that neither the blocked reinvite nor the successful resend altered the membership's Status value,"reinvite_attempt succeeds cleanly (data.inviteUser.succeeded = true, errors[] empty) for an already-Invited membership (ReinvitableStatuses boundary not enforced); resend_attempt errors[] non-empty (the one documented correct action for Invited fails); verify_still_invited shows a status other than Invited (either mutation had an unexpected side effect on state); resend_attempt answers OrganizationIdRequired for an organization maintainer (the caller organization is not read)","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
-[REST DELETE /api/members?ids={{ORG_ID}}]",VCST-5281; testing-checklist.md item 20; BL-B2B-009,Draft
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql073@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]",VCST-5281; testing-checklist.md item 20; BL-B2B-009 | Synced: VCST-6498 (2026-11-23) PR vc-module-profile-experience-api#154,Draft
 PRF-GQL-074,"[VCST-5281] xProfile — revokeOrganizationInvite Transitions to a Blocking Status (Exact Target Value Is an Open Question, C-32)",GraphQL > xProfile > OrganizationMembership > Invite,High,BL-B2B-009,ECL-2.1,"Runner-native. OPEN QUESTION (testing-checklist.md C-32): nothing in source states which of the 4 legal statuses revokeOrganizationInvite transitions TO. This case deliberately asserts only the documented invariant (result must be a BlockingStatus, since a revoked invite must not leave the invitee with access) rather than guessing the literal string, and records the OBSERVED value for a human to promote into the oracle once confirmed. Input: InputRevokeOrganizationInviteType has a single field memberId (admin-side, targets another member — distinct from accept/reject's self-service organizationId-only shape).",org_id=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT]
 [REST-OP create_member]
 POST {{BACK_URL}}/api/members
@@ -884,7 +971,7 @@ Body: {""userId"": ""{{USER_ID}}""}
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql074@yopmail.com]
 [REST DELETE /api/members?ids={{MEMBER_ID}}]",VCST-5281; testing-checklist.md C-32 (open question); BL-B2B-009,Draft
-PRF-GQL-075,"[VCST-5281] xProfile — resendOrganizationInvite Happy Path (Re-Dispatches Notification, No Status Change)",GraphQL > xProfile > OrganizationMembership > Invite,High,BL-B2B-009,,"Runner-native. Input: InputResendOrganizationInviteType has memberId, urlSuffix, message. Return: CustomIdentityResultType {succeeded, errors{code description}}.",org_id=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT]
+PRF-GQL-075,"[VCST-5281] xProfile — resendOrganizationInvite Happy Path (Re-Dispatches Notification, No Status Change)",GraphQL > xProfile > OrganizationMembership > Invite,High,BL-B2B-009,,"Runner-native. Input: InputResendOrganizationInviteType has memberId, urlSuffix, message. Return: CustomIdentityResultType {succeeded, errors{code description}}. resendOrganizationInvite takes the organization from the CALLER's token and needs the my-organization-edit permission, so the resend runs as TECHFLOW_ADMIN (an organization maintainer); the org-less ADMIN_DEFAULT answers OrganizationIdRequired. BLOCKED on a stand without the TECHFLOW_ADMIN alias (environment finding).",org_id=@td(ORG_TECHFLOW.platform_id),"[AUTH role=ADMIN_DEFAULT]
 [REST-OP create_member]
 POST {{BACK_URL}}/api/members
 Content-Type: application/json
@@ -906,6 +993,7 @@ Content-Type: application/json
 Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""@td(ORG_TECHFLOW.platform_id)"", ""organizationName"": ""TechFlow"", ""status"": ""Invited"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
 [REST-EXEC create_membership]
 [REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[AUTH role=TECHFLOW_ADMIN]
 [GQL-OP resend_invite]
 mutation {
   resendOrganizationInvite(command: { memberId: ""{{MEMBER_ID}}"", urlSuffix: ""/confirm-invitation"", message: ""Reminder to join TechFlow"" }) {
@@ -914,16 +1002,17 @@ mutation {
   }
 }
 [GQL-EXEC resend_invite]
+[AUTH role=ADMIN_DEFAULT]
 [REST-OP verify_unchanged]
 POST {{BACK_URL}}/api/customer/organization-memberships/search
 Content-Type: application/json
 Body: {""userId"": ""{{USER_ID}}""}
 [REST-EXEC verify_unchanged]","[ERRORS label=resend_invite] errors[] empty {SPEC} (vc-module-profile-experience-api#141 resendOrganizationInvite)
 [DATA label=resend_invite] data.resendOrganizationInvite.succeeded = true {SPEC}
-[DATA label=verify_unchanged] body.results[?organizationId=@td(ORG_TECHFLOW.platform_id)].status = ""Invited"" -- resend re-dispatches the notification, it does not itself change the membership's status {BL} (BL-B2B-009)","[REST] verify_unchanged above is the cross-layer confirmation; the notification re-dispatch itself is checked in CUST-090-family cases via the Admin Notifications activity feed (027 suite), not duplicated here",errors[] non-empty for a valid Invited membership; succeeded = true but the membership's status is silently changed by resend (side effect outside the documented contract),"[AUTH role=ADMIN_DEFAULT]
+[DATA label=verify_unchanged] body.results[?organizationId=@td(ORG_TECHFLOW.platform_id)].status = ""Invited"" {BL} -- resend re-dispatches the notification, it does not itself change the membership's status (BL-B2B-009)","[REST] verify_unchanged above is the cross-layer confirmation; the notification re-dispatch itself is checked in CUST-090-family cases via the Admin Notifications activity feed (027 suite), not duplicated here",errors[] non-empty for a valid Invited membership; succeeded = true but the membership's status is silently changed by resend (side effect outside the documented contract),"[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-prfgql075@yopmail.com]
-[REST DELETE /api/members?ids={{MEMBER_ID}}]",VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; testing-checklist.md item 11,Draft
+[REST DELETE /api/members?ids={{MEMBER_ID}}]",VCST-5281; vc-module-profile-experience-api#141; BL-B2B-009; testing-checklist.md item 11 | Synced: VCST-6498 (2026-11-23) PR vc-module-profile-experience-api#154,Draft
 PRF-GQL-076,[VCST-5281] xProfile — A REJECTED Caller Must NOT Enumerate Other Members PII via Organization.contacts,GraphQL > xProfile > OrganizationMembership > Authorization,Critical,BL-B2B-001; BL-B2B-012,ECL-10.2; ECL-3.1,"Runner-native. Uses the SAME throwaway-org pattern as PRF-GQL-072. It must NEVER create a membership in a canonical org the actor already belongs to: POSTing organization-memberships for an existing (userId, organizationId) pair UPSERTS that row, silently overwriting BOTH its status and its roles, and Cleanup cannot put them back.
 The org is created fresh and seeded with a SECOND contact — the victim whose PII must not leak. Without another member present, ""no PII returned"" would pass trivially against an empty org.
 Status oracle: Rejected is a BlockingStatus, so the caller must lose read access to that org entirely.",victim_email=AGENT-TEST-prfgql076-victim@yopmail.com; password={{DEFAULT_TEST_PASSWORD}},"[AUTH role=ADMIN_DEFAULT]
@@ -1036,9 +1125,9 @@ query {
   }
 }
 [GQL-EXEC filter_invalid_value]","[ERRORS label=filter_valid] errors[] empty {SPEC} (vc-module-profile-experience-api#141 ContactType.organizations(statuses: [String]))
-[COUNT label=filter_valid] data.me.contact.organizations.totalCount = 2 -- both TechFlow and BuildRight are Approved {OBSERVED} (MULTI_ORG_TF_BR fixture, both memberships Approved)
+[COUNT label=filter_valid] data.me.contact.organizations.totalCount = 2 {OBSERVED} -- both TechFlow and BuildRight are Approved (MULTI_ORG_TF_BR fixture, both memberships Approved)
 [ERRORS label=filter_wrong_case] errors[] empty {SPEC}
-[COUNT label=filter_wrong_case] data.me.contact.organizations.totalCount = 0 -- CONFIRMED case-sensitive: ""approved"" does not match the stored ""Approved"" {SPEC} (testing-checklist.md item 9, confirmed defect list item 9)
+[COUNT label=filter_wrong_case] data.me.contact.organizations.totalCount = 0 {SPEC} -- CONFIRMED case-sensitive: ""approved"" does not match the stored ""Approved"" (testing-checklist.md item 9, confirmed defect list item 9)
 [ERRORS label=filter_invalid_value] errors[] empty -- a non-enum, never-legal value does not error, it silently narrows to zero results {SPEC} (testing-checklist.md item 9)
 [COUNT label=filter_invalid_value] data.me.contact.organizations.totalCount = 0 {SPEC}","none — pure read against the MULTI_ORG_TF_BR fixture, no state mutated","filter_valid.totalCount != 2 (filter itself broken, unrelated to the case-sensitivity defect); filter_wrong_case now correctly matches case-insensitively (fix landed — update this case's Assertions and title); filter_invalid_value now returns an error instead of silently empty (fix landed — likewise update)",none — read-only,VCST-5281; testing-checklist.md item 9 (confirmed defect); vc-module-profile-experience-api#141,Draft
 PRF-GQL-079,"[VCST-5281][P0 ROOT CAUSE] xProfile — contact.organizationId (Default-Org Login Context) Is NEVER Validated Against BlockingStatuses, Unlike contact.organizations",GraphQL > xProfile > OrganizationMembership > Status Fields,Critical,new,ECL-2.1; ECL-10.2,"Runner-native. Creates its OWN single-org throwaway user + org — it must NEVER flip a shared fixture into a blocking status. The previous version mutated ORG_USER canonical membership and restored it with HARDCODED status ""Approved"" and roleId ""org-employee"", overwriting her real no-override status and her org-maintainer role; because runner Cleanup is best-effort, a mid-case failure left the shared fixture Rejected and broke every later case and suite using that actor.
@@ -1142,9 +1231,9 @@ query {
 }
 [GQL-EXEC confirm_org_schema]","[STATUS label=grant_with_storeid] 400 {BL} (BL-AUTH-013)
 [DATA label=grant_with_storeid] error = ""invalid_grant"" {BL} (BL-AUTH-013)
-[DATA label=grant_with_storeid] code = ""user_is_locked_in_organization"" -- never a global lockout code (user_is_locked_out / user_is_temporary_locked_out) {BL} (BL-AUTH-013; checklist item 26; VCST-5374 regression guard)
+[DATA label=grant_with_storeid] code = ""user_is_locked_in_organization"" {BL} -- never a global lockout code (user_is_locked_out / user_is_temporary_locked_out) (BL-AUTH-013; checklist item 26; VCST-5374 regression guard)
 [STATUS label=grant_without_storeid] 400 {OBSERVED} (summary.json harness_notes)
-[DATA label=grant_without_storeid] code = ""user_cannot_login_in_store"" -- this masks the real user_is_locked_in_organization error whenever storeId is omitted, which is why every case in this suite that grants a token MUST always include storeId {OBSERVED} (summary.json harness_notes, confirmed live 2026-07-29)
+[DATA label=grant_without_storeid] code = ""user_cannot_login_in_store"" {OBSERVED} -- this masks the real user_is_locked_in_organization error whenever storeId is omitted, which is why every case in this suite that grants a token MUST always include storeId (summary.json harness_notes, confirmed live 2026-07-29)
 [ERRORS label=confirm_org_schema] errors[] empty {DOC}
 [DATA label=confirm_org_schema] data.organization.id = @td(ORG_TECHFLOW.platform_id) {DOC}","[API] GET {{BACK_URL}}/api/platform/security/users/{{USER_ID}}/locked returns {locked:false} -- confirms the org-scoped lock never touches the global account (BL-AUTH-012), so grant_with_storeid's rejection is specifically the org-scoped code, not a global one",grant_with_storeid.code is a global lockout code instead of user_is_locked_in_organization (BL-AUTH-013 violation); grant_with_storeid returns 200 despite the locked membership (P0); grant_without_storeid succeeds (200) despite missing required context (would contradict the documented storeId requirement),"[AUTH role=ADMIN_DEFAULT]
 [REST-OP unlock_membership]
@@ -1235,12 +1324,12 @@ totalCount here is the UNFILTERED membership count: post-PR #145 a locked member
     }
   }
 [GQL-EXEC me_orgs]","[ERRORS label=me_orgs] errors[] empty {SPEC} (vc-module-profile-experience-api PR #145 deleted the continue in ContactType.cs that excluded locked orgs; a locked membership is data, not an error)
-[COUNT label=me_orgs] data.me.contact.organizations.totalCount = 2 -- the locked membership is still COUNTED post-#145 {OBSERVED} (2-org lane fixture; measured 2026-09-09 totalCount stayed 2 with TechFlow locked)
-[COUNT label=me_orgs] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 1 -- exactly one item carries the flag, so the flag is per-membership and does not paint the whole list {SPEC} (OrganizationType.cs isLockedForCurrentUser, DataLoader-batched per caller)
-[COUNT label=me_orgs] data.me.contact.organizations.items[*?isLockedForCurrentUser=false].length = 1 -- and exactly one does not {OBSERVED}
-[DATA label=me_orgs] data.me.contact.organizations.items[?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLockedForCurrentUser = true -- identity pin: the flagged item is the organization the seeder locked {SPEC} (PR #145 OrganizationType.cs:55-60)
+[COUNT label=me_orgs] data.me.contact.organizations.totalCount = 2 {OBSERVED} -- the locked membership is still COUNTED post-#145 (2-org lane fixture; measured 2026-09-09 totalCount stayed 2 with TechFlow locked)
+[COUNT label=me_orgs] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 1 {SPEC} -- exactly one item carries the flag, so the flag is per-membership and does not paint the whole list (OrganizationType.cs isLockedForCurrentUser, DataLoader-batched per caller)
+[COUNT label=me_orgs] data.me.contact.organizations.items[*?isLockedForCurrentUser=false].length = 1 {OBSERVED} -- and exactly one does not
+[DATA label=me_orgs] data.me.contact.organizations.items[?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLockedForCurrentUser = true {SPEC} -- identity pin: the flagged item is the organization the seeder locked (PR #145 OrganizationType.cs:55-60)
 [DATA label=me_orgs] data.me.contact.organizations.items[?id=@td(MULTI_ORG_TF_BR.org_buildright_id)].isLockedForCurrentUser = false {OBSERVED}
-[COUNT label=me_orgs] data.me.contact.organizations.items.length = 2 -- the locked organization is RETURNED, not silently omitted as it was pre-#145 {SPEC} (PR #145)","[ROUNDTRIP label=me_orgs] the seeder's own read-back for the locked leg reports isLocked=true AND isCurrentlyLocked=true; if it does not, the fixture never reached V2 and this case is vacuous rather than failing
+[COUNT label=me_orgs] data.me.contact.organizations.items.length = 2 {SPEC} -- the locked organization is RETURNED, not silently omitted as it was pre-#145 (PR #145)","[ROUNDTRIP label=me_orgs] the seeder's own read-back for the locked leg reports isLocked=true AND isCurrentlyLocked=true; if it does not, the fixture never reached V2 and this case is vacuous rather than failing
 [EVIDENCE] both PRs are OPEN/unmerged and deployed to this environment only (ProfileExperienceApiModule 3.1018.0-pr-145-4fe6). If either is reverted the contract flips back to omitting the locked organization, which is exactly what this case is here to catch",the locked organization is absent from items[] (PR #145 reverted or not deployed on the queried path — the pre-#145 HIDE contract is back); isLockedForCurrentUser is false or null/undefined on the locked item (a client would render it selectable); the field does not exist on the type at all (schema regression — the query will fail schema validation before it is sent); both items carry the flag true (the flag is not per-membership); totalCount drops to 1 (the lock filter came back),"MANDATORY teardown symmetry (every case that locks must unlock, or the next case reads a poisoned fixture): `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left behind and the suite is no longer re-runnable.",VCST-5317 · Archetype:SILENT · Technique:DT,Draft
 PRF-GQL-084,xProfile — Org-Scoped Lock Leaves The Global Account Unlocked And Revokes Tokens Without Killing The Live Session,GraphQL xProfile > Organizations > Lock Axis,Critical,BL-AUTH-012,ECL-14.3,"Runner-native. BACKEND lane ONLY: this case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR.email). The frontend/UI lane account @td(MULTI_ORG_TF_BR_ALT.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: it is the environment's only other locked membership and suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
@@ -1278,9 +1367,9 @@ GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked
 [DATA label=sibling_before] data.organization.id = @td(MULTI_ORG_TF_BR.org_buildright_id) {OBSERVED}
 [ERRORS label=sibling_after] errors[] empty -- the token minted BEFORE the lock still serves the unlocked sibling afterwards: a sibling-organization lock does not evict the caller's session {OBSERVED} (measured 2026-09-09; the handler name predicts the opposite)
 [DATA label=sibling_after] data.organization.id = @td(MULTI_ORG_TF_BR.org_buildright_id) {OBSERVED}
-[DATA label=sibling_after] data.organization.isLockedForCurrentUser = false -- the sibling the caller still holds is not flagged {OBSERVED}
+[DATA label=sibling_after] data.organization.isLockedForCurrentUser = false {OBSERVED} -- the sibling the caller still holds is not flagged
 [ERRORS label=global_lock_flag] HTTP 200 {OBSERVED}
-[DATA label=global_lock_flag] body.locked = false -- an organization-scoped lock never locks the platform account, so the user can still sign in {BL} (BL-AUTH-012)","[ROUNDTRIP label=sibling_after] the seeder's read-back confirms the NON-active leg is isCurrentlyLocked=true at the moment sibling_after runs — otherwise the negative result is vacuous because nothing was ever locked
+[DATA label=global_lock_flag] body.locked = false {BL} -- an organization-scoped lock never locks the platform account, so the user can still sign in (BL-AUTH-012)","[ROUNDTRIP label=sibling_after] the seeder's read-back confirms the NON-active leg is isCurrentlyLocked=true at the moment sibling_after runs — otherwise the negative result is vacuous because nothing was ever locked
 [EVIDENCE] the discriminator that makes the session half meaningful is that the SAME token succeeded before and after the lock; a token minted after the lock would prove nothing about eviction","sibling_after returns errors[] non-empty or a 401 (the in-flight token was revoked — eviction DID happen, contradicting the 2026-09-09 measurement, and that is the finding); body.locked = true on the global flag (a P0 BL-AUTH-012 violation: an org-scoped lock locked the whole platform account); global_lock_flag returns 404 (the endpoint or the userId alias drifted — harness problem, BLOCKED not FAIL); sibling_before already fails (the fixture is not at the resting state)","MANDATORY teardown symmetry (every case that locks must unlock, or the next case reads a poisoned fixture): `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left behind and the suite is no longer re-runnable.",VCST-5317 · Archetype:SCOPE · Technique:ST,Draft
 PRF-GQL-085,xProfile — A Non-Password Grant Naming A Locked Org Is Refused With Exactly One user_is_locked_in_organization,GraphQL xProfile > Organizations > Lock Axis,Critical,"BL-AUTH-013, BL-AUTH-016",ECL-14.3,"Runner-native. BACKEND lane ONLY: this case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR.email). The frontend/UI lane account @td(MULTI_ORG_TF_BR_ALT.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: it is the environment's only other locked membership and suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
@@ -1309,16 +1398,16 @@ POST {{BACK_URL}}/connect/token
 Content-Type: application/x-www-form-urlencoded
 Body: grant_type=refresh_token&refresh_token={{FRESH_REFRESH_TOKEN}}&organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id)&storeId={{STORE_ID}}
 [REST-EXEC refresh_into_locked]","[ERRORS label=grant_password_fresh] HTTP 200 {BL} (BL-AUTH-012)
-[DATA label=grant_password_fresh] body.refresh_token is non-null -- scope=offline_access is what makes the refresh leg possible; without it there is nothing to refresh {OBSERVED}
+[DATA label=grant_password_fresh] body.refresh_token is non-null {OBSERVED} -- scope=offline_access is what makes the refresh leg possible; without it there is nothing to refresh
 [ERRORS label=refresh_into_locked] HTTP 400 {BL} (BL-AUTH-013)
 [DATA label=refresh_into_locked] body.error = invalid_grant {BL} (BL-AUTH-013)
-[COUNT label=refresh_into_locked] body.errors.length = 1 -- exactly one entry; the response's own `count` field is the parameter count and must never be read as an error count {BL} (BL-AUTH-013)
-[DATA label=refresh_into_locked] body.errors[0].code = user_is_locked_in_organization -- an organization-specific code, never a global-lockout code (user_is_locked_out / user_is_temporary_locked_out), because the remedy differs {BL} (BL-AUTH-013)
+[COUNT label=refresh_into_locked] body.errors.length = 1 {BL} -- exactly one entry; the response's own `count` field is the parameter count and must never be read as an error count (BL-AUTH-013)
+[DATA label=refresh_into_locked] body.errors[0].code = user_is_locked_in_organization {BL} -- an organization-specific code, never a global-lockout code (user_is_locked_out / user_is_temporary_locked_out), because the remedy differs (BL-AUTH-013)
 [ERRORS label=grant_password_locked] HTTP 200 {BL} (BL-AUTH-016)
 [COUNT label=grant_password_locked] body.errors.length = 0 {OBSERVED}","[EVIDENCE] why the three grant legs read the way they do: grant_password_fresh must be 200 because the ACCOUNT is not locked (only a membership is), and it is what yields the usable refresh token; refresh_into_locked must be 400 because allowFallback is set only for the password grant; grant_password_locked must be 200 because BL-AUTH-016 specifies a silent fallback to the accessible organization for that grant type — a future change that refuses it outright is a regression, not a fix
 [ROUNDTRIP label=refresh_into_locked] the seeder's read-back confirms the named organization's membership is isCurrentlyLocked=true at the moment the grant is attempted
 [EVIDENCE] if refresh_into_locked returns a code-less invalid_grant, check FIRST whether the refresh token was already consumed by an earlier op or an earlier run — that failure shape is indistinguishable from the organization refusal at the HTTP level and is the most likely harness error here
-[EVIDENCE] if any leg returns user_cannot_login_in_store, storeId was dropped from that request body; fix the request rather than recording the code","refresh_into_locked returns 200 (the switch into a locked organization succeeded — P0); its code is a global-lockout code instead of user_is_locked_in_organization (the buyer is sent to the wrong remedy); more than one errors[] entry; a code-less invalid_grant (most likely a consumed refresh token — re-mint before treating it as the organization refusal); grant_password_locked returns 400 (BL-AUTH-016's silent fallback was removed); any leg returning user_cannot_login_in_store (storeId missing from that body — harness error, not a finding)","MANDATORY teardown symmetry (every case that locks must unlock, or the next case reads a poisoned fixture): `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left behind and the suite is no longer re-runnable.",VCST-5317 · Archetype:FALLBACK · Technique:DT,Draft
+[EVIDENCE] if any leg returns user_cannot_login_in_store, storeId was dropped from that request body; fix the request rather than recording the code","refresh_into_locked returns 200 (the switch into a locked organization succeeded — P0); its code is a global-lockout code instead of user_is_locked_in_organization (the buyer is sent to the wrong remedy); more than one errors[] entry; a code-less invalid_grant (most likely a consumed refresh token — re-mint before treating it as the organization refusal); grant_password_locked returns 400 (BL-AUTH-016's silent fallback was removed); any leg returning user_cannot_login_in_store (storeId missing from that body — harness error, not a finding)","MANDATORY teardown symmetry (every case that locks must unlock, or the next case reads a poisoned fixture): `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left behind and the suite is no longer re-runnable.",VCST-5317 · Archetype:FALLBACK · Technique:DT | Behavior:auth.org.resolve.explicit-switch-refused,Draft
 PRF-GQL-086,"xProfile — organizationsIds Is A Membership List, Not An Access List (Locked Id Returned, Then Refused Per-Org)",GraphQL xProfile > Organizations > Lock Axis,High,"BL-B2B-007, BL-AUTH-015",ECL-14.8,"Runner-native. BACKEND lane ONLY: this case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR.email). The frontend/UI lane account @td(MULTI_ORG_TF_BR_ALT.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: it is the environment's only other locked membership and suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
 Resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
@@ -1372,7 +1461,7 @@ V2 terminates sessions, so the token is minted after the lock.","back_url={{BACK
     }
   }
 [GQL-EXEC read_unlocked_org]","[ERRORS label=me_ids] errors[] empty {OBSERVED}
-[COUNT label=me_ids] data.me.contact.organizationsIds.length = 2 -- the locked organization's id is still listed: organizationsIds is a membership list {SPEC} (PR #145 removed the lock filter from organizationsIds too)
+[COUNT label=me_ids] data.me.contact.organizationsIds.length = 2 {SPEC} -- the locked organization's id is still listed: organizationsIds is a membership list (PR #145 removed the lock filter from organizationsIds too)
 [DATA label=me_ids] data.me.contact.organizationsIds matches /@td(MULTI_ORG_TF_BR.org_techflow_id)/ {OBSERVED}
 [ERRORS label=read_locked_org] errors[] non-empty -- naming the locked organization's id directly is refused; a disabled row in the UI is not access control {OBSERVED}
 [DATA label=read_locked_org] errors[0].extensions.code = Forbidden {OBSERVED}
@@ -1425,12 +1514,12 @@ Precedent: VCST-5374 filed this exact IsLocked-versus-IsCurrentlyLocked confusio
 [REST-OP membership_readback]
 GET {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)
 [REST-EXEC membership_readback]","[ERRORS label=me_orgs_expired] errors[] empty {OBSERVED}
-[COUNT label=me_orgs_expired] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 0 -- no membership is currently locked once LockoutEnd has passed, with no unlock write ever issued {BL} (BL-AUTH-012; OrganizationMembership.IsCurrentlyLocked = IsLocked && (!LockoutEnd.HasValue || LockoutEnd > UtcNow))
+[COUNT label=me_orgs_expired] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 0 {BL} -- no membership is currently locked once LockoutEnd has passed, with no unlock write ever issued (BL-AUTH-012; OrganizationMembership.IsCurrentlyLocked = IsLocked && (!LockoutEnd.HasValue || LockoutEnd > UtcNow))
 [DATA label=me_orgs_expired] data.me.contact.organizations.items[?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].isLockedForCurrentUser = false {BL} (BL-AUTH-012)
-[COUNT label=me_orgs_expired] data.me.contact.organizations.totalCount = 2 -- the membership is still listed; only the flag changes {OBSERVED}
+[COUNT label=me_orgs_expired] data.me.contact.organizations.totalCount = 2 {OBSERVED} -- the membership is still listed; only the flag changes
 [ERRORS label=membership_readback] HTTP 200 {OBSERVED}
-[DATA label=membership_readback] body.isLocked = true -- THE DIVERGENCE: the raw field is still true {OBSERVED}
-[DATA label=membership_readback] body.isCurrentlyLocked = false -- while the computed predicate is false, so a resolver reading the raw field would report the opposite of the xAPI flag above {BL} (BL-AUTH-012)
+[DATA label=membership_readback] body.isLocked = true {OBSERVED} -- THE DIVERGENCE: the raw field is still true
+[DATA label=membership_readback] body.isCurrentlyLocked = false {BL} -- while the computed predicate is false, so a resolver reading the raw field would report the opposite of the xAPI flag above (BL-AUTH-012)
 [EVIDENCE] cross-layer relation (recorded, not machine-evaluated): the xAPI isLockedForCurrentUser for this organization equals the platform's own isCurrentlyLocked, and does NOT equal its isLocked -- the read path is on the computed predicate, not the raw flag {BL} (BL-AUTH-012)","[ROUNDTRIP label=membership_readback] the REST read-back and the xAPI flag are compared against each other in the same case; that cross-check is what turns a green result into evidence rather than a coincidence
 [EVIDENCE] the REST membership search with onlyLocked is deliberately NOT consulted here — it has no time bound and reported this row locked at t+162s after a passive expiry","isLockedForCurrentUser is true at an expired LockoutEnd (the raw-IsLocked read — VCST-5374's defect class re-appearing on the switcher's contract); the read-back shows isLocked and isCurrentlyLocked agreeing (the fixture never reached V4 — BLOCKED, not FAIL); the membership read-back 404s (the membership-id alias drifted after a re-seed — harness problem); the organization disappears from items[] entirely","MANDATORY teardown symmetry (every case that locks must unlock, or the next case reads a poisoned fixture): `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left behind and the suite is no longer re-runnable.","VCST-5317 · Archetype:BOUNDARY · Technique:BVA · VCST-5374 (the same predicate confusion, already filed once as a user-visible bug) · cross-ref PRF-GQL-080",Draft
 PRF-GQL-088,xProfile — A Single-Org User Whose Only Membership Is Locked Signs In With No Organization Context,GraphQL xProfile > Organizations > Lock Axis,High,"BL-AUTH-015, BL-AUTH-016",ECL-14.3,"BLOCKED BY A MISSING FIXTURE — report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING`, never PASS, and never satisfy this by substitution.
@@ -1449,7 +1538,7 @@ POST {{BACK_URL}}/connect/token
 Content-Type: application/x-www-form-urlencoded
 Body: grant_type=password&scope=offline_access&username=<the reserved single-org account>&password={{DEFAULT_TEST_PASSWORD}}&storeId={{STORE_ID}}
 [REST-EXEC grant_single_org_locked]","[ERRORS label=grant_single_org_locked] HTTP 200 {BL} (BL-AUTH-015)
-[COUNT label=grant_single_org_locked] body.errors.length = 0 -- and in particular no global-lockout code, since the platform account is not locked {BL} (BL-AUTH-015)
+[COUNT label=grant_single_org_locked] body.errors.length = 0 {BL} -- and in particular no global-lockout code, since the platform account is not locked (BL-AUTH-015)
 [DATA label=grant_single_org_locked] body.access_token is non-null {BL} (BL-AUTH-015)
 [EVIDENCE] decode the returned access_token payload and record its organization claim: it must be ABSENT, not set to the locked organization. Recorded rather than machine-asserted because the claim lives inside the JWT and this layer has no endpoint that reports it {BL} (BL-AUTH-015)","[EVIDENCE] the 200 asserted above is BL-AUTH-015 in full: a grant resolving NO accessible organization succeeds with no organization context rather than being refused, so the buyer can still reach their own account pages to see why
 [EVIDENCE] storeId is mandatory on every grant in this suite: omitting it returns user_cannot_login_in_store and masks the answer this case is asking for
@@ -1468,8 +1557,8 @@ A storefront customer principal is refused the TOP-LEVEL organizations query, an
       isLockedForCurrentUser
     }
   }
-[GQL-EXEC anon_org]","[DATA label=anon_org] data.organization.isLockedForCurrentUser = false OR errors[] non-empty -- an anonymous caller either gets the short-circuited false or is refused outright; the flag is never true for a caller with no user id {SPEC} (OrganizationType.cs:252-256 short-circuits to all-false on an empty or anonymous user id)
-[DATA label=anon_org] data.organization.isLockedForCurrentUser is null OR data.organization.isLockedForCurrentUser = false -- restated as a shape check so a true value cannot slip through whichever branch the environment takes {SPEC} (OrganizationType.cs:252-256)","[EVIDENCE] record the operation's elapsed_ms. The short-circuit exists to avoid a per-organization membership lookup and elapsed time is the only signal this layer has, but a wall-clock number cannot prove a query did not run and OrganizationType.cs specifies no timing at all — so this is captured as evidence and is deliberately NOT an assertion. Attributing a latency expectation to that source would be inventing a spec
+[GQL-EXEC anon_org]","[DATA label=anon_org] data.organization.isLockedForCurrentUser = false OR errors[] non-empty {SPEC} -- an anonymous caller either gets the short-circuited false or is refused outright; the flag is never true for a caller with no user id (OrganizationType.cs:252-256 short-circuits to all-false on an empty or anonymous user id)
+[DATA label=anon_org] data.organization.isLockedForCurrentUser is null OR data.organization.isLockedForCurrentUser = false {SPEC} -- restated as a shape check so a true value cannot slip through whichever branch the environment takes (OrganizationType.cs:252-256)","[EVIDENCE] record the operation's elapsed_ms. The short-circuit exists to avoid a per-organization membership lookup and elapsed time is the only signal this layer has, but a wall-clock number cannot prove a query did not run and OrganizationType.cs specifies no timing at all — so this is captured as evidence and is deliberately NOT an assertion. Attributing a latency expectation to that source would be inventing a spec
 [EVIDENCE] record the full response envelope. If the request is refused, capture errors[0].extensions.code so the refusal branch is distinguishable from the short-circuit branch in the evidence rather than being collapsed into 'not true'
 [EVIDENCE] no Authorization header is sent by this case. If the runner attaches a cached bearer from an earlier case in the same run, the case is invalid — re-run it in isolation","isLockedForCurrentUser comes back true for an anonymous caller (a membership answer leaked to an unauthenticated caller, which also discloses that a membership exists); the query 500s rather than resolving or refusing cleanly; the response is served with an Authorization header attached (the case did not actually run anonymously — invalid, re-run in isolation)","none — anonymous read-only, nothing mutated. Confirm `npm run seed:membership-lock:verify` still exits 0 so a leaked lock from an earlier case cannot be mistaken for this case's residue.",VCST-5317 · Archetype:SCOPE · Technique:EG,Draft
 PRF-GQL-090,"xProfile — contact.organization Never Carries isLockedForCurrentUser true, Despite Sharing The organizationFields Fragment",GraphQL xProfile > Organizations > Lock Axis,High,"BL-GQL-002, BL-B2B-013",ECL-14.8,"Runner-native. BACKEND lane ONLY: this case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR.email). The frontend/UI lane account @td(MULTI_ORG_TF_BR_ALT.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
@@ -1538,12 +1627,12 @@ TOKEN HANDLING, because it is the fragile part: V7 locks every membership and th
     }
   }
 [GQL-EXEC active_org_v7]","[ERRORS label=active_org_v2] errors[] empty {OBSERVED}
-[DATA label=active_org_v2] data.me.contact.organization.isLockedForCurrentUser = false -- with the NON-active organization locked, the active-organization row does not inherit the flag through the shared fragment {OBSERVED} (measured 2026-09-09; the fragment is spread onto contact.organization by both GetMe and GetPageContext)
-[DATA label=active_org_v2] data.me.contact.organization.id = @td(MULTI_ORG_TF_BR.org_buildright_id) -- the active organization is the unlocked one {OBSERVED}
+[DATA label=active_org_v2] data.me.contact.organization.isLockedForCurrentUser = false {OBSERVED} -- with the NON-active organization locked, the active-organization row does not inherit the flag through the shared fragment (measured 2026-09-09; the fragment is spread onto contact.organization by both GetMe and GetPageContext)
+[DATA label=active_org_v2] data.me.contact.organization.id = @td(MULTI_ORG_TF_BR.org_buildright_id) {OBSERVED} -- the active organization is the unlocked one
 [EVIDENCE] cross-path relation (recorded, not machine-evaluated): the item in organizations.items with the same id as contact.organization carries isLockedForCurrentUser false, and the OTHER item carries true -- the same fragment yields different values per organization, which is exactly what it must do {OBSERVED}
 [EVIDENCE] the all-locked read may succeed with a null active organization or be refused; BOTH are admissible, so this leg carries no errors[] verdict by design and the evidence records which branch was taken {OBSERVED}
-[DATA label=active_org_v7] data.me.contact.organization is null OR data.me.contact.organization.isLockedForCurrentUser = false -- with EVERY membership locked the active-organization row is null rather than a flagged organization; it never comes back carrying true {OBSERVED} (measured 2026-09-09: contact.organization was null in the all-locked state)
-[COUNT label=active_org_v7] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 2 -- both memberships ARE flagged in the list, which is what makes the null active-organization row meaningful rather than an artefact of nothing being locked {OBSERVED}","[ROUNDTRIP label=active_org_v7] the seeder's read-back confirms BOTH legs are isCurrentlyLocked=true before the null active organization is read as evidence
+[DATA label=active_org_v7] data.me.contact.organization is null OR data.me.contact.organization.isLockedForCurrentUser = false {OBSERVED} -- with EVERY membership locked the active-organization row is null rather than a flagged organization; it never comes back carrying true (measured 2026-09-09: contact.organization was null in the all-locked state)
+[COUNT label=active_org_v7] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 2 {OBSERVED} -- both memberships ARE flagged in the list, which is what makes the null active-organization row meaningful rather than an artefact of nothing being locked","[ROUNDTRIP label=active_org_v7] the seeder's read-back confirms BOTH legs are isCurrentlyLocked=true before the null active organization is read as evidence
 [EVIDENCE] record the raw contact.organization object on both legs. The distinction that matters is null versus an object carrying true, and a summary that records only 'not true' loses it","contact.organization comes back carrying isLockedForCurrentUser true on either leg (the shared fragment leaked the flag onto the active-organization row — every surface rendering the current company from it would start showing it as blocked); the V7 leg returns 401 (the fresh-mint device failed — the role alias no longer resolves to the same account, so re-author rather than re-run); active_org_v7 shows fewer than 2 flagged items (V7 did not fully apply — BLOCKED, not FAIL); contact.organization is non-null AND its id is a locked organization","MANDATORY teardown symmetry (every case that locks must unlock, or the next case reads a poisoned fixture): `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left behind and the suite is no longer re-runnable.",VCST-5317 · Archetype:PARITY · Technique:ST,Draft
 PRF-GQL-091,"xProfile — statuses: [""Locked""] Is A Query-Argument Overload That Filters On The Lock Predicate While The Persisted Status Stays Approved",GraphQL xProfile > Organizations > Lock Axis,High,BL-B2B-013,ECL-14.8,"Runner-native. BACKEND lane ONLY: this case applies a lock to the OrganizationMembership rows of @td(MULTI_ORG_TF_BR.email). The frontend/UI lane account @td(MULTI_ORG_TF_BR_ALT.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes.
 IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: never unlock it, never reference it as a mutable fixture. Resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
@@ -1591,15 +1680,15 @@ The lane fixture's memberships declare membership_status=Approved explicitly, so
     }
   }
 [GQL-EXEC approved_at_v2]","[ERRORS label=locked_filter] errors[] empty {SPEC} (ContactType.ResolveMyOrganizationIdsByStatusAsync — ""Locked"" is a recognised filter value, not an invalid one)
-[COUNT label=locked_filter] data.me.contact.organizations.totalCount = 1 -- the overload matches on the lock predicate, so exactly the one currently-locked membership qualifies {SPEC} (ContactType.ResolveMyOrganizationIdsByStatusAsync wantsLocked && isLocked branch; PR #145 ContactTypeTests asserts the locked org id is contained)
-[COUNT label=locked_filter] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].length = 1 -- the LOCKED organization IS returned under [""Locked""] {SPEC} (ContactTypeTests: ResolveMyOrganizationIdsByStatusAsync(context, [OrgId], [""Locked""]) contains the org)
-[COUNT label=locked_filter] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_buildright_id)].length = 0 -- and ONLY it: the unlocked sibling is not locked, so the lock predicate excludes it. ""Exactly the locked org"" is the pair of this line and the one above {SPEC} (wantsLocked && isLocked branch)
-[COUNT label=locked_filter] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 1 -- every item the overload returned is genuinely locked, so the filter and the per-item flag agree {SPEC} (OrganizationType.cs isLockedForCurrentUser)
+[COUNT label=locked_filter] data.me.contact.organizations.totalCount = 1 {SPEC} -- the overload matches on the lock predicate, so exactly the one currently-locked membership qualifies (ContactType.ResolveMyOrganizationIdsByStatusAsync wantsLocked && isLocked branch; PR #145 ContactTypeTests asserts the locked org id is contained)
+[COUNT label=locked_filter] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].length = 1 {SPEC} -- the LOCKED organization IS returned under [""Locked""] (ContactTypeTests: ResolveMyOrganizationIdsByStatusAsync(context, [OrgId], [""Locked""]) contains the org)
+[COUNT label=locked_filter] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_buildright_id)].length = 0 {SPEC} -- and ONLY it: the unlocked sibling is not locked, so the lock predicate excludes it. ""Exactly the locked org"" is the pair of this line and the one above (wantsLocked && isLocked branch)
+[COUNT label=locked_filter] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 1 {SPEC} -- every item the overload returned is genuinely locked, so the filter and the per-item flag agree (OrganizationType.cs isLockedForCurrentUser)
 [DATA label=locked_filter] data.me.contact.organizations.items[?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].myStatusInOrganization = Approved {BL}
 [ERRORS label=approved_at_v2] errors[] empty {SPEC} (ContactType.organizations(statuses: [String]))
-[COUNT label=approved_at_v2] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_buildright_id)].length = 1 -- the unlocked sibling is Approved and present, which proves the filter itself works at this state {BL} (BL-B2B-013)
-[COUNT label=approved_at_v2] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].length = 1 -- THE DISCRIMINATOR: the LOCKED membership is ALSO in the Approved bucket, because a lock does not move a membership out of its persisted status — post-#145 it falls through to the status check instead of short-circuiting, which is the one thing that diff did change {BL} (BL-B2B-013; PR #145 moved the wantsLocked branch below the status check)
-[COUNT label=approved_at_v2] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 1 -- and it still carries the lock flag while sitting in the Approved bucket: both axes are readable at once, on the same item, without either collapsing into the other {BL} (BL-B2B-013)","[EVIDENCE] THE RECONCILING FACT, which the bare myStatusInOrganization assertion above is checking: the membership the [""Locked""] filter matched still carries the MEMBERSHIP-level status Approved. ""Locked"" was never written to the status column — it is a filter-vocabulary value only — so BL-B2B-013's legal set (Invited / Approved / Rejected / Deleted) is intact and the two statements never conflict. The assertion is left as a bare predicate on purpose: this rationale contains ""/"" and ""("", which the runner's arithmetic detection would read as operators, degrading the comparison to undefined=undefined and turning a real check into a guaranteed pass
+[COUNT label=approved_at_v2] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_buildright_id)].length = 1 {BL} -- the unlocked sibling is Approved and present, which proves the filter itself works at this state (BL-B2B-013)
+[COUNT label=approved_at_v2] data.me.contact.organizations.items[*?id=@td(MULTI_ORG_TF_BR.org_techflow_id)].length = 1 {BL} -- THE DISCRIMINATOR: the LOCKED membership is ALSO in the Approved bucket, because a lock does not move a membership out of its persisted status — post-#145 it falls through to the status check instead of short-circuiting, which is the one thing that diff did change (BL-B2B-013; PR #145 moved the wantsLocked branch below the status check)
+[COUNT label=approved_at_v2] data.me.contact.organizations.items[*?isLockedForCurrentUser=true].length = 1 {BL} -- and it still carries the lock flag while sitting in the Approved bucket: both axes are readable at once, on the same item, without either collapsing into the other (BL-B2B-013)","[EVIDENCE] THE RECONCILING FACT, which the bare myStatusInOrganization assertion above is checking: the membership the [""Locked""] filter matched still carries the MEMBERSHIP-level status Approved. ""Locked"" was never written to the status column — it is a filter-vocabulary value only — so BL-B2B-013's legal set (Invited / Approved / Rejected / Deleted) is intact and the two statements never conflict. The assertion is left as a bare predicate on purpose: this rationale contains ""/"" and ""("", which the runner's arithmetic detection would read as operators, degrading the comparison to undefined=undefined and turning a real check into a guaranteed pass
 [EVIDENCE] FIELD TRAP, measured live 2026-09-09 — the reconciling fact MUST be read from myStatusInOrganization and never from Organization.status. Organization.status is the ORGANIZATION's own member status, an org-level attribute with nothing to do with any caller's membership: on these two shared orgs it reads Approved for BuildRight and null for TechFlow, a data difference between the orgs themselves. So asserting status=Approved on the locked item would false-FAIL against correct behaviour, and even where it passed it would be proving an org attribute while claiming to prove a membership-level invariant. Organization.status stays in the selection set as ORG-LEVEL evidence only; label it that way wherever it is recorded
 [EVIDENCE] DO NOT use contact.isLockedInOrganization as a locked-membership oracle here. It is caller-relative to the CURRENT organization, so it read false while the TechFlow membership was locked, simply because the active org is BuildRight. The per-org field is Organization.isLockedForCurrentUser, which is what this row asserts. PRF-GQL-082 already documents this class of caller-relative confusion
 [EVIDENCE] the overload lives ONLY on the nested me.contact.organizations. Measured live 2026-09-09, the TOP-LEVEL organizations query rejects the argument outright at validation time — ""Unknown argument 'statuses' on field 'organizations' of type 'Query'"", extensions.code KNOWN_ARGUMENT_NAMES — which is a sharper statement of this ticket's AC-2 DRIFT than ""the top-level query is Forbidden"": the argument does not exist there at all, so no permission is even reached

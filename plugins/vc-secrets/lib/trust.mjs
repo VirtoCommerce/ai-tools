@@ -43,8 +43,8 @@ const TRUST_SCHEMA_VERSION = 1;
 // around, so a lookup needs no translation between them.
 const LAUNCHABLE_KINDS = ["servers", "tasks"];
 
-// The trust file sits beside the keystore's `secrets` directory, the way the oversize markers' `state`
-// directory does, so one config base holds everything this tool keeps on the machine.
+// The trust file sits beside the keystore's `secrets` directory, so one config base holds everything
+// this tool keeps on the machine.
 function trustFilePath(env = process.env) {
     return path.join(path.dirname(secretsDir(env)), TRUST_FILE_NAME);
 }

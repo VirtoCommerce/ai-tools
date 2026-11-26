@@ -25,6 +25,8 @@
  *   Dim 7 Duplication    DUP-001 DUP-004 (DUP-002/003 are cross-suite — skipped)
  *   Dim 9 Technique      TC-001
  *   Dim 10 Grounding     GRD-001 (GRD-002 invented-literal needs judgment — skipped)
+ *   Parallel waves       EXC-001 a case that looks like it changes shared state (a store or platform
+ *                        setting, PUT /api/stores) without [EXCLUSIVE:<what>] — Informational, a heuristic
  *   Dim 11 Triangulation TRI-000 audit-stamp staleness ONLY
  *                        (TRI-001..006 verdicts need docs+live+source → the skill)
  *
@@ -765,8 +767,24 @@ export function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Fi
     }
   }
 
+  // --- Parallel waves: a case that changes what every session reads ---
+  // A candidate, not a verdict: a person tags it [EXCLUSIVE:<what>] or rewrites it to create its own data.
+  const writes = [row.Preconditions, row.Steps, row.Cleanup].join("\n");
+  if (!/\[EXCLUSIVE:/.test(row.Preconditions ?? "")) {
+    const why = ENV_WIDE_WRITE.find(([, re]) => re.test(writes));
+    if (why) push("EXC-001", "Informational", `looks like it changes shared state (${why[0]}) — tag [EXCLUSIVE:<what>] in Preconditions, or create and delete its own data in the case`);
+  }
+
   return f;
 }
+
+/** Text that usually means a write every other session reads. Heuristic: EXC-001 is Informational for that reason. */
+const ENV_WIDE_WRITE: [string, RegExp][] = [
+  ["PUT /api/stores", /PUT\s+\/api\/stores\b/i],
+  ["platform settings write", /(POST|PUT)\s+\/api\/platform\/settings/i],
+  ["store/platform setting change", /\b(set|enable|disable|turn (on|off)|toggle|flip|switch)\b[^.\n]{0,60}\b(store|platform)[- ]?setting/i],
+  ["marked not parallel-safe", /ADMIN-DESTRUCTIVE|do not run in parallel|exclusive window|operator window|env-wide|environment-wide/i],
+];
 
 function truncate(s: string, n = 70): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;

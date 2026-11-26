@@ -13,7 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as m from "./vc-secrets.mjs";
 import * as cache from "./vc-secrets-cache.mjs";
-import { stripComments, tmpDirs } from "./test-support.mjs";
+import { UNREACHABLE_POWERSHELL, stripComments, tmpDirs } from "./test-support.mjs";
 
 export const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.meta.url));
 
@@ -26,6 +26,10 @@ export const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.me
 // variables, so a test that can touch them pins the backend (as the doctor tests do) or stubs the tool
 // on PATH. Both HOME and USERPROFILE for the reason shimEnv gives; a test that means to use a fixture
 // home passes it in `extra`, which lands last.
+//
+// Stripping VC_SECRETS_POWERSHELL takes the suite's guard with it (test-support.mjs), and a launcher spawned
+// from this env would then start the real powershell.exe on Windows: so the guard is put back, and a test
+// that stubs PowerShell sets its own in `extra`.
 export function launcherEnv(extra = {}) {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-launcher-home-"));
     tmpDirs.push(home);
@@ -36,7 +40,8 @@ export function launcherEnv(extra = {}) {
         }
     }
 
-    return { ...env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home, ...extra };
+    return { ...env, VC_SECRETS_POWERSHELL: UNREACHABLE_POWERSHELL, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home,
+        ...extra };
 }
 
 // One path fails the named fs call with EACCES, the way it does under an ancestor that lost its search
@@ -428,6 +433,10 @@ export const SECRET_PAT = [{ kind: "secret", name: "pat" }];
 
 export const POSIX_STUB_ONLY = { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" };
 
+// For a test whose stub receives the DPAPI script's command line. Skipped on Windows only: the property is
+// platform-independent and keeps running on Linux and macOS. The reason is the skip message, or false elsewhere.
+export const WIN32_COMMAND_LINE_LIMIT = process.platform === "win32" && "on Windows the stub is a .cmd file started through cmd.exe, whose command line is limited to 8191 characters, and the DPAPI script's -EncodedCommand is longer; production starts powershell.exe directly (limit 32767), and the real-OS smoke workflow spawns the real powershell.exe with these scripts";
+
 // A repository on disk, found the way a real run finds it: by walking up from its working directory.
 export function namespaceRepo(project, local) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-ns-store-"));
@@ -496,7 +505,7 @@ export function namespaceStoreSeams() {
             },
             writeEntry: async (name) => { calls.push(`write ${name}`); },
             removeEntry: async (name) => { calls.push(`remove ${name}`); },
-            oversize: { record: () => {}, clear: () => {} },
+            removeLegacyEntry: async (name) => { calls.push(`remove-legacy ${name}`); },
             randomState: () => "STATE",
             log: () => {},
             backend: "gpg",
@@ -555,8 +564,7 @@ export function loginDeps(overrides = {}) {
     const logged = [];
     const lock = [];
     const removed = [];
-    const marked = [];
-    const cleared = [];
+    const removedLegacy = [];
     const deps = {
         listen: async () => ({ port: 51234, next: async () => ({ code: "the-code" }), close: async () => {} }),
         open: (cmd) => { opened.push(cmd); },
@@ -580,17 +588,17 @@ export function loginDeps(overrides = {}) {
         // like nothing at all. Both oauth entries for the affected server were present before the
         // run and gone after, with every other test still passing.
         removeEntry: async (name) => { removed.push(name); },
-        // Injected for exactly the reason removeEntry is: the default WRITES and DELETES a file
-        // under the developer's own config directory, and both halves run on ordinary paths --
-        // `clear` on every successful login. Left to default, every login test would litter a real
-        // machine from a green run.
-        oversize: { record: (key, info) => { marked.push([key, info]); }, clear: (key) => { cleared.push(key); } },
+        // Injected for the reason removeEntry is: on a dpapi login the default is a Credential Manager
+        // delete through the REAL PowerShell, run after every successful refresh write. A test that
+        // injects `backend: "dpapi"` and leaves this to default deletes a developer's live sign-in from
+        // a green run.
+        removeLegacyEntry: async (name) => { removedLegacy.push(name); },
         // Injected for the reason the others are: the default reads the developer's own trust file.
         trustState: trustedFor(LOGIN_CFG),
         ...overrides,
     };
 
-    return { deps, written, opened, logged, lock, removed, marked, cleared };
+    return { deps, written, opened, logged, lock, removed, removedLegacy };
 }
 
 // Depth-aware rather than line-anchored: the first version of this matched only a seam standing

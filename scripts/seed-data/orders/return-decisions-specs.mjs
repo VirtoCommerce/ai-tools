@@ -26,7 +26,7 @@
  * validateDecisionFixtureSet() fails the build when any of those gaps collapses.
  */
 import {
-  LINE_ROLE_X, LINE_ROLE_Y, RETURN_ORDER_MARK, RETURN_ALLOWED_STATUS, stripFixtureMeta,
+  LINE_ROLE_X, LINE_ROLE_Y, RETURN_ORDER_MARK, RETURN_ALLOWED_STATUS, stripFixtureMeta, setTag,
   recipientEmailsOf, forceRecipientEmails,
 } from './orders-specs.mjs';
 
@@ -34,7 +34,7 @@ export { recipientEmailsOf, forceRecipientEmails };
 
 /** Order-number prefix. Distinct from step 1's `AGENT-TEST-ORD-RET-<A..G>` so neither teardown sweeps the other. */
 export const DECISION_ORDER_MARK = `${RETURN_ORDER_MARK}-DEC`;
-export const decisionOrderNumber = (key) => `${DECISION_ORDER_MARK}-${key}`;
+export const decisionOrderNumber = (key) => `${DECISION_ORDER_MARK}-${key}${setTag()}`;
 /** Stamped on every seeded return's customerReference — the handle the teardown sweeps by. */
 export const DECISION_RETURN_REF_MARK = 'AGENT-TEST-RET-DEC';
 export const decisionReturnRef = (key, ref) => `${DECISION_RETURN_REF_MARK}-${key}-${ref}`;

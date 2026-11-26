@@ -7,14 +7,22 @@ rationale: |
   coverage. Built because a /qa-test run (VCST-5317) tested one predicate on one control in great
   depth and never established the feature around it; the operator called that out. A ticket-scoped
   context step inherits the ticket's narrowness, so this file is the feature-scoped counterpart.
+  Rev 3 (2026-11-24) refreshes the org-switcher surface after vc-frontend#2667 moved it from the account
+  dropdown to a header control (VCST-6237), recounts coverage, and adds D23-D26 / G18-G25; Admin, quotes and
+  the API contract were NOT re-enumerated (see section 0).
   Rev 2 folds in the QUOTES surface end-to-end (storefront + Admin + xAPI) after a Quotes question
   exposed that rev 1 named the coverage hole (old §6a) but never inventoried the surface itself.
-generated: 2026-09-16
-rev: 2
+generated: 2026-11-24
+rev: 3
 amended: 2026-09-18
 stale_after_days: 60
 expires_after_days: 120
 sources:
+  - REV 3 (2026-11-24) - this file's rev 2 carried forward whole; plus reports/tickets/Sprint26-23/VCST-6237/vcst/{test-strategy,test-model,testing-checklist,design-report,verdict}.md, evidence/A9/root-cause.md, exploratory/SBTM-VCST-6237-2026-11-23.md (read by path; their live observations enter here only through the kb ids cited per row)
+  - REV 3 live: playwright-firefox, GUEST only (header, /sign-in, /account/quotes redirect). The authenticated walk was BLOCKED - the firefox lane was not started by scripts/lanes/playwright-lane.mjs so it holds no password (hook refusal), and no login exists in the store for MULTI_ORG_TF_BR_ALT. Authenticated rows below rest on kb entries observed 2026-11-23 on vcst by the VCST-6237 run, and on source @ vc-frontend 0444048a2 (PR #2667 head)
+  - REV 3 deployed (vcst, 2026-11-23, per the brief): Platform 3.1099.0, theme 2.63.0-pr-2667-0444-0444048a, Customer 3.1033.0, ProfileExperienceApi 3.1025.0, Xapi 3.1033.0-pr-79-4dfa, WhiteLabeling 3.1007.0
+  - REV 3 docs: VirtoOZ connector NOT available this pass; Context7 /virtocommerce/vc-docs fallback returned xAPI reference pages only, no user-guide page for the switcher, so NO guide is quoted this pass and every rev-2 guide quote (D1, D4, D11, D16-D18) is carried unrefreshed
+  - .claude/knowledge/api/graphql-schema.md run copy refreshed 2026-11-23 (reports/tickets/Sprint26-23/VCST-6237/vcst/knowledge/api/graphql-schema.md; 130 queries / 154 mutations per the run)
   - reports/ba/Organization roles/ (9 prior-art docs, 2,269 lines — verdicts in §8, carried from rev 1)
   - .claude/knowledge/domain/b2b-organizations.md rev 1 (2026-09-09, amended 2026-09-11) — this file IS the previous rev; every D*/G* id carried forward
   - reports/ba/test-models/VCST-5317-2026-09-09.md, VCST-5281-*, VCST-5733-2026-09-02.md — read by path this pass, not re-opened line-by-line (no new claim needed from them beyond what rev 1 already extracted)
@@ -46,7 +54,30 @@ excludes: >-
 `DRIFT` = prior art says otherwise and prior art is wrong · `MISSING` = documented, does not exist ·
 `UNVERIFIED` = not established, and **not** to be treated as true.
 
-## §0 — Changed since rev 1 (2026-09-16)
+## §0 — Changed since rev 2 (2026-09-16 → 2026-11-24)
+
+**What moved: one surface, and the shape of the coverage.** Everything not named here is carried from rev 2
+verbatim and is exactly as old as rev 2 says it is. **Not re-enumerated this pass:** the whole Admin SPA
+(§2 — rev 2 walked platform `3.1071.0-pr-3108`, the stand now runs `3.1099.0`), the quotes surface (§2g, §3f,
+§4e), the REST contract (§4b–§4d) and the personal-vs-org route table (§3a/§3e beyond the header row). Gap G23
+says why: the authenticated live walk was blocked on this lane.
+
+| # | Rev 2 said | Rev 3 says | Basis |
+|---|---|---|---|
+| 1 | §3d: desktop switcher = `top-header-organizations.vue`, **last child of the account-menu popover** | **That component no longer exists.** The desktop switcher is the header control `organizations-button` (`organization-switcher.vue` + `organization-list.vue`), the **last item of the right icon group after Cart**, in `bottom-header`, rendered only when `me.contact.organizations.totalCount > 1`. The account dropdown is now the name link + Logout (+ "Back to operator" while impersonating). **DRIFT of our own prior art — D23** | source @0444048a2 (`top-header-organizations` absent from the tree; `menu.json` id `organizations`, priority 110, rendered through ExtensionPoint `headerMenu`) + KB-3F1B8798, KB-A26A8ACC live |
+| 2 | §3e: account button reads `<Org> / <User>` | Still true on desktop, **but the org label is hidden below `xl`**; below it the org is visible only in the control's name/title. A personal / single-accessible-org buyer: user name only, no control | KB-A26A8ACC (live); org-label breakpoint from the brief — UNVERIFIED by me |
+| 3 | D6: the gate counts **every** status, the list is Approved-only, so an Invited/Locked org makes the control render with a short list | **Narrowed (D24).** The unfiltered `totalCount` already excludes Invited/Rejected/Deleted server-side, so those never open the control (Approved+Invited ⇒ **no control**). Only a **locked Approved** membership is counted — and the list now **returns** it as a disabled row | KB-EB6191B8 (3 confirmations, incl. two on this build) |
+| 4 | D7: a locked org "cannot be flagged in the switcher — structurally"; mid-change under unmerged PRs | The new control renders a locked row `disabled` with a lock icon and a `title` tooltip; the panel is re-mounted per open (`:key="openCount"`) so the stale-flag defeat is closed in source. **D7's original claim is historical**; the mid-change note stays below it | KB-BDC577C1 (tooltip text source-only; row disabled + lock icon live), source |
+| 5 | §6a: "switcher lock axis: 23 of 65, **all Draft — none has ever run**"; 006 = 65 cases, 0 Automated | **006 = 71 cases: 25 Automated · 41 Draft · 4 Reviewed · 1 Manual.** Five retired, five added this week (header-control rows `B2C-ORG-072/073/074/076/077`). The "all Draft" and "never run" lines are **false now** | `regression/suites/Frontend/b2b/006-b2b-organization.csv` parsed this pass |
+| 6 | §6a/§6c: suite 015 = 32 cases, **all Draft** | **27 Draft · 5 Automated**, still one fixture (`ORG_USER_DEFAULT` on every row) | parsed this pass |
+| 7 | §6c: `selections.b2b` = 10 suites | **25 suites.** The `b2b` tag now also sits on the Sales-Rep suites (`050m`,`050m2`,`050m3`,`089`–`093b`,`097`,`112`,`116`), UCP `102` and returns `050o` — so `/qa-regression b2b` runs the domain this map excludes, and **still** omits `026`,`027`,`027b`,`050d`,`031`–`033`,`082`. **DRIFT** | `config/test-suites.json`, recomputed |
+| 8 | (absent) | **A membership write terminates the buyer's sessions** (a refresh token minted before it is revoked: `400 invalid_grant ID2018`, no org code). The storefront reads that code-less 400 as a successful switch, persists the refused org as last-used and reloads as a guest with no message. Pre-existing, not from #2667 — **D25** | KB-3CBA0D5F (7 confirmations); `evidence/A9/root-cause.md` |
+
+**Counts, D/G ids.** D1–D22 and G1–G17 carried, none renumbered or deleted. New: **D23–D26** (4), **G18–G25** (8).
+Closed: none outright; **G6 CLOSED (by D24), G3 unchanged, G2 further partly closed** (§7). Nothing in the quote,
+Admin or REST layers was contradicted — they were not re-read.
+
+## §0b — Changed since rev 1 (2026-09-16) — carried from rev 2
 
 Rev 1 named the quotes coverage hole (old §6a: *"015 has 32 cases, all Draft, none org-scoped… the
 entire B2B dimension of quotes is absent"*) but never inventoried the quotes surface itself. That is
@@ -98,7 +129,7 @@ does). The chain below is **reconstructed**, unchanged from rev 1, plus one link
 | 5 | Each person gets rights *in that company* | Effective roles = **global account roles ∪ org-level `Organization.Roles` ∪ per-member `OrganizationMembership.Roles`**, deduped |
 | 6 | Those rights become a session | `/connect/token` + `organization_id` → JWT carries the `organization_id` claim + org-scoped permission claims |
 | 7 | The buyer transacts under that company | Org context drives cart · ship-to addresses · org pricing · order scope · shared lists · **quotes (partially — see D19–D21 and G16: the storefront surface is identical whether or not an org is in context, and Admin does not visibly bind a quote back to the requester's org)** · branding |
-| 8 | They move between companies | Switcher → `refresh(organizationId)` (`grant_type=refresh_token` + `organization_id`), then **every open tab reloads**; persisted to `localStorage["organization-id-<userName>"]` **and** server-side to `Contact.CurrentOrganizationId` |
+| 8 | They move between companies | **(rev 3: the header Organizations control, §3d — not the account menu)** → `refresh(organizationId)` (`grant_type=refresh_token` + `organization_id`), then **every open tab reloads**; persisted to `localStorage["organization-id-<userName>"]` **and** server-side to `Contact.CurrentOrganizationId` |
 | 9 | Access is taken away | Two independent axes — **status** (`Invited`/`Rejected`/`Deleted` block) and **lock** (`IsLocked` + `LockoutEnd`). **Lock beats status.** Locking revokes tokens |
 
 ### Actors
@@ -122,6 +153,8 @@ count otherwise match): Home · Loyalty missions · Marketing · Loyalty · **Co
 Notifications · Push Messages · Pricing · System Operations · Tasks · Sales Reps · Returns · **Quotes** ·
 Settings · Security · Stores · Developer tools · More. (Platform build this pass: `3.1071.0-pr-3108-016f`,
 a PR build — the menu composition is `UNVERIFIED` against a release build.)
+
+> **Rev 3 note — §2 is rev 2's enumeration, not re-walked.** Platform moved `3.1071.0-pr-3108` → `3.1099.0` and Customer to `3.1033.0`; menu composition, counts (792 contacts, 2,239 quotes) and the blade inventory are therefore `UNVERIFIED` against the current build (gap G23). Nothing in the VCST-6237 evidence touched Admin, so there is no new contradiction either.
 
 ### 2a. "Companies and contacts" root list (`#!/workspace/customers`)
 
@@ -302,6 +335,8 @@ shown separately).
 | `/account/purchase-requests` | `PurchaseRequests.Enabled` | **404** — module not enabled on vcst-qa |
 | `/account/confirmemail` · `/account/impersonate/:userId` | `public: true` | source |
 
+**Rev 3, guest contrast (live, Firefox, signed out):** the header carries no Organizations control; `/account/quotes` redirects to `/sign-in?returnUrl=/account/quotes` while the footer still lists "Quote requests" (CONFIRMED — gate is `requiresAuth`, the footer link is not gated). `/sign-in` now opens on an **OTP-first** form ("We'll email you a code. No password needed.") with a "Sign in with a password instead" link, then Entra ID / Google / Passkey buttons — a login-flow change the rev 2 map never recorded; any case that types a password must click the link first (CONFIRMED live as guest).
+
 **No route in vc-frontend carries a permission or role in its `meta`.** Route-level authz is exactly
 three flags (`public`, `requiresAuth`, `requiresOrganization`) plus `beforeEnter` closures. Every other
 permission gate lives **inside a component**. **`/account/quotes` carries no `requiresOrganization`
@@ -339,12 +374,33 @@ Below `md` it is a text pill; at `≥md` icon + tooltip only.
 operator can impersonate a user who has not accepted their invitation. Gated on `CanImpersonate` + a
 security account, **independently** of `canEditOrganization`.
 
-### 3d. The two org-switcher components — different components, not one
+### 3d. The org switcher — REV 3: desktop moved to a header control; the mobile one is untouched
+
+**Rev 3 (vc-frontend #2667, VCST-6237; deployed theme `2.63.0-pr-2667-0444-0444048a`).**
+
+| | Desktop (new) | Mobile (unchanged) |
+|---|---|---|
+| Component | `organization-switcher.vue` (popover) + `organization-list.vue` (panel) | `mobile-menu/menus/multi-organisation-menu.vue` |
+| Entry | button `data-test-id="organizations-button"`, **last item of the right icon group after Cart**, in `bottom-header`; accessible name `Organizations: <current org>`, visible caption "Organizations" | hamburger → **Corporate** → **"My organizations"** (`menu.json` id `contact-organizations`) |
+| Rendered when | `isMultiOrganization` = `me.contact.organizations.totalCount > 1`; filtered out of `desktopMainMenuItems` otherwise | `isMultiOrganization`, filtered in `mobile-menu.vue` |
+| Configurable | menu id `organizations`, **priority 110**, rendered through ExtensionPoint category `headerMenu` — a store can move or remove it by header-menu config | separate menu id — removing one does **not** remove the other |
+| Panel | `role="dialog"` "Organizations" → `listbox` "Organizations" of `option` rows; current org first and selected; **locked rows disabled with a lock icon and a `title` tooltip**; search combobox "Search organizations" **only above 10 orgs** (`SEARCH_THRESHOLD = 10`); **30 per page** (`ORGANIZATIONS_PER_PAGE = 30`), infinite scroll; **re-fetched on every open** (`:key="openCount"`) | separate radio for the current org, then a `v-for` over the rest (rev 2); lock handling since VCST-5317 |
+| Keyboard | Enter opens, arrows skip locked rows, **Escape closes and returns focus to the control**; Tab past the last option leaves the panel **open** (G19) | — |
+| Counting rule | **Invited / Rejected / Deleted memberships are not counted** (one Approved + one Invited ⇒ no control); **locked Approved IS counted** (control shown, row disabled) | same gate |
+
+`CONFIRMED`: source @0444048a2 for the structure (verified this pass: `top-header-organizations` absent, `organization-switcher.vue` / `organization-list.vue` present, `menu.json` entry, `bottom-header.vue` filter, thresholds); live (kb, 2026-11-23 vcst) for the button position/name, the panel roles, the 2-org panel with no search and the 11-org panel with search, locked row disabled, the counting rule, `/403` still showing the control (KB-3F1B8798), cross-tab reload (KB-47727A18), and search pinning the current org only when something matches (KB-9D6EEFF5 — a no-match phrase shows "No results found" and drops it, G18). `UNVERIFIED` by me this pass: everything authenticated (G23). The tooltip string is source-only (KB-BDC577C1).
+
+**The account dropdown** (`account-button`, "Account menu") now holds the **user-name link + Logout** (+ "Back to operator" while impersonating) — no Organizations listbox (KB-3F1B8798, KB-A26A8ACC). Its button text is `<org> / <user>`, with the org label hidden below `xl`. Rev 2's "last child of `account-menu`" is gone with it.
+
+**Behaviour that did not change and is not this PR's:** a switch after any membership write returns `400 invalid_grant ID2018`, signs the buyer out silently and stores the refused org as last-used (D25).
+
+#### 3d-rev2 — the rev 2 text, kept because a case or ticket may cite it. **SUPERSEDED for the desktop column (D23).**
+
 
 | | Desktop | Mobile |
 |---|---|---|
-| Component | `top-header-organizations.vue` | `mobile-menu/menus/multi-organisation-menu.vue` |
-| Entry | Account-menu popover, last child of `account-menu` | hamburger → **Corporate** → **"My organizations"** (`menu.json`, id `contact-organizations`) |
+| Component | ~~`top-header-organizations.vue`~~ (rev 3: file deleted) | `mobile-menu/menus/multi-organisation-menu.vue` |
+| Entry | ~~Account-menu popover, last child of `account-menu`~~ (rev 3: header control) | hamburger → **Corporate** → **"My organizations"** (`menu.json`, id `contact-organizations`) |
 | Declared on desktop? | — | **No** — the desktop `corporate` section has no `contact-organizations` child |
 | Markup | `listbox` + `role="option"`, arrow-key roving focus, search combobox | separate non-`@change` radio for the current org, then a `v-for` over the rest |
 | Current org | pinned first via `displayedOrganizations` | separate radio above the loop |
@@ -373,6 +429,8 @@ rendering bug (an early hypothesis this pass, corrected before it was recorded a
 | **`/account/quotes`** | **renders — new row, this pass** | **renders identically — new row, this pass** |
 | Header `Ship to:` | `Select address` | `Add new address` |
 | Dashboard "Monthly spend report" | Budget $58,152 / Spent $530,152 | **byte-identical** |
+
+> **Rev 3, §3e:** the "Org switcher | present | absent" row now reads *header Organizations control* (present only when ≥2 counted memberships — a one-org user, a personal user and an org user with one Approved + one Invited membership all get none, KB-A26A8ACC). The account-button row is unchanged on desktop at ≥`xl`; below it the org label is hidden.
 
 **`VC-B2B-001` `CONFIRMED`, and it runs the direction people mis-read:** "Addresses" is hidden for
 **ORGANIZATION** members and shown for **PERSONAL** accounts — corporate members manage addresses under
@@ -445,6 +503,8 @@ adding cart items and is adjacent to, not required by, the read-only quotes inve
 `acceptOrganizationInvite` · `rejectOrganizationInvite` · `revokeOrganizationInvite` ·
 `resendOrganizationInvite` · `registerByInvitation` · `requestRegistration` ·
 `addAddressToFavorites` · `removeAddressFromFavorites`.
+
+**Rev 3 contract notes (schema run copy 2026-11-23, 130 queries / 154 mutations):** `Organization` now exposes `myStatusInOrganization` **and** `isLockedForCurrentUser`; `me.contact.organizations(after, first, searchPhrase, sort, statuses)` — with **no** `statuses` it already excludes Invited/Rejected/Deleted and counts locked Approved (KB-EB6191B8); `searchPhrase` goes through the Member search index (an unindexed org never matches, KB-AB719187) and matches case-insensitively by word prefix (KB-94364409). The panel's query is `GetOrganizations` with `first:30, sort:name:asc, statuses:[Approved]` (KB-9D6EEFF5). Query/mutation NAME lists below are rev 2's and were not diffed against the new 130/154 — `UNVERIFIED` for additions.
 
 **Org scoping is asymmetric.** Only `organizationContracts` takes `organizationId` as non-null. The five
 org-mutating mutations (role change, lock, unlock, revoke, resend) take **no** `organizationId` — it is
@@ -553,7 +613,7 @@ consistent, not a finding on its own.
 
 ## §5 — Where the layers DISAGREE
 
-The most valuable section. D1–D18 were found in the rev-1 pass; D19–D22 are new this pass, all quotes-related.
+The most valuable section. D1–D18 were found in the rev-1 pass; D19–D22 in rev 2 (quotes); **D23–D26 are new in rev 3 (org switcher)**. Rows are never deleted: a row a later pass overtook is annotated in the rev 3 status block below the table, not edited.
 
 | # | Disagreement | Verdict |
 |---|---|---|
@@ -580,6 +640,11 @@ The most valuable section. D1–D18 were found in the rev-1 pass; D19–D22 are 
 | **D21** | **Sidebar module-route labels leak raw i18n keys for two of three account shapes tested, in the same session where the footer (same routes, same labels) renders correctly.** Signed in as `ORG_USER_EMAIL` (TechFlow), every sidebar label rendered as normal English text (`Quote requests`, `Back-in-stock list`, `Missions & challenges`, `Points history`, `Sales reps`). Signed in as `MULTI_ORG_USER_EMAIL` (11-org account) and separately as `USER2_EMAIL` (personal, no org), the **same five sidebar entries** rendered their raw i18n keys instead — `Quotes.navigation.route_name`, `Back_in_stock.navigation.route_name`, `Shared.account.navigation.links.missions_challenges`, `Loyalty.navigation.route_name`, `Sales_rep.navigation.link` — and the page `<title>` itself read `quotes.meta.title`. **The footer's "Quote requests" link, in the identical page load, rendered the correct label every time**, on every account. Reproduced across a hard navigation (`page.goto`), a 3-second wait, and a full page reload — not a transient render race. All five broken keys belong to the **module-contributed routes** `sitemap.md` describes as added via `router.addRoute()` at bootstrap (back-in-stock, loyalty, quotes, sales-rep) — every **core** route label (Dashboard, Orders, Lists, Saved for later, Coupons, Notifications, Profile, Company info/members) rendered correctly on every account | `CONFIRMED` live, reproduced on 2 of 3 independent accounts, persists across navigation and reload. **Root cause not established — see gap G17.** A plausible mechanism (unconfirmed): each `addRoute()` module ships its own i18n namespace, loaded lazily; something about the TechFlow account's session (or its being the *first* account signed into this browser context) left that namespace warm while the later two logins did not reload it — but a full `page.goto` should re-boot the SPA, so this hypothesis is not yet supported and needs a fresh, TechFlow-free browser context to test cleanly |
 | **D22** | **Admin's "Customer's company" field reads "Not defined" for a quote from a confirmed org member.** `AGENT-TEST-QTE-ADMIN-RESPONSE`'s Customer field correctly resolves to `test-emily.johnson-20260310@test-agent.com` — a TechFlow org maintainer confirmed elsewhere in this map (§1 Actors, §3f) — but the adjacent **Customer's company** field on the same blade reads **"Not defined"**. Combined with §2g's observation that the Quotes list has no Organization/Company column at all, **the Admin surface for Quotes does not visibly carry organization context**, even for a requester who unambiguously belongs to one | `CONFIRMED` live for this one quote. **`UNVERIFIED`** whether this is a per-fixture data-population gap (this specific quote's `CustomerCompany`/`OrganizationId` field was never populated at creation) or the Quotes module's data model does not capture organization at all — see gap G16, which needs exactly this distinction to design a scoping test |
 
+| **D23** | **Rev 2's own §3d is wrong now: the desktop switcher left the account menu.** Rev 2 named `top-header-organizations.vue` as the desktop component and the account-menu popover as its entry; at `0444048a2` that file is gone and the entry is the header `organizations-button`. Cases, tickets and `033`/`006` rows written against "open account menu → Organizations" point at a control that no longer exists on this build. The **published guide's location of the control was NOT re-fetched** (VirtoOZ unavailable; Context7 returned no user-guide page) — whether the guide still sends the reader to the account menu is `UNVERIFIED` and is the question to ask first | `CONFIRMED` source + live (KB-3F1B8798, KB-A26A8ACC). **DRIFT of prior art (this map).** Docs half `UNVERIFIED` — gap G24 |
+| **D24** | **D6 narrowed — the gate and the list now disagree in exactly ONE way.** The unfiltered `totalCount` the gate reads already drops Invited/Rejected/Deleted (and counts a null status as Approved), so the "Approved + Invited ⇒ control with a short list" state rev 2 predicted cannot occur on this build: it gives **no control**. The surviving divergence is a **locked Approved** membership: counted by the gate, **returned and disabled** by the list. The 2026-11-23 run observed, per state, totalCount: Invited 1 · Rejected 1 · Deleted 1 · Approved+locked 2 | `CONFIRMED` live (KB-EB6191B8, 3 confirmations). D6's "live `UNVERIFIED`" and G6's fixture ask are answered |
+| **D25** | **A membership write ends the buyer's sessions, the storefront treats the resulting error as a success, and no document says either.** Lock/unlock/remove on a signed-in buyer revokes the refresh tokens minted before it; the switch call (`refresh_token` + `organization_id`) then returns `400 invalid_grant ID2018` with **no `errors[]` and no lockout code** — for the locked org **and** for an unlocked one. `useUser.switchOrganization` checks only `authErrors.length`, so the code-less body counts as success: it writes `organization-id-<user>` = the refused org and reloads, landing as a guest with no message. The next sign-in lands in that org once it is accessible; while it is locked the password grant falls back to another org. Pre-existing (base 2.63.0 has the same code), not introduced by #2667 | `CONFIRMED` live + source (A9 root cause, KB-3CBA0D5F). Docs: the root-cause worksheet records that "Manage Organization Membership Status" does not mention session revocation — **not re-fetched by me**, so the doc-silence half is carried, not re-verified. Open bug: `reports/bugs/open/critical-high/BUG-stale-org-switcher-locked-row-stays-enabled-and-signs-out-all-tabs-VCST-5317.md`. Product question (should a write end all sessions?) is G22 |
+| **D26** | **Desktop and mobile switchers are still two components with two menu ids, and they no longer share an entry model.** Desktop: header control, menu id `organizations`. Mobile: Corporate → "My organizations", menu id `contact-organizations`, inside a section that exists only for org users. A store can remove one without the other. 375 px (VCST-6237 exploratory, not re-observed by me): the phone list reflects a switch made in another tab, switching from it reloads both tabs, the radio `<input>` is covered by its row (tap the label), and the current org name wraps while the other is ellipsised at equal length | source `CONFIRMED`; live per `exploratory/SBTM-VCST-6237-2026-11-23.md` — `UNVERIFIED` in this pass's own session |
+
 > **D7 is mid-change.** `vc-module-profile-experience-api` **#145** and `vc-frontend` **#2469** — both
 > **OPEN/unmerged but PR-deployed on vcst-qa** — add `Organization.isLockedForCurrentUser`, stop
 > excluding locked orgs from `contact.organizations`/`organizationsIds`, and render the desktop row
@@ -598,9 +663,46 @@ The most valuable section. D1–D18 were found in the rev-1 pass; D19–D22 are 
 > established this pass** — flag for whoever next touches D7/D8 to re-derive the PR state before trusting
 > the "still stands" line above.
 
+> **Rev 3 status of the rows the switcher change overtook (annotations, no wording changed above).**
+> **D6** → narrowed, see **D24** (gate ≠ list now only for a locked Approved membership). **D7** → the *structural* claim is
+> CLOSED on this build (locked rows are returned and disabled; the panel refetches per open); the unmerged-PR note
+> above is historical — #2467/#2469 were not re-derived; the shipped vehicle is vc-frontend **#2667** (deployed theme
+> `2.63.0-pr-2667-…`), so the 2026-09-16 "which PR" question is moot for the desktop control. The locked org's
+> order-history read (`organizationOrders`, VCST-5933) was **not re-measured** — still `UNVERIFIED`. **D8** → unchanged in
+> mechanism and now demonstrable from the other side: the pinned org is written by a *failed* switch (D25).
+> **D16** → its quoted sentence ("Select a different company from this list") was not re-fetched; whether the guide's "list"
+> is the account menu or the header control is the open half of **D23**.
+
 ---
 
 ## §6 — Coverage shape
+
+### 6-rev3 — recount, 2026-11-23 (parsed from the suite CSVs and `config/test-suites.json`; basis stated per row)
+
+Suite sizes below are **`testCount` in the manifest and agree with the parsed CSV row count** (checked for the parsed rows). "Org-relevant" subsets (rev 2's 585 / 555) were **not re-derived** — a per-row org-relevance read of 35 suites is not a breadth-first task — so for the partial suites only the size is given. **Do not add these up into a new "org-relevant" total.**
+
+| Suite | Cases | Automation_Status (parsed) | Δ vs rev 2 |
+|---|---|---|---|
+| **006** B2B Organization | **71** | Automated 25 · Draft 41 · Reviewed 4 · Manual 1 | 65 → 71; "0 Automated" → 25. Sections: Switcher Lock Axis 24 (+1 journey) · Header Switcher 5 · Organization 38 · other 3 |
+| 008 B2B Members | 40 | Automated 9 · Draft 19 · Deprecated 6 · Semi-Automated 4 · Reviewed 2 | unchanged size |
+| **015** Quotes | 32 | Draft 27 · **Automated 5** | still all `ORG_USER_DEFAULT`; "all Draft" no longer true |
+| 026 Customer Contacts | **74** | blank 50 · Automated 17 · Draft 4 · ready 3 | 53 → 74 |
+| 027 Customer Orgs & Invites | 71 | Draft 32 · blank 20 · Reviewed 13 · Automated 6 | unchanged size |
+| 027b Org-Scoped Roles | **20** | Draft 14 · Semi-Automated 5 · Automated 1 | 18 → 20 |
+| 074 Contracts | 18 | blank 18 | unchanged — no case has a status |
+| 082 Impersonation | 48 | Automated 30 · Reviewed 7 · Draft 6 · Manual 5 | unchanged size |
+| 011b B2B Company E2E | **30** | Draft 22 · Automated 8 | 26 → 30 |
+| 010 Bulk Ship Dashboard | 53 | Draft 39 · Automated 6 · Manual 5 · Deprecated 3 | unchanged size |
+| 013 Checkout B2B | 7 | Manual 6 · Reviewed 1 | unchanged |
+| 031 / 032 / 033 Auth | 37 / 20 / 23 | 031: Automated 20 · Manual 11 · Draft 6; 032: Automated 4 · Semi 5 · Draft 6 · Manual 3 · Reviewed 2; 033: Automated 11 · Manual 6 · Draft 6 | 033 was cited as "9 of 15" org-relevant; suite is now 23 |
+| 050d xProfile | 60 | not parsed | 58 → 60 |
+| 007 / 021 / 017 / 050h / 081 / 011 / 042 / 009 | 77 / 39 / 50 / 49 / 29 / 71 / 34 / 31 | not parsed | sizes only |
+
+**Suites changed in the last week** (`git log --since=2026-11-16 -- regression/suites`, b2b-relevant only): **006** (2 commits, VCST-6237), 007, **008** (2), 009, 011b, **027**, 031, 032 (2), 033 (2), 042, 071, **082** (2), 104 (4), 111. Others in that log (compare, site-builder, OTP API, telemetry…) are other domains. **Selection `b2b` is now 25 suites**, not 10 (§0 row 7).
+
+**Rev 2's "centre of mass is Draft, ~200 cases never executed" is stale for 006, 015 and 082 and unchanged for 074** (18 of 18 still blank) and 026 (54 of 74 blank or Draft). The rev 2 text below is kept as the diff baseline; where it conflicts with this block, this block wins.
+
+### Rev 2 coverage text (2026-09-16 counts — baseline, partly superseded)
 
 **Sales Rep is deliberately excluded** from this pass — the whole of selection group **`sales-rep`** in
 `config/test-suites.json` (`050m`, `050m2`, `089`, `090`, `091`, `092`, `092b`, `093`, `097`), now
@@ -646,6 +748,9 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 | **Org-scoped member Import / Export** | **0** | a write path, org-scoped by the drill-down org |
 | **Admin-vs-storefront status/label parity** | **2** | D1/D2/D11 all sit in this hole |
 | **Quote-status vocabulary parity (D19)** | **0** | no case anywhere asserts a quote-status string against more than one of the four vocabularies in D19; a case authored against the storefront doc's 6 and a case authored against the config's 8 would both look "correct" in isolation |
+| **Header Organizations panel: keyboard focus-out (Tab past the last option, panel stays open)** | **0** | new rev 3 — exploratory F1 proposes a 006 keyboard row once the product owner rules (G19) |
+| **Pinned-current-org when search matches nothing** | **0** | new rev 3 — G18 |
+| **Session end on membership write → switch** | **1 bug report, 0 cases for the unlocked-target control run** | new rev 3 — D25 |
 | **Org hierarchy** | **5** | 2 Draft, 3 blank-status; **no storefront-side case at all**; nothing covers D14 |
 | **`/company/info`** | **3** | one Automated E2E, one XSS-only, one widget-compat. **No field-level view/edit/validation** — and it is the company-addresses surface |
 | **Mobile switcher** | **5** | against **60** desktop cases — still a heavy skew on one control. **Amended 2026-09-10:** the row asserting the panel exposes *no* switcher (`B2C-ORG-047`) was executed in `REG-2026-09-10-1453` and **FAILED on that premise**, confirming it as a test defect rather than a product statement; two new rows were added (`B2C-ORG-068` refetch-on-open incl. the two-tab probe, `B2C-ORG-070` mobile degraded org-list) |
@@ -667,14 +772,13 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 
 ### 6c. Selection-group and executability problems
 
-- **`selections.b2b` = `{where:{tag:"b2b"}}` → `006,007,008,009,010,011b,013,015,042,074` only.**
-  (Re-verified live in `config/test-suites.json` this pass — unchanged from rev 1.)
+- **`selections.b2b` = `{where:{tag:"b2b"}, exclude:[121,122]}` → 25 suites in rev 3 (rev 2 said 10: `006,007,008,009,010,011b,013,015,042,074`).** The additions are Sales-Rep (`050m,050m2,050m3,089,090,091,091c,092b,093,093b,097,112,116`), UCP `102` and `050o`. **DRIFT — the group now includes the domain this map excludes.**
   `/qa-regression b2b` tests **none** of the Admin (`026`, `027`, `027b`), GraphQL (`050d`, `050h`),
   auth (`031`–`033`) or impersonation (`082`) coverage — and **does** run `009`, which has none.
 - **`envRiskGate: "staging"`** on `013, 015, 026, 027, 027b, 074` — the whole Admin/quotes/contracts
   half will not run below that tier.
 - **`requiresModules`** — `026/027/027b` need `customer`, `074` needs `contracts`; absent ⇒ silent skip.
-- **Firefox lane:** with `defaults.firefoxClickOk: false` (the documented rollback), 15 of the 18 core
+- **Firefox lane:** `defaults.firefoxClickOk` is currently **`true`** in the manifest (rev 3, recomputed); with `false` (the documented rollback), 15 of the 18 core
   suites are `clickDriven` and get denied the slot. Since 2026-09-21 `026` is `clickDriven` too
   (it gained the VCST-5547 condition-tree cases), so that rollback would leave only `074` eligible.
 - **The feature's centre of mass is Draft.** `006` (65, 0 Automated), `015` (32, 0 Automated, all one
@@ -705,6 +809,17 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 | **G16** | **Is a quote actually scoped to the organization, or purely to the requesting user?** | **NEW, OPEN.** Neither the xAPI `quote`/`quotes` signature (§4e) nor the Admin blade (§2g, D22) exposes an explicit organization argument or column. A live probe this pass — same multi-org user, switched between two of their 11 orgs, `/account/quotes` checked on each — came back **empty on both sides**, which is **inconclusive**, not a negative result: this user simply has no quotes seeded under either org. **Needs a fixture**: one user with a quote created while signed into Org A, then the same user switched to Org B, to see whether the quote (a) still shows (user-scoped), (b) disappears (org-scoped via ambient `userId`+current-org context), or (c) the org context has no effect on quote visibility at all. This is the concrete blocker `/qa-review-tests` / suite 015 authoring needs before "org-scoped quote" cases can be written at all — rev 1 named the coverage hole; this closes it into an actionable fixture requirement |
 | **G17** | **Root cause of the sidebar i18n key leak (D21)** | **NEW, OPEN.** Reproduced on 2 of 3 accounts this pass, with the footer correctly resolving the same labels in the same page load. Candidate explanations not yet tested: (a) locale/culture differs per account (not observed — all three showed `Language: English (United States) en` in the header); (b) the module i18n namespace loads once per browser/tab and the first account signed in (TechFlow) "won" it, with later logins in the same tab never re-fetching it despite a hard `page.goto` — needs a completely fresh browser context (not just a logout+re-login in the same tab) to rule in or out; (c) something about the account/org data itself (e.g. a missing preferred-locale field) causes the SPA's i18n loader to silently fail only for those two accounts. **Needs**: a fresh Firefox/Edge profile, sign in directly as `MULTI_ORG_USER_EMAIL` with no prior session in that browser, and check whether the sidebar labels are correct or broken on the very first render |
 
+| **G18** | **Product-owner question: when a search phrase matches nothing, should the panel keep the current organization pinned?** | **NEW, OPEN.** Live: a phrase matching other orgs keeps the current org first (selected, not a description match); a phrase matching nothing shows "No results found" and **drops** it (KB-9D6EEFF5). Needs the owner's ruling; then a 006 row either way |
+| **G19** | **Product-owner question: should the panel close when keyboard focus leaves it?** | **NEW, OPEN.** Tab past the last option leaves it expanded over the main nav; Escape still closes (exploratory F1, Low a11y; AC-6/7 wording unchecked). Also: options keep tabindex 0 (no roving tabindex) and opening focuses the dialog, not the selected row (design report, advisory) |
+| **G20** | **Product-owner question: classic Paprika lost its cream** | **NEW, OPEN.** Classic widgets resolve to additional-50 white and menu rows to transparent for every design; the cream remains only in soft. Matches AC-10 / the PR comment, so it is a ruling, not a defect (design-report.md §Paprika) |
+| **G21** | **Soft design look cannot be judged — no design link on the ticket** | **NEW, OPEN.** `vs. DESIGN` SKIPPED; soft sm/xs widgets render at 28 px radius since the PR dropped the short-plate rule — intended? Needs the design link, not a fixture |
+| **G22** | **Is ending every session on a membership write intended, and should the storefront say so?** | **NEW, OPEN.** Trigger is server-side and reads as deliberate (7 confirmations, KB-3CBA0D5F); the guide does not document it (carried, not re-fetched); the storefront's silent guest reload and wrong last-used org is the defect half (D25, Medium/P3 in the A9 worksheet; fix target `useUser.switchOrganization` in vc-frontend). Needs: a Customer-module owner's statement of intent + a docs page |
+| **G23** | **Authenticated live walk not repeated on rev 3; Admin / quotes / REST not re-enumerated** | **NEW, OPEN.** The `playwright-firefox` lane was not started by the credential launcher (hook-blocked) and the store has no login for `MULTI_ORG_TF_BR_ALT`. Needs: reconnect the lane after `npm run creds:migrate`, then walk `MULTI_ORG_USER` (11 orgs), `ORG_USER`, `USER2` and the impersonation 11-org account, and re-read §2/§3f/§4. Capabilities confirmable only by mutating (lock a membership, create an Invited one) stay UNVERIFIED without a fixture |
+| **G24** | **Docs: where does the published guide put the switcher now, and does it say anything about a membership write ending sessions?** | **NEW, OPEN.** VirtoOZ was unavailable and the Context7 fallback returned no user-guide page, so nothing was quoted. Needs a VirtoOZ `StorefrontUserGuide` + `PlatformUserGuide` query (§Switch between your companies; §Manage Organization Membership Status) — a mismatch becomes a D* row |
+| **G25** | **White-labeling records outlive their organization and cannot be deleted over REST; the Paprika preset is not in `WhiteLabeling.ThemePresetNames`** | **NEW, OPEN, fixture hygiene.** `DELETE /api/white-labeling*` → 405; the record survives `DELETE /api/members` of its org (KB-52D2F554). Teardown of a branded fixture org leaves orphans; a Paprika-preset org cannot be created from the dictionary. Overlaps G9/G11 |
+
+**Rev 3 state of older rows (ids not reworded).** **G6** — **CLOSED by D24**: the "1 Approved + ≥1 Invited" fixture was built and measured; it yields *no* control, not a control with a short list (KB-EB6191B8). The locked half of G6 (Approved + locked) is observed: control shown, row disabled. **G3** (Blocked badge live) — unchanged, OPEN (a roster surface, not re-walked). **G2** — PARTLY CLOSED further: mobile source is read (D26) but its internals are not diffed this pass. **G17** — a candidate root cause now exists in the kb, not verified by me: KB-80095B02 (raw i18n keys appear on a hard load when the page chunk is served from browser cache while the quotes module locale chunk still needs a network revalidation) — it fits D21 better than the three hypotheses in the row; confirm with a cold-cache load. **G16** — unchanged, not re-probed. **G1, G7–G15** — unchanged.
+
 ---
 
 ## §8 — Prior-art verdicts
@@ -731,6 +846,9 @@ disagree. **Eleven Admin claims and four storefront claims are wrong** — the o
 | C6 — storefront role vocabulary is 3 roles | **DRIFT** — 5 appear in the Members filter |
 | **C28r** — server-side whitelist enforcement is *not implemented* | **PARTLY STALE** — enforced on `changeOrganizationContactRole` via `RoleNotAllowed`; only `PUT /api/organizations` remains unguarded. **`BL-B2B-011` needs an oracle re-audit** |
 | **`sitemap.md`, the GraphQL xAPI module table's Quote row** — the xAPI "Quote" module exposes `quoteRequest`/`quoteRequests` | **DRIFT, found this pass.** Live introspection (2026-09-16) and `graphql-schema.md` (refreshed the same day) both show `quote`/`quotes` — no `quoteRequest*` name exists in the schema. `sitemap.md` is the stale document here, not `graphql-schema.md`; the two names likely diverged when the storefront-facing terminology ("quote **request**") was chosen independently of the GraphQL type name ("Quote") |
+| **This map, rev 2 §3d** — desktop switcher is `top-header-organizations.vue` in the account menu | **DRIFT (rev 3, D23)** — superseded by `organization-switcher.vue` as a header control |
+| **This map, rev 2 §6a/§6c/§0b** — 006 "65 cases, all Draft, never run"; 015 "all 32 Draft"; `selections.b2b` = 10 suites | **DRIFT (rev 3, §0 rows 5–7)** — 71 / 25 Automated; 27 Draft + 5 Automated; 25 suites |
+| **`BL-B2B-001` / `BL-AUTH-013` wording** (switch re-scopes the session; locked-org sign-in behaviour) | **Candidate drift, routed to `/qa-review-oracles bl` — never edited here.** (a) A switch after a membership write does not re-scope: it ends the session (D25). (b) Anything BL-AUTH-013 says about locked-org sign-in must be read against KB-3CBA0D5F (password/otp fall back to a remaining org; single-org locked ⇒ 200 with no org claim, not 400). Neither oracle was re-read line by line this pass — the claim rests on the kb and the exploratory oracle-feedback table |
 
 Settled from the prior-art open list: **G2.1** (no domain file for this area) `CONFIRMED` — **closed by
 this file**; **G2.3** (no `/company/*` inventory) **closed** by §3a; **G1.5** (all-locked: hidden or empty
@@ -764,6 +882,10 @@ ratchet dangling **paths**, and a line offset is not a path — so the citation 
 false, which is the direction that costs a reader rather than an author. `sales-rep.md` rev 3 re-anchored
 its side to `§` sections; this is the same repair in the other direction. **Cite a sibling map, a report
 or a source file by section, heading or stable id (`D15`, `G16`, `BL-*`, a case id) — never by line.**
+
+### Rev 3 fold-in (2026-11-23)
+
+A1 above is carried unchanged. Its three corrections were already in the rev 2 body that rev 3 inherits; A1's `sitemap.md` **Quote** row verdict (§8) still stands and was **not** re-checked. `amended:` keeps `2026-09-18` because no amendment has happened since; `generated`/`rev` moved because this is a refresh.
 
 **Not changed, and why.** Every other `rev 1` / `rev 2` reference in this file points at *this map's own*
 prior revisions (`sources:`, §0, §1, §2, §6), which is a historical record of what this file used to say,

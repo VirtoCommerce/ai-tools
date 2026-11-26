@@ -81,9 +81,8 @@ writers claiming one case, which the merge step refuses outright.
 ## Phase 1: Setup
 
 1. Read `{{SUITE_CSV_PATH}}` once. Parse test cases.
-2. Read `test-data/users/agent-user-pool.csv` and take the row whose **`slot`** equals `{{LANE_ID}}`
-   (fall back to matching `server_name` = `{{BROWSER_SERVER}}` when the caller passes no lane id).
-   Store that row's credentials.
+2. Slot = `agent-user-pool.csv` row with **`slot`** = `{{LANE_ID}}` (else `server_name` = `{{BROWSER_SERVER}}`).
+   Logins: `npm run -s persona:login -- AGENT_POOL_SLOT_<slot>` / `….b2b_email` (persona set applies).
 
    **Why `slot`:** `server_name` is advisory — two lanes on one browser (headless CI: all
    Chromium) would take the SAME account, and one account under two agents yields BLOCKED cascades
@@ -226,6 +225,7 @@ On a real FAIL only, read [`knowledge/agents/qa/test-runner-failure-trace.md`](.
 | Browser crash | Write partial results, populate `errors[]`, exit |
 | Auth failure | All tests `BLOCKED`, exit |
 | Environment unreachable | All tests `BLOCKED`, exit |
+| Site-wide failure, or 3 non-PASS in a row with one signature | Stop the suite: `test-runner-tags.md` §Shared-cause brake |
 
 On unrecoverable error: write partial `{{OUTPUT_FILE}}`, populate `errors[]`, close browser, exit. Do NOT retry — orchestrator handles retries.
 
@@ -234,10 +234,10 @@ On unrecoverable error: write partial `{{OUTPUT_FILE}}`, populate `errors[]`, cl
 1. Use ONLY `{{BROWSER_SERVER}}` (browser-mode suites) — or no browser at all (GraphQL Runner Fast Path).
 2. Never disable HAR.
 3. Always write `{{OUTPUT_FILE}}` — even on partial/error.
-4. Execute all test cases unless environment is down.
+4. Execute all test cases unless the environment is down or the shared-cause brake trips.
 5. Check `errors[]` on every GraphQL mutation (the fast path enforces this via the runner's assertion evaluator).
 6. Execute `Cleanup` after every test (fast path runs cleanup via the runner's best-effort step).
 7. BL-* overrides DOM assertions.
 8. Preliminary bugs only (`confirmed: false`).
 9. No prose narration — results go to JSON.
-10. **Never invoke `graphql-runner.ts` and never lint the suite.** The machine lane already ran every runner-executable row before you were dispatched (`npm run suites:machine`), and it owns the exit-code mapping. Your file is the browser remainder — drive all of it, compute no suite totals, and pre-seed PENDING only for the rows you were given.
+10. **Never invoke `graphql-runner.ts` and never lint the suite.** The machine lane ran every runner row before you (`npm run suites:machine`) and owns its exit codes. Your file is the browser remainder: drive all of it, compute no totals, pre-seed PENDING only for your rows.

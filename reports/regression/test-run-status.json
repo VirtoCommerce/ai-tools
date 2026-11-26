@@ -1,23 +1,19 @@
 {
-  "runId": "REG-2026-11-25-1921",
+  "runId": "REG-2026-11-26-0805-W0R",
   "status": "completed",
-  "startedAt": "2026-11-25T17:22:43.761Z",
-  "env": "vcptcore_qa1",
-  "selection": "109 --ids PNCR-029 --no-promote",
-  "ticket": "VCST-6764",
-  "note": "qa-suite-sync fix round 1 scoped run",
+  "startedAt": "2026-11-26T05:01:09.712Z",
+  "env": "vcst",
+  "ticket": "VCST-7026",
+  "selection": "042 --ids SMK-002,SMK-003,SMK-034 (sprint-26-23 W0 re-run: SMK-002/003 rewritten, SMK-034 after saving a Skyflow card)",
   "suites": {
-    "109": {
+    "042": {
       "status": "done",
-      "lane": "browser",
-      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-25T17:22:43.768Z",
-      "pass": 1,
+      "lane": "browser",
+      "pass": 3,
       "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-25T17:29:41.628Z"
+      "blocked": 0
     }
   },
-  "finishedAt": "2026-11-25T17:29:45.407Z"
+  "finishedAt": "2026-11-26T05:16:19.210Z"
 }

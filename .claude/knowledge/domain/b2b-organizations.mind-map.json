@@ -1,0 +1,4121 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "b2b",
+  "domain_map_rev": 3,
+  "generated": "2026-11-24",
+  "metadata": {
+    "scope": "B2B organizations: organization record, membership and invitation, roles, organization context and the switcher, quotes (RFQ). Sales Rep is domain sr.",
+    "built_from": "b2b-organizations.md rev 3 (sections 1 to 8), bl:extract --domain b2b (BL-B2B-001..013), suites 006/008/011b/015/026/027/027b/033 (Title, References, Automation_Status), VCST-6237 test-model Part 0 and evidence/A9/root-cause.md",
+    "authentication_note": "Rev 3 had no authenticated live walk (G23): Admin, quotes, REST and the route table stay UNVERIFIED. CONFIRMED rests on the VCST-6237 kb entries (2026-11-23, vcst) and source read at vc-frontend 0444048a2.",
+    "kb_read": "2026-11-24: KB-EB6191B8, KB-AB719187, KB-A8B46253 (org count and search), KB-3CBA0D5F, KB-D5083C05, KB-D1D30720 (token and lock). Other ids cited from the dispatch brief.",
+    "ticket": "VCST-6237"
+  },
+  "nodes": [
+    {
+      "id": "b2b.organizations",
+      "type": "feature",
+      "name": "B2B organizations and company accounts",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "value chain reconstructed; purpose UNDECLARED",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "Companies, their members and roles, the organization context a buyer works in and moves between, and the quotes surface that sits on top. Sales Rep is its own domain (sr).",
+      "interfaces": [
+        "admin-ui",
+        "storefront",
+        "graphql",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.org",
+      "type": "capability",
+      "name": "Organization record",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "links 1-3",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "A company exists, has an identity and may sit under another."
+    },
+    {
+      "id": "b2b.membership",
+      "type": "capability",
+      "name": "Membership and invitation",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "links 4 and 9",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "A person becomes part of a company through two linkages and a status/lock lifecycle."
+    },
+    {
+      "id": "b2b.roles",
+      "type": "capability",
+      "name": "Roles inside a company",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 5",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "Effective rights are a union of three role sources, scoped to one organization."
+    },
+    {
+      "id": "b2b.context",
+      "type": "capability",
+      "name": "Organization context",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "links 6-7",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "A signed-in session carries one active organization that scopes the data."
+    },
+    {
+      "id": "b2b.switcher",
+      "type": "capability",
+      "name": "Organization switcher",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "header control, source @0444048a2",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A26A8ACC",
+          "note": "control position and visibility",
+          "date": "2026-11-23"
+        }
+      ],
+      "description": "The header Organizations control (desktop) and My organizations (mobile) move the active organization."
+    },
+    {
+      "id": "b2b.quotes",
+      "type": "capability",
+      "name": "Quotes (RFQ)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3f",
+          "note": "quotes surface carried from rev 2",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "Quote requests built from a cart, answered in Admin, approved or declined by the buyer."
+    },
+    {
+      "id": "b2b.admin",
+      "type": "capability",
+      "name": "Admin back office",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §2",
+          "note": "Admin not re-enumerated in rev 3",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "Contacts, organization and membership blades."
+    },
+    {
+      "id": "b2b.storefront",
+      "type": "capability",
+      "name": "Storefront company pages",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3",
+          "note": "route table not re-walked in rev 3",
+          "date": "2026-11-24"
+        }
+      ],
+      "description": "/company/* pages and personal-versus-organization route guards."
+    },
+    {
+      "id": "b2b.org.create",
+      "type": "behavior",
+      "name": "A company comes into existence",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 1: Admin Add, POST /api/organizations, storefront self-signup",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2b",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Admin Add blade",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-010"
+        }
+      ],
+      "chain_link": "1",
+      "interfaces": [
+        "admin-ui",
+        "rest",
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-B2B-010"
+      ],
+      "notes": "data needs (no b2b data model yet): data.b2b.organization.exists. integrates with: auth - self-signup creates the registrant account."
+    },
+    {
+      "id": "b2b.org.create.self-signup-org-roles-only",
+      "type": "branch",
+      "name": "Self-service registration grants organization-membership roles, never global roles",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-010",
+          "note": "DECLARED; REST half not re-walked"
+        },
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-013",
+          "note": "Draft case"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "oracle_refs": [
+        "BL-B2B-010"
+      ],
+      "interfaces": [
+        "storefront",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.org.create.parent-from-drilldown",
+      "type": "branch",
+      "name": "The parent of a new organization is whichever one was open when Add was clicked",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2b",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): organization-detail.js assigns parentId once, never rendered",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D14",
+          "note": "source",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "Initial parent is a side effect of navigation (D14)."
+    },
+    {
+      "id": "b2b.org.identity",
+      "type": "behavior",
+      "name": "An organization has an identity buyers recognise",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 2",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2b",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Organization blade fields",
+          "date": "2026-09-16"
+        }
+      ],
+      "chain_link": "2",
+      "interfaces": [
+        "admin-ui",
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.org.identity.company-info-edit",
+      "type": "branch",
+      "name": "A maintainer edits company name, logo and addresses on /company/info",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3b",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): no /company/addresses route; /company/info is the address surface",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-006",
+          "note": "Automated case, no promoting run recorded"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Edit controls gated by xapi:my_organization:edit (COMP-E2E-029, Draft)."
+    },
+    {
+      "id": "b2b.org.identity.out-of-dictionary-status",
+      "type": "branch",
+      "name": "An organization status outside the dictionary is accepted and never blocks",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D13",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Active / null / Suspended fixtures, none in the allowed set",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.org.identity.delete-orphans-memberships",
+      "type": "branch",
+      "name": "Deleting an organization leaves its membership rows behind",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CUST-094",
+          "note": "Draft case, VCST-5281"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "notes": "No source beyond the case; candidate for a BL once a human source states it."
+    },
+    {
+      "id": "b2b.org.hierarchy",
+      "type": "behavior",
+      "name": "An organization can sit under a bigger one",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 3: single parentId field",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2b",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): children interleave with contacts; no parent field in the form",
+          "date": "2026-09-16"
+        }
+      ],
+      "chain_link": "3",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.org.hierarchy.admin-cannot-reparent",
+      "type": "branch",
+      "name": "Re-parenting is possible only through the API; Admin shows no parent field",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D14",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): no parent field, no child list, no Parent column",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EP",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.org.hierarchy.member-scoping",
+      "type": "branch",
+      "name": "Parent and child organizations scope their members",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CUST-100",
+          "note": "Draft case"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-064",
+          "note": "Draft case"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EG",
+      "notes": "Behaviour not stated by any human source; D14 only says the data and navigation exist."
+    },
+    {
+      "id": "b2b.state.membership.approved",
+      "type": "state",
+      "name": "Membership status: Approved: full access, the effective default",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "status transitions on a persistent row"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "four selectable values"
+        }
+      ],
+      "notes": "Status axis only; lock is a separate axis (states below)."
+    },
+    {
+      "id": "b2b.state.membership.invited",
+      "type": "state",
+      "name": "Membership status: Invited: pending, blocks access",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "status transitions on a persistent row"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "four selectable values"
+        }
+      ],
+      "notes": "Status axis only; lock is a separate axis (states below)."
+    },
+    {
+      "id": "b2b.state.membership.rejected",
+      "type": "state",
+      "name": "Membership status: Rejected: declined, blocks access, row survives",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "status transitions on a persistent row"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "four selectable values"
+        }
+      ],
+      "notes": "Status axis only; lock is a separate axis (states below)."
+    },
+    {
+      "id": "b2b.state.membership.deleted",
+      "type": "state",
+      "name": "Membership status: Deleted: revoked or removed, blocks access, row survives",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "status transitions on a persistent row"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "four selectable values"
+        }
+      ],
+      "notes": "Status axis only; lock is a separate axis (states below)."
+    },
+    {
+      "id": "b2b.state.membership-lock.unlocked",
+      "type": "state",
+      "name": "Membership lock: not locked",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "lock is a separate axis from status"
+        }
+      ]
+    },
+    {
+      "id": "b2b.state.membership-lock.locked",
+      "type": "state",
+      "name": "Membership lock: locked (indefinitely or until LockoutEnd)",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "IsCurrentlyLocked"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D1D30720",
+          "note": "locking revokes the user tokens server-side",
+          "date": "2026-11-23"
+        }
+      ]
+    },
+    {
+      "id": "b2b.member.link",
+      "type": "behavior",
+      "name": "A person is linked to a company in two independent ways",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 4: Contact.Organizations and one OrganizationMembership row per account x org",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): four linkage surfaces on the contact blade",
+          "date": "2026-09-16"
+        }
+      ],
+      "chain_link": "4",
+      "interfaces": [
+        "admin-ui",
+        "rest",
+        "graphql"
+      ],
+      "notes": "integrates with: sales-rep - serving an organization creates a real membership (sr.serve-orgs). data needs: data.b2b.contact.multi-org-member, data.b2b.membership.approved."
+    },
+    {
+      "id": "b2b.member.link.admin-first-account-only",
+      "type": "branch",
+      "name": "The Admin memberships widget shows only the first security account of a contact",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): securityAccounts[0] only; blast radius unsized (G12)",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.member.link.accountless-contact-invisible",
+      "type": "branch",
+      "name": "A membership created over REST for a contact with no account is invisible in Admin",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): zero accounts shows a notification dialog instead of a roster",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.member.invite",
+      "type": "behavior",
+      "name": "Inviting a person creates a per-organization membership",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-009",
+          "note": "invite writes a membership, not a global role"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3c",
+          "note": "Invite members, Resend, Revoke (carried)",
+          "date": "2026-11-24"
+        }
+      ],
+      "chain_link": "4",
+      "oracle_refs": [
+        "BL-B2B-009"
+      ],
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "notes": "data needs: data.b2b.organization.exists, data.b2b.user.maintainer."
+    },
+    {
+      "id": "b2b.member.invite.storefront",
+      "type": "branch",
+      "name": "A maintainer invites from /company/members",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-014",
+          "note": "Draft cross-layer case"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-005",
+          "note": "Draft"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.member.invite.permission-denied",
+      "type": "branch",
+      "name": "A role without the invite permission cannot send an invite and nothing persists",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-028",
+          "note": "Draft"
+        },
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-020",
+          "note": "Draft"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-frontend permissions.enum.ts",
+          "note": "xapi:my_organization:user:invite read by the SPA",
+          "date": "2026-09-11"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.member.invite.admin-bypasses-whitelist",
+      "type": "branch",
+      "name": "The Admin invite blade offers three roles and ignores the role whitelist",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D9",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): invite endpoint: 3 roles, single role, bypasses the whitelist",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.member.invite.existing-user-second-org",
+      "type": "branch",
+      "name": "An existing customer invited to a second organization gets a link that works",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CUST-090",
+          "note": "Draft, VCST-5281 urlSuffix regression"
+        },
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-026",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "notes": "integrates with: notifications - the invite email carries the link."
+    },
+    {
+      "id": "b2b.member.invite.pending-row-login-on-behalf",
+      "type": "branch",
+      "name": "A pending-invite row offers Login on behalf",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3c",
+          "note": "Login on behalf appears on an Invited row, gated on CanImpersonate (source, carried)",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "integrates with: auth - impersonation of an invitee who has not accepted."
+    },
+    {
+      "id": "b2b.member.accept-invite",
+      "type": "behavior",
+      "name": "The invitee accepts and becomes an approved member",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-009",
+          "note": "membership count at least 1 after acceptance"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-033",
+          "note": "Draft lifecycle case"
+        }
+      ],
+      "state_before": "b2b.state.membership.invited",
+      "state_after": "b2b.state.membership.approved",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.member.reject-invite",
+      "type": "behavior",
+      "name": "The invitee declines; the row survives as Rejected",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "Status set to Rejected, no row delete"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D3",
+          "note": "Rejected and Deleted both render Inactive",
+          "date": "2026-11-24"
+        }
+      ],
+      "state_before": "b2b.state.membership.invited",
+      "state_after": "b2b.state.membership.rejected",
+      "oracle_refs": [
+        "BL-B2B-012"
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.member.revoke-invite",
+      "type": "behavior",
+      "name": "A pending invite is revoked; the row survives as Deleted",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "Deleted is a status, not a row deletion"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-116",
+          "note": "Automated REST revoke case"
+        }
+      ],
+      "state_before": "b2b.state.membership.invited",
+      "state_after": "b2b.state.membership.deleted",
+      "oracle_refs": [
+        "BL-B2B-012"
+      ],
+      "interfaces": [
+        "storefront",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.member.reinvite",
+      "type": "behavior",
+      "name": "A declined member can be invited again",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "ReinvitableStatuses = Rejected, Deleted"
+        }
+      ],
+      "state_before": "b2b.state.membership.rejected",
+      "state_after": "b2b.state.membership.invited",
+      "oracle_refs": [
+        "BL-B2B-012"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.member.reinvite.from-deleted",
+      "type": "branch",
+      "name": "A revoked or removed member can be invited again",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "ReinvitableStatuses includes Deleted"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "ST",
+      "state_before": "b2b.state.membership.deleted",
+      "state_after": "b2b.state.membership.invited",
+      "oracle_refs": [
+        "BL-B2B-012"
+      ]
+    },
+    {
+      "id": "b2b.member.reinvite.refused-while-invited-or-approved",
+      "type": "branch",
+      "name": "Inviting an already-Invited or Approved member fails as already-a-member",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-012",
+          "note": "Invited can only be resent; Approved not re-invitable"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "DT",
+      "oracle_refs": [
+        "BL-B2B-012"
+      ]
+    },
+    {
+      "id": "b2b.member.delete",
+      "type": "behavior",
+      "name": "A maintainer removes an approved member",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3c",
+          "note": "Delete on an Active row (carried)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "DOC",
+          "ref": "docs: company-members.md",
+          "note": "deleting sets status Inactive, record remains (cited by BL-B2B-012)",
+          "date": "2026-11-24"
+        }
+      ],
+      "state_before": "b2b.state.membership.approved",
+      "state_after": "b2b.state.membership.deleted",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "notes": "Admin equivalent is Invite status -> Deleted (domain map section 2c). The stored value for the storefront Delete is not established by a source read this pass."
+    },
+    {
+      "id": "b2b.member.status-override",
+      "type": "behavior",
+      "name": "An operator sets a membership status, or lets it inherit from the contact",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Invite status: Inherit from member sentinel plus four values",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-120",
+          "note": "Draft"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.member.status-override.invalid-value",
+      "type": "branch",
+      "name": "A status outside the four values is rejected by the PUT while the dropdown offers whatever the setting holds",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CUST-122",
+          "note": "Draft"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "four selectable values, dictionary may be extended"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.member.status-resolve",
+      "type": "behavior",
+      "name": "The effective status is the membership status, else the contact status, else Approved",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "three-tier fallback"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D4",
+          "note": "formula confirmed by PlatformUserGuide first-hand (rev 2) and source",
+          "date": "2026-11-24"
+        }
+      ],
+      "chain_link": "9",
+      "oracle_refs": [
+        "BL-B2B-013"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest"
+      ],
+      "notes": "BL-B2B-013 lifecycle is SUSPECT (RET-ORG-003, B2C-ORG-068 failed in REG-2026-11-09-1635-W4); not re-observed in rev 3."
+    },
+    {
+      "id": "b2b.member.status-resolve.membership-beats-contact",
+      "type": "branch",
+      "name": "A membership status overrides the contact status",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-092",
+          "note": "Draft"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-105",
+          "note": "Reviewed"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "DT",
+      "oracle_refs": [
+        "BL-B2B-013"
+      ]
+    },
+    {
+      "id": "b2b.member.status-resolve.contact-blocks-all-orgs",
+      "type": "branch",
+      "name": "A blocking contact status with no membership row denies every organization",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D4",
+          "note": "account-wide blocking status loses access to every organization",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-091",
+          "note": "Draft"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-041",
+          "note": "Draft"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "notes": "The contact Status column is hidden by default in Admin."
+    },
+    {
+      "id": "b2b.member.status-resolve.null-inherits",
+      "type": "branch",
+      "name": "A null membership status inherits the contact status, not a fifth state",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "null is legacy/inheritance"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "oracle_refs": [
+        "BL-B2B-013"
+      ]
+    },
+    {
+      "id": "b2b.member.status-resolve.label-collapse",
+      "type": "branch",
+      "name": "Storefront labels collapse Rejected, Deleted and unknown into Inactive",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3c",
+          "note": "label map Approved->Active, Locked->Blocked, rest Inactive (carried)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D3",
+          "note": "declined and removed are indistinguishable",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.member.block",
+      "type": "behavior",
+      "name": "A maintainer or operator locks one organization membership",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 9 lock axis",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-010",
+          "note": "Draft"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-039",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "chain_link": "9",
+      "state_before": "b2b.state.membership-lock.unlocked",
+      "state_after": "b2b.state.membership-lock.locked",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest",
+        "graphql"
+      ],
+      "notes": "Storefront label is Blocked; Admin command is Lock in organization / membership blade Lock. data needs: data.b2b.membership.approved."
+    },
+    {
+      "id": "b2b.member.block.revokes-refresh-tokens",
+      "type": "branch",
+      "name": "The lock ends the member's ability to refresh: tokens minted before it are revoked",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D1D30720",
+          "note": "locking or deleting a membership revokes tokens server-side",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3CBA0D5F",
+          "note": "a refresh token minted before a membership write fails with 400 ID2018",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "rest"
+      ],
+      "notes": "Shared with every membership write, see b2b.access.membership-write-ends-sessions."
+    },
+    {
+      "id": "b2b.member.block.sibling-session-survives",
+      "type": "branch",
+      "name": "A live session in another, unlocked organization keeps working",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D1D30720",
+          "note": "already-issued access token keeps working; locked in a sibling org while active in an unlocked one",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Cases B2C-ORG-046, B2C-ORG-053 assert the storefront half."
+    },
+    {
+      "id": "b2b.member.block.admin-two-step-expiry",
+      "type": "branch",
+      "name": "An Admin operator cannot set a lock expiry in one action",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Lock posts an empty body; Locked until appears only once locked",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4b",
+          "note": "POST .../lock accepts lockoutEnd, REST-only atomic",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "notes": "Window of indefinite lock between Lock and Save."
+    },
+    {
+      "id": "b2b.member.unblock",
+      "type": "behavior",
+      "name": "A maintainer or operator unlocks the membership",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-011",
+          "note": "Automated, no promoting run recorded"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-121",
+          "note": "Draft"
+        }
+      ],
+      "state_before": "b2b.state.membership-lock.locked",
+      "state_after": "b2b.state.membership-lock.unlocked",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.member.lock-expiry",
+      "type": "behavior",
+      "name": "A timed lock ends by itself when LockoutEnd passes",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "IsCurrentlyLocked from IsLocked and LockoutEnd"
+        },
+        {
+          "class": "SPEC",
+          "ref": "COMP-E2E-019",
+          "note": "Automated, no promoting run recorded"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-049",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "state_before": "b2b.state.membership-lock.locked",
+      "state_after": "b2b.state.membership-lock.unlocked",
+      "interfaces": [
+        "rest",
+        "storefront"
+      ],
+      "notes": "Evaluated on read, after a cache window (B2C-ORG-049); no job is involved."
+    },
+    {
+      "id": "b2b.access.axes-independent",
+      "type": "behavior",
+      "name": "Status and lock are independent axes and each can be asserted alone",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-013",
+          "note": "status is a separate axis from lock"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 9: lock beats status",
+          "date": "2026-11-24"
+        }
+      ],
+      "chain_link": "9",
+      "oracle_refs": [
+        "BL-B2B-013"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest"
+      ],
+      "notes": "Precedence when both apply is BL-AUTH-016 (auth domain)."
+    },
+    {
+      "id": "b2b.access.axes-independent.lock-beats-status",
+      "type": "branch",
+      "name": "With both a blocking status and a lock, the lock refusal wins",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4c",
+          "note": "lock beats status in the five-code refusal table (source, carried)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-113",
+          "note": "Reviewed"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "DT",
+      "interfaces": [
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.access.membership-write-ends-sessions",
+      "type": "behavior",
+      "name": "A membership write ends the buyer's sessions",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3CBA0D5F",
+          "note": "7 confirmations: refresh token minted before a membership write is revoked",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §0 row 8",
+          "note": "D25 server-side trigger",
+          "date": "2026-11-23"
+        }
+      ],
+      "chain_link": "9",
+      "interfaces": [
+        "rest",
+        "storefront"
+      ],
+      "notes": "Applies to lock, unlock and remove. Pre-existing, not introduced by vc-frontend#2667. Docs silent (not re-fetched)."
+    },
+    {
+      "id": "b2b.access.membership-write-ends-sessions.intent",
+      "type": "branch",
+      "name": "Ending every session on a membership write: intended, and should the storefront say so",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:b2b@rev3 §7 G22",
+          "note": "reads as deliberate; no human source states the intent",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "notes": "UNFILED - product-owner question G22 (Customer-module owner statement of intent + a docs page)."
+    },
+    {
+      "id": "b2b.role.effective",
+      "type": "behavior",
+      "name": "Effective roles are global, organization-level and membership roles, de-duplicated",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 5",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-customer MergeRoles, GlobalRolesResolver",
+          "note": "DistinctBy(RoleId), additive in the token (G15)",
+          "date": "2026-09-11"
+        }
+      ],
+      "chain_link": "5",
+      "oracle_refs": [
+        "BL-B2B-005",
+        "BL-B2B-007"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest",
+        "storefront"
+      ],
+      "notes": "integrates with: returns - ret.org.permission.three-sources consumes this union (edge belongs in the returns map). data needs: data.b2b.organization.with-roles, data.b2b.membership.with-own-role."
+    },
+    {
+      "id": "b2b.role.effective.org-level-inheritance",
+      "type": "branch",
+      "name": "Every member inherits the organization-level roles with no per-member action",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2d",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): TechFlow roles merged onto all 16 roster rows",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-024",
+          "note": "Automated, no promoting run recorded"
+        },
+        {
+          "class": "SPEC",
+          "ref": "ORGROLE-013",
+          "note": "Draft"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.role.effective.per-org-isolation",
+      "type": "branch",
+      "name": "A role granted in one organization never appears in another or on the global account",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-008",
+          "note": "role change mutates only the target membership"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-007",
+          "note": "token carries only the active organization permissions"
+        },
+        {
+          "class": "SPEC",
+          "ref": "ORGROLE-014",
+          "note": "Draft"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "oracle_refs": [
+        "BL-B2B-007",
+        "BL-B2B-008"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.role.effective.pagecontext-matches-jwt",
+      "type": "branch",
+      "name": "pageContext permissions equal the active-organization token permissions",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-007",
+          "note": "BUG-A: pageContext returned [] while the token held 8"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EG",
+      "oracle_refs": [
+        "BL-B2B-007"
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.role.effective.change-applies-next-sign-in",
+      "type": "branch",
+      "name": "A role change is applied on the server at once but the open session keeps the old permissions",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §7 G13",
+          "note": "docs reconcile as server-immediate, session-stale; live unverified",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "notes": "BL-B2B-005 Violation signal lists the same lag as a violation: oracle review pending (SUSPECT)."
+    },
+    {
+      "id": "b2b.role.effective.employee-read-only",
+      "type": "branch",
+      "name": "An organization employee reads the roster with no Invite button and no Actions column",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "actors table: UNVERIFIED, source only (G1)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-005"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "DT",
+      "oracle_refs": [
+        "BL-B2B-005"
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Employee and purchasing agent are indistinguishable to the SPA (G15, COMP-E2E-030)."
+    },
+    {
+      "id": "b2b.role.assignment-whitelist",
+      "type": "behavior",
+      "name": "Assignable roles are limited by a whitelist",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-011"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2d",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): both whitelists empty on vcst; empty means all roles",
+          "date": "2026-09-16"
+        }
+      ],
+      "oracle_refs": [
+        "BL-B2B-011"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "notes": "Three assignment surfaces differ (D9). data needs: data.b2b.setting.membership-roles-whitelist."
+    },
+    {
+      "id": "b2b.role.assignment-whitelist.empty-global-offers-all",
+      "type": "branch",
+      "name": "An empty global whitelist offers every platform role",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-011",
+          "note": "filter skipped on empty global"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D18",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): doc is silent about the empty default",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "oracle_refs": [
+        "BL-B2B-011"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.role.assignment-whitelist.empty-store-falls-to-global",
+      "type": "branch",
+      "name": "An empty store override falls through to the global whitelist",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-011",
+          "note": "two-hop fallback"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §7 G7",
+          "note": "answered 2026-09-18 from source and live",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "oracle_refs": [
+        "BL-B2B-011"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "notes": "Not a neutral reset: teardown must restore the captured pre-state."
+    },
+    {
+      "id": "b2b.role.assignment-whitelist.xapi-rejects-outside",
+      "type": "branch",
+      "name": "changeOrganizationContactRole rejects a role outside the whitelist",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-011",
+          "note": "VCST-5450 AC4, Done"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4d",
+          "note": "REST PUT organization-memberships has no whitelist enforcement",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EP",
+      "oracle_refs": [
+        "BL-B2B-011"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest"
+      ],
+      "notes": "Cases ORGROLE-009/010 expect a REST bypass to be rejected; no source states that. See open_questions."
+    },
+    {
+      "id": "b2b.role.assignment-whitelist.picker-truncated-at-20",
+      "type": "branch",
+      "name": "The picker is silently truncated at 20 roles",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D9",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): roles.search take 20",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.context.token",
+      "type": "behavior",
+      "name": "A sign-in names an organization and the token carries its permissions",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 6",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4c",
+          "note": "org-scoped /connect/token and five refusal codes (source, carried)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-007"
+        }
+      ],
+      "chain_link": "6",
+      "oracle_refs": [
+        "BL-B2B-007"
+      ],
+      "interfaces": [
+        "rest"
+      ],
+      "notes": "Refusal codes are owned by the auth map (auth.org.resolve.*)."
+    },
+    {
+      "id": "b2b.context.token.unusable-org-falls-back",
+      "type": "branch",
+      "name": "A credential sign-in naming an unusable organization lands in another accessible one",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4c",
+          "note": "fallback first, resolving no org is not a refusal",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-103",
+          "note": "Reviewed"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "DT",
+      "interfaces": [
+        "rest"
+      ],
+      "notes": "integrates with: auth."
+    },
+    {
+      "id": "b2b.context.scope",
+      "type": "behavior",
+      "name": "The active organization scopes cart, addresses, prices, orders, lists and branding",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 7",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-001",
+          "note": "SUSPECT: BSM-078, BSM-092 failed in REG-2026-10-08-0812"
+        }
+      ],
+      "chain_link": "7",
+      "oracle_refs": [
+        "BL-B2B-001"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "data needs: data.b2b.contact.multi-org-member, data.b2b.cart.in-org-a."
+    },
+    {
+      "id": "b2b.context.scope.cart-and-addresses",
+      "type": "branch",
+      "name": "Cart and ship-to addresses are the active organization's",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-001"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-065",
+          "note": "Draft journey"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "oracle_refs": [
+        "BL-B2B-001"
+      ],
+      "notes": "integrates with: orders/cart (no mind map) - cart and checkout re-scoping."
+    },
+    {
+      "id": "b2b.context.scope.pricing",
+      "type": "branch",
+      "name": "An organization price list overrides the store default for its members",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-002",
+          "note": "INFERRED trust"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §6a",
+          "note": "price lists per organization: zero coverage",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "DT",
+      "oracle_refs": [
+        "BL-B2B-002"
+      ],
+      "notes": "integrates with: pricing (no mind map) - priority org list, store default, unavailable."
+    },
+    {
+      "id": "b2b.context.scope.lists-user-scoped",
+      "type": "branch",
+      "name": "Lists follow the user, not the organization",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-001",
+          "note": "says wish lists reset on switch"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-005",
+          "note": "user-scope verified live 2026-06-01, corrected 2026-09-19"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EP",
+      "oracle_refs": [
+        "BL-B2B-001"
+      ],
+      "drift": {
+        "expected": "BL-B2B-001: cart, addresses, wish lists and pricing all reset to the new organization",
+        "observed": "case B2C-ORG-005 (Reviewed): lists are user-scoped, not organization-scoped, verified live 2026-06-01",
+        "route": "/qa-review-oracles bl (BL-B2B-001 is already SUSPECT)"
+      },
+      "notes": "Raised by this build from the case References, not from the domain map. Never edit the oracle here."
+    },
+    {
+      "id": "b2b.context.scope.orders-of-locked-org-readable",
+      "type": "branch",
+      "name": "A locked organization's order history stays readable through organizationOrders",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D7 amendment",
+          "note": "totalCount 79 re-measured 2026-09-10, VCST-5933; not re-measured in rev 3",
+          "date": "2026-09-10"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "integrates with: orders. Owning ticket named in the domain map: VCST-5933; not re-checked."
+    },
+    {
+      "id": "b2b.context.scope.white-labeling",
+      "type": "branch",
+      "name": "Branding follows the active organization, per field, over the store setting",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-006",
+          "note": "superseded by BL-WL-001..006"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-011",
+          "note": "Manual case"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EP",
+      "notes": "integrates with: white-labeling (domain map exists, no mind map) - record preset; Paprika preset not in ThemePresetNames (G25)."
+    },
+    {
+      "id": "b2b.context.scope.loyalty-pool",
+      "type": "branch",
+      "name": "Loyalty balance and mission rewards are pooled per organization in Organization mode",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "test-data authoring rule: Loyalty.LoyaltyBalanceCalculationMode=Organization",
+          "note": "pooled balance needs its own organization"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EG",
+      "notes": "integrates with: loyalty-missions - loy.mission.reward.grant.per-organization (edge belongs in the loyalty map)."
+    },
+    {
+      "id": "b2b.context.scope.sales-rep",
+      "type": "branch",
+      "name": "A sales rep reaches buyer organizations through the Sales Rep hub, not the buyer header",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "actors: out of scope, sales-rep.md",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EP",
+      "notes": "integrates with: sales-rep - sr.scope, sr.scope.locked-membership (D15: rep excludes locked orgs, switcher returns and flags them)."
+    },
+    {
+      "id": "b2b.state.switcher.hidden",
+      "type": "state",
+      "name": "Header control: absent (guest, personal, one counted organization)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A26A8ACC",
+          "note": "no control for single or personal accounts",
+          "date": "2026-11-23"
+        }
+      ]
+    },
+    {
+      "id": "b2b.state.switcher.closed",
+      "type": "state",
+      "name": "Header control: shown, panel closed",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A26A8ACC",
+          "note": "organizations-button after Cart",
+          "date": "2026-11-23"
+        }
+      ]
+    },
+    {
+      "id": "b2b.state.switcher.open",
+      "type": "state",
+      "name": "Header control: panel open",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9D6EEFF5",
+          "note": "panel is a dialog with a listbox",
+          "date": "2026-11-23"
+        }
+      ]
+    },
+    {
+      "id": "b2b.state.switcher.switching",
+      "type": "state",
+      "name": "Header control: token refresh in flight for the picked organization",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "useUser.switchOrganization",
+          "note": "switch waits on refresh before storing and reloading",
+          "date": "2026-11-23"
+        }
+      ]
+    },
+    {
+      "id": "b2b.switcher.gate",
+      "type": "behavior",
+      "name": "The header control shows only for a buyer with more than one counted organization",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A26A8ACC",
+          "note": "control after Cart for totalCount > 1",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EB6191B8",
+          "note": "counting rule, 3 confirmations",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "isMultiOrganization = me.contact.organizations.totalCount > 1, source @0444048a2",
+          "date": "2026-11-24"
+        }
+      ],
+      "chain_link": "8",
+      "state_before": "b2b.state.switcher.hidden",
+      "state_after": "b2b.state.switcher.closed",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "Replaces top-header-organizations.vue (D23). data needs: data.b2b.contact.two-approved-orgs, data.b2b.contact.one-approved-one-locked, data.b2b.contact.one-approved-one-invited."
+    },
+    {
+      "id": "b2b.switcher.gate.hidden-for-single-or-personal",
+      "type": "branch",
+      "name": "Guest, personal and single-organization buyers get no control and no empty item",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A26A8ACC",
+          "note": "single or personal: user name only, no control",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "guest header carries no Organizations control (Firefox, rev 3)",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.switcher.gate.invited-rejected-deleted-not-counted",
+      "type": "branch",
+      "name": "One Approved plus one Invited, Rejected or Deleted membership gives no control",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EB6191B8",
+          "note": "Invited 1, Rejected 1, Deleted 1: not counted",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "Narrows D6 (D24)."
+    },
+    {
+      "id": "b2b.switcher.gate.locked-approved-counted",
+      "type": "branch",
+      "name": "One Approved plus one locked Approved membership gives a control with a disabled row",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EB6191B8",
+          "note": "Approved+locked: totalCount 2",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BDC577C1",
+          "note": "locked row disabled with lock icon",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.switcher.gate.null-status-counted",
+      "type": "branch",
+      "name": "A membership with no status is counted as Approved",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EB6191B8",
+          "note": "null-status membership is still counted",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.switcher.gate.control-kept-on-403",
+      "type": "branch",
+      "name": "The control stays available on the /403 page as a recovery path",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3F1B8798",
+          "note": "/403 still shows the control",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Case AUTH-043 (Draft) asserts the older account-menu placement; see open_questions."
+    },
+    {
+      "id": "b2b.switcher.gate.menu-entry-removed",
+      "type": "branch",
+      "name": "A store that removes the header menu entry has no desktop control while the phone menu keeps its own",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "menu id organizations, priority 110, ExtensionPoint headerMenu; separate id contact-organizations on mobile (source)",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "The off state for the desktop control. Not observed live."
+    },
+    {
+      "id": "b2b.switcher.gate.operator-on-behalf",
+      "type": "branch",
+      "name": "An operator signed in on behalf of a multi-organization buyer sees the target's organizations",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "VCST-6237 test-model S8",
+          "note": "scenario, never executed"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "integrates with: auth - impersonation keeps Back to operator in the dropdown."
+    },
+    {
+      "id": "b2b.switcher.open",
+      "type": "behavior",
+      "name": "Opening the control shows the organizations with the current one first",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9D6EEFF5",
+          "note": "pin the current organization when the search matches something",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "role=dialog, listbox of options, re-mounted per open (:key=openCount), source @0444048a2",
+          "date": "2026-11-24"
+        }
+      ],
+      "chain_link": "8",
+      "state_before": "b2b.state.switcher.closed",
+      "state_after": "b2b.state.switcher.open",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "Panel query GetOrganizations first:30 sort:name:asc statuses:[Approved] (KB-9D6EEFF5)."
+    },
+    {
+      "id": "b2b.switcher.open.refetch-per-open",
+      "type": "branch",
+      "name": "Every open re-fetches, so a lock landing after page load disables the row on the next open",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "stale-flag defeat closed in source (:key=openCount)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D7 amendment",
+          "note": "refetch verified by a second GetOrganizations after a mid-session lock (#2469)",
+          "date": "2026-09-10"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.switcher.open.search-above-threshold",
+      "type": "branch",
+      "name": "The search field appears only above 10 organizations",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "2-org panel has no search; 11-org panel has search (kb, 2026-11-23)",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "DOC",
+          "ref": "organization-switcher.vue SEARCH_THRESHOLD=10",
+          "note": "source @0444048a2",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.switcher.open.paging-30",
+      "type": "branch",
+      "name": "Thirty rows load first and scrolling loads the rest without repeats",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "organization-list.vue ORGANIZATIONS_PER_PAGE=30",
+          "note": "source @0444048a2",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-076",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.switcher.open.search-pins-current-when-matching",
+      "type": "branch",
+      "name": "A search that matches other organizations keeps the current one first and selected",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9D6EEFF5",
+          "note": "pinned, not a description match",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "Search runs through the Member index; an unindexed org never matches (KB-AB719187)."
+    },
+    {
+      "id": "b2b.switcher.open.search-no-match",
+      "type": "branch",
+      "name": "A search that matches nothing shows No results and drops the current organization",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9D6EEFF5",
+          "note": "no-match phrase drops the current organization",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "UNFILED - product-owner question G18. The observation is established; whether it is intended is not."
+    },
+    {
+      "id": "b2b.switcher.open.locked-row-disabled",
+      "type": "branch",
+      "name": "A locked organization is listed as a disabled row with a lock icon and a tooltip",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BDC577C1",
+          "note": "row title / disabled / lock icon; tooltip text source-only",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Closes the structural half of D7. Arrow keys skip disabled rows (source)."
+    },
+    {
+      "id": "b2b.switcher.open.escape-closes",
+      "type": "branch",
+      "name": "Escape closes the panel and returns focus to the control",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "keyboard: Enter opens, arrows skip locked rows, Escape closes (source)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-073",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "state_before": "b2b.state.switcher.open",
+      "state_after": "b2b.state.switcher.closed"
+    },
+    {
+      "id": "b2b.switcher.open.tab-out-stays-open",
+      "type": "branch",
+      "name": "Tabbing past the last option leaves the panel open over the main navigation",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §7 G19",
+          "note": "exploratory F1, Low a11y (SBTM-VCST-6237-2026-11-23)",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "UNFILED - product-owner question G19: should the panel close when focus leaves it?"
+    },
+    {
+      "id": "b2b.switcher.open.all-locked-every-option-disabled",
+      "type": "branch",
+      "name": "With every membership locked the list still shows each as a disabled option, never an empty state",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-059",
+          "note": "Automated, no promoting run recorded"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §8",
+          "note": "G1.5 resolved in favour of the empty state organizations-empty-list; the case says disabled options",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Domain map section 8 and case B2C-ORG-059 disagree on empty state versus disabled options; auth.org.resolve.no-org-left holds the sign-in half."
+    },
+    {
+      "id": "b2b.switcher.pick",
+      "type": "behavior",
+      "name": "Picking another organization asks the server for a token in it",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 8: refresh(organizationId) then every tab reloads",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "DOC",
+          "ref": "useUser.switchOrganization",
+          "note": "useUser.ts L368-376 @0444048a2",
+          "date": "2026-11-23"
+        }
+      ],
+      "chain_link": "8",
+      "state_before": "b2b.state.switcher.open",
+      "state_after": "b2b.state.switcher.switching",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.switcher.pick.accepted-reloads-all-tabs",
+      "type": "branch",
+      "name": "An accepted switch reloads every open tab into the new organization",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-47727A18",
+          "note": "two-tab reload",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D35BFF8D",
+          "note": "a second tab with its panel open reloads into the new organization",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "ST",
+      "state_before": "b2b.state.switcher.switching",
+      "state_after": "b2b.state.switcher.closed",
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Header, cart, prices and white-labeling preset follow the new organization (BL-B2B-001 regression)."
+    },
+    {
+      "id": "b2b.switcher.pick.refused-with-code-shows-error",
+      "type": "branch",
+      "name": "A refusal that carries an organization code shows an error and the panel stays",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "useOrganizationSwitcher.ts L18-19, organization-list.vue L240-243",
+          "note": "switchError set only when authErrors is non-empty (A9 root cause)",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "state_before": "b2b.state.switcher.switching",
+      "state_after": "b2b.state.switcher.open",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "notes": "Source-read only; never produced live, because the only refusal observed has no code (next node)."
+    },
+    {
+      "id": "b2b.switcher.pick.code-less-refusal-looks-like-success",
+      "type": "branch",
+      "name": "A refusal with no organization code is treated as a successful switch",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3CBA0D5F",
+          "note": "400 ID2018 for the locked org and for an unlocked one",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D59DDAAD",
+          "note": "same symptom from the account-menu placement",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-24469A0C",
+          "note": "refused org stored as last-used",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "DOC",
+          "ref": "A9 root-cause.md",
+          "note": "useUser.ts L368-376; useAuth.ts L181-184",
+          "date": "2026-11-23"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "drift": {
+        "expected": "BL-AUTH-013: the switcher surfaces organization-specific copy only for a coded organization refusal; AC-15 (VCST-6237): a failed switch keeps the buyer signed in",
+        "observed": "after any membership write the switch returns 400 invalid_grant ID2018 with no code; the storefront stores the refused org as last-used, reloads as a guest and shows no message (KB-3CBA0D5F, KB-D59DDAAD, KB-24469A0C)",
+        "route": "reports/bugs/open/critical-high/BUG-stale-org-switcher-locked-row-stays-enabled-and-signs-out-all-tabs-VCST-5317.md (the bug report); /qa-review-oracles bl for any BL clause - BL-B2B-001 stays SUSPECT"
+      },
+      "notes": "Pre-existing, not from vc-frontend#2667. Fix target useUser.switchOrganization (vc-frontend). Medium / P3 in the A9 worksheet. Product question G22 sits on b2b.access.membership-write-ends-sessions.intent."
+    },
+    {
+      "id": "b2b.switcher.persist-last-used",
+      "type": "behavior",
+      "name": "The chosen organization is remembered and resent on the next sign-in",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §1",
+          "note": "link 8: localStorage organization-id-<user> and Contact.CurrentOrganizationId",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-24469A0C",
+          "note": "refused org stored as last-used",
+          "date": "2026-11-23"
+        }
+      ],
+      "chain_link": "8",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "notes": "CurrentOrganizationId is shown nowhere in Admin (section 2f). D8: a pinned org can outlive the filter that hides it."
+    },
+    {
+      "id": "b2b.switcher.mobile",
+      "type": "behavior",
+      "name": "The phone menu has its own My organizations switcher",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "Corporate > My organizations, menu id contact-organizations, unchanged by #2667 (source)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D26",
+          "note": "two components, two menu ids",
+          "date": "2026-11-24"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "375 px observations are the VCST-6237 exploratory, not re-observed in rev 3."
+    },
+    {
+      "id": "b2b.switcher.mobile.locked-row-guard",
+      "type": "branch",
+      "name": "A locked row on the phone is disabled with a lock icon and a tap fires no token request",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D7 amendment",
+          "note": "measured at 375x812 on three lanes (#2469, 878e765a)",
+          "date": "2026-09-10"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-ORG-066",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.switcher.mobile.org-users-only",
+      "type": "branch",
+      "name": "The phone entry sits inside the Corporate section that exists only for organization users",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3e",
+          "note": "Corporate section absent for personal accounts; contact-organizations gated on isMultiOrganization (source)",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.switcher.mobile.independent-of-desktop",
+      "type": "branch",
+      "name": "Removing the desktop control does not remove the phone one",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D26",
+          "note": "separate menu ids (source)",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.switcher.account-dropdown",
+      "type": "behavior",
+      "name": "The account dropdown no longer lists organizations",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3F1B8798",
+          "note": "account button holds name link plus Logout",
+          "date": "2026-11-23"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A26A8ACC",
+          "note": "button text org / user",
+          "date": "2026-11-23"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Replaces rev 2 section 3d (D23). The org label is hidden below xl: from the brief, not observed."
+    },
+    {
+      "id": "b2b.switcher.account-dropdown.back-to-operator",
+      "type": "branch",
+      "name": "While impersonating the dropdown keeps Back to operator",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3d",
+          "note": "Back to operator while impersonating (source)",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "integration",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.state.quote.draft",
+      "type": "state",
+      "name": "Quote: Draft",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Draft seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.state.quote.processing",
+      "type": "state",
+      "name": "Quote: Processing",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Processing seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.state.quote.proposal-sent",
+      "type": "state",
+      "name": "Quote: Proposal sent",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Proposal sent seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.state.quote.ordered",
+      "type": "state",
+      "name": "Quote: Ordered",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Ordered seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.state.quote.declined",
+      "type": "state",
+      "name": "Quote: Declined",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Declined seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.state.quote.on-hold",
+      "type": "state",
+      "name": "Quote: On hold",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): On hold seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.state.quote.cancelled",
+      "type": "state",
+      "name": "Quote: Cancelled",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Cancelled seen in the Admin grid or dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "notes": "Four vocabularies disagree (D19); this is the union of the live Admin dropdown and grid."
+    },
+    {
+      "id": "b2b.quote.create",
+      "type": "behavior",
+      "name": "A buyer builds a quote request from a cart",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3f",
+          "note": "Add cart items to quote documented, not re-clicked",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "QUOTE-001",
+          "note": "Draft"
+        }
+      ],
+      "chain_link": "7",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "integrates with: orders/cart (no mind map). data needs: data.b2b.cart.in-org-a, data.b2b.user.maintainer."
+    },
+    {
+      "id": "b2b.quote.submit",
+      "type": "behavior",
+      "name": "The buyer submits the request and Admin sees it",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4e",
+          "note": "submitQuoteRequest (xAPI, carried)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-004",
+          "note": "approval is quote-based"
+        }
+      ],
+      "state_before": "b2b.state.quote.draft",
+      "state_after": "b2b.state.quote.processing",
+      "interfaces": [
+        "storefront",
+        "graphql",
+        "admin-ui"
+      ],
+      "oracle_refs": [
+        "BL-B2B-004"
+      ]
+    },
+    {
+      "id": "b2b.quote.proposal",
+      "type": "behavior",
+      "name": "Admin answers with a proposal",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Submit proposal on the Processing toolbar",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "SPEC",
+          "ref": "QUOTE-004",
+          "note": "Draft"
+        }
+      ],
+      "state_before": "b2b.state.quote.processing",
+      "state_after": "b2b.state.quote.proposal-sent",
+      "interfaces": [
+        "admin-ui",
+        "storefront"
+      ],
+      "notes": "integrates with: notifications - Admin response notification."
+    },
+    {
+      "id": "b2b.quote.approve",
+      "type": "behavior",
+      "name": "The buyer approves a proposal and the quote becomes an order",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D20",
+          "note": "no Convert to Order control on either surface; approve moves status to Ordered",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-B2B-003",
+          "note": "names a Convert to Order action"
+        }
+      ],
+      "state_before": "b2b.state.quote.proposal-sent",
+      "state_after": "b2b.state.quote.ordered",
+      "oracle_refs": [
+        "BL-B2B-003"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "integrates with: orders - Ordered places an order. BL-B2B-003 wording is a surface-naming mismatch: candidate for /qa-review-oracles bl, never edited here."
+    },
+    {
+      "id": "b2b.quote.decline",
+      "type": "behavior",
+      "name": "The buyer declines a proposal in one click",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §4e",
+          "note": "declineQuoteRequest",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "SPEC",
+          "ref": "QUOTE-008",
+          "note": "Draft"
+        }
+      ],
+      "state_before": "b2b.state.quote.proposal-sent",
+      "state_after": "b2b.state.quote.declined",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "b2b.quote.hold",
+      "type": "behavior",
+      "name": "Admin puts a processing quote on hold",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Put on hold on the Processing toolbar",
+          "date": "2026-09-16"
+        }
+      ],
+      "state_before": "b2b.state.quote.processing",
+      "state_after": "b2b.state.quote.on-hold",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.quote.cancel",
+      "type": "behavior",
+      "name": "Admin cancels a quote with Cancel document",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Cancelled is reached by Cancel document, not the status dropdown",
+          "date": "2026-09-16"
+        }
+      ],
+      "state_before": "b2b.state.quote.processing",
+      "state_after": "b2b.state.quote.cancelled",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.quote.expiry",
+      "type": "behavior",
+      "name": "An expired quote cannot be turned into an order",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-003",
+          "note": "expiry blocks conversion"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2g",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Expiry date and Reminder date fields exist",
+          "date": "2026-09-16"
+        }
+      ],
+      "oracle_refs": [
+        "BL-B2B-003"
+      ],
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "notes": "No Convert button exists (D20): the gate shows on approve. data needs: data.b2b.quote.expired."
+    },
+    {
+      "id": "b2b.quote.visibility",
+      "type": "behavior",
+      "name": "A quote is visible to its requester; whether the organization matters is not established",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3f",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): quotes gated by authentication only: a personal account sees the same page",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:b2b@rev3 §7 G16",
+          "note": "org scoping unknown; probe inconclusive",
+          "date": "2026-11-24"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "data needs: data.b2b.quote.in-org-a-none-in-org-b (G16 fixture)."
+    },
+    {
+      "id": "b2b.quote.visibility.personal-sees-same-page",
+      "type": "branch",
+      "name": "A personal account reaches /account/quotes exactly like an organization buyer",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3f",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): three account shapes, read-only",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.quote.visibility.admin-company-not-defined",
+      "type": "branch",
+      "name": "Admin shows Customer's company as Not defined for an organization member's quote",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D22",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): one quote, per-fixture gap or no org on the model: unknown",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.quote.submit.status-vocabulary",
+      "type": "branch",
+      "name": "Four quote-status vocabularies disagree",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §5 D19",
+          "note": "storefront guide, platform guide, runtime config and the live dropdown differ",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EP",
+      "notes": "Do not assert a status string against only one vocabulary."
+    },
+    {
+      "id": "b2b.quote.no-spending-limit",
+      "type": "behavior",
+      "name": "Approval is quote-based: there is no native spending limit and no Pending approval order status",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-B2B-004",
+          "note": "DECLARED, live-verified 2026-07-15"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-013",
+          "note": "five Deprecated order-approval cases against this rule"
+        }
+      ],
+      "oracle_refs": [
+        "BL-B2B-004"
+      ],
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "A negative platform fact; not re-observed in rev 3. Do not re-author the Deprecated order-approval cases."
+    },
+    {
+      "id": "b2b.admin.contacts-list",
+      "type": "behavior",
+      "name": "The Contacts list manages companies and people with single-selection organization commands",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2a",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Lock in organization, Unlock, Change roles are single-selection; no bulk lock",
+          "date": "2026-09-16"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.admin.contacts-list.status-column-hidden",
+      "type": "branch",
+      "name": "The contact Status that overrides every organization is hidden by default",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2a",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Status among 17 hidden columns",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.admin.contacts-list.no-bulk-lock",
+      "type": "branch",
+      "name": "Lock, unlock and role change act on one selection only",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2a",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): getSelectedRows().length === 1",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "negative",
+      "technique": "EP",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.admin.contacts-list.import-export",
+      "type": "branch",
+      "name": "Members can be imported into and exported from the organization in view",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2a",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Import and Export on the toolbar",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §6a",
+          "note": "zero coverage",
+          "date": "2026-11-24"
+        }
+      ],
+      "branch_kind": "happy",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "Behaviour of import is not described by any source."
+    },
+    {
+      "id": "b2b.admin.membership-blade",
+      "type": "behavior",
+      "name": "The membership blade edits roles, invite status and lock",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Save, Reset, Lock or Unlock exactly one; Locked until only when locked",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CUST-121",
+          "note": "Draft"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.admin.invite-blade",
+      "type": "behavior",
+      "name": "The Invite customers blade sends invitations for one organization",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §2e",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): one command, maps to POST /api/members/customers/invite",
+          "date": "2026-09-16"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "b2b.storefront.roster",
+      "type": "behavior",
+      "name": "The company members page lists, searches and filters the roster",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): search, Role (5) and Status (3) filters, row actions by row state",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "SPEC",
+          "ref": "B2C-MBR-001",
+          "note": "Automated, no promoting run recorded"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.storefront.roster.actions-by-row-state",
+      "type": "branch",
+      "name": "Row actions depend on the row state and the viewer",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3c",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Invited: Resend, Revoke, Login on behalf; Active: Edit role, Block, Delete, Login on behalf; self: none",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.storefront.roster.name-fallback-invite-sent",
+      "type": "branch",
+      "name": "A row whose badge says Active can show Invite sent as its name",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D11",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): name fallback reads the global contact status",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.storefront.roster.raw-role-names",
+      "type": "branch",
+      "name": "A role granted in Admin shows its raw platform name and as a filter option",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §5 D10",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): Sales Representative has no common.roles key",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "b2b.storefront.route-guards",
+      "type": "behavior",
+      "name": "Company pages and addresses are gated by account type",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:b2b@rev3 §3a",
+          "note": "requiresAuth and requiresOrganization flags, beforeEnter closures (source)",
+          "date": "2026-11-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3e",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): VC-B2B-001: Addresses hidden for organization members, shown for personal accounts",
+          "date": "2026-09-16"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.storefront.route-guards.company-bounces-personal",
+      "type": "branch",
+      "name": "/company/* sends a personal account to the dashboard",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3a",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): /company/info bounces a personal account",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.storefront.route-guards.addresses-hidden-for-corporate",
+      "type": "branch",
+      "name": "/account/addresses is closed for organization members at three points",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3e",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): canShowUserItem, canShowItem, beforeEnter",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "b2b.storefront.route-guards.quotes-not-gated",
+      "type": "branch",
+      "name": "/account/quotes carries no organization guard",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:b2b@rev3 §3a",
+          "note": "carried from rev 2, not re-walked in rev 3 (G23): requiresAuth only",
+          "date": "2026-09-16"
+        }
+      ],
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.org",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.membership",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.roles",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.context",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.switcher",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.quotes",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.admin",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.organizations",
+      "to": "b2b.storefront",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.org",
+      "to": "b2b.org.create",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.org.create",
+      "to": "b2b.org.create.self-signup-org-roles-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.org.create",
+      "to": "b2b.org.create.parent-from-drilldown",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.org",
+      "to": "b2b.org.identity",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.org.identity",
+      "to": "b2b.org.identity.company-info-edit",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.org.identity",
+      "to": "b2b.org.identity.out-of-dictionary-status",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.org.identity",
+      "to": "b2b.org.identity.delete-orphans-memberships",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.org",
+      "to": "b2b.org.hierarchy",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.org.hierarchy",
+      "to": "b2b.org.hierarchy.admin-cannot-reparent",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.org.hierarchy",
+      "to": "b2b.org.hierarchy.member-scoping",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.link",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.member.link",
+      "to": "b2b.member.link.admin-first-account-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.link",
+      "to": "b2b.member.link.accountless-contact-invisible",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.link",
+      "to": "sr.serve-orgs",
+      "type": "affected_by",
+      "note": "a served organization appears as a membership"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.invite",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.member.invite",
+      "to": "b2b.member.invite.storefront",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.invite",
+      "to": "b2b.member.invite.permission-denied",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.invite",
+      "to": "b2b.member.invite.admin-bypasses-whitelist",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.invite",
+      "to": "b2b.member.invite.existing-user-second-org",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.invite",
+      "to": "b2b.member.invite.pending-row-login-on-behalf",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.invite.pending-row-login-on-behalf",
+      "to": "auth.impersonate",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.accept-invite",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.reject-invite",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.revoke-invite",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.reinvite",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.member.reinvite",
+      "to": "b2b.member.reinvite.from-deleted",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.reinvite",
+      "to": "b2b.member.reinvite.refused-while-invited-or-approved",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.delete",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.status-override",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.member.status-override",
+      "to": "b2b.member.status-override.invalid-value",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.status-resolve",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.member.status-resolve",
+      "to": "b2b.member.status-resolve.membership-beats-contact",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.status-resolve",
+      "to": "b2b.member.status-resolve.contact-blocks-all-orgs",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.status-resolve",
+      "to": "b2b.member.status-resolve.null-inherits",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.status-resolve",
+      "to": "b2b.member.status-resolve.label-collapse",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.block",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.member.block",
+      "to": "b2b.member.block.revokes-refresh-tokens",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.block",
+      "to": "b2b.member.block.sibling-session-survives",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.member.block",
+      "to": "b2b.member.block.admin-two-step-expiry",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.unblock",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.member.lock-expiry",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.state.membership-lock.unlocked",
+      "to": "b2b.state.membership-lock.locked",
+      "type": "transitions_to",
+      "via": "b2b.member.block"
+    },
+    {
+      "from": "b2b.state.membership-lock.locked",
+      "to": "b2b.state.membership-lock.unlocked",
+      "type": "transitions_to",
+      "via": "b2b.member.unblock"
+    },
+    {
+      "from": "b2b.state.membership-lock.locked",
+      "to": "b2b.state.membership-lock.unlocked",
+      "type": "transitions_to",
+      "via": "b2b.member.lock-expiry"
+    },
+    {
+      "from": "b2b.state.membership.invited",
+      "to": "b2b.state.membership.approved",
+      "type": "transitions_to",
+      "via": "b2b.member.accept-invite"
+    },
+    {
+      "from": "b2b.state.membership.invited",
+      "to": "b2b.state.membership.rejected",
+      "type": "transitions_to",
+      "via": "b2b.member.reject-invite"
+    },
+    {
+      "from": "b2b.state.membership.invited",
+      "to": "b2b.state.membership.deleted",
+      "type": "transitions_to",
+      "via": "b2b.member.revoke-invite"
+    },
+    {
+      "from": "b2b.state.membership.rejected",
+      "to": "b2b.state.membership.invited",
+      "type": "transitions_to",
+      "via": "b2b.member.reinvite"
+    },
+    {
+      "from": "b2b.state.membership.deleted",
+      "to": "b2b.state.membership.invited",
+      "type": "transitions_to",
+      "via": "b2b.member.reinvite.from-deleted"
+    },
+    {
+      "from": "b2b.state.membership.approved",
+      "to": "b2b.state.membership.deleted",
+      "type": "transitions_to",
+      "via": "b2b.member.delete"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.access.axes-independent",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.access.axes-independent",
+      "to": "b2b.access.axes-independent.lock-beats-status",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.access.axes-independent.lock-beats-status",
+      "to": "auth.org.resolve.status-refusal",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.access.axes-independent",
+      "to": "auth.org.resolve.global-lock-wins",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.membership",
+      "to": "b2b.access.membership-write-ends-sessions",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.access.membership-write-ends-sessions",
+      "to": "b2b.access.membership-write-ends-sessions.intent",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.roles",
+      "to": "b2b.role.effective",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.role.effective",
+      "to": "b2b.role.effective.org-level-inheritance",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.effective",
+      "to": "b2b.role.effective.per-org-isolation",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.effective",
+      "to": "b2b.role.effective.pagecontext-matches-jwt",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.effective",
+      "to": "b2b.role.effective.change-applies-next-sign-in",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.effective",
+      "to": "b2b.role.effective.employee-read-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.roles",
+      "to": "b2b.role.assignment-whitelist",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.role.assignment-whitelist",
+      "to": "b2b.role.assignment-whitelist.empty-global-offers-all",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.assignment-whitelist",
+      "to": "b2b.role.assignment-whitelist.empty-store-falls-to-global",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.assignment-whitelist",
+      "to": "b2b.role.assignment-whitelist.xapi-rejects-outside",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.role.assignment-whitelist",
+      "to": "b2b.role.assignment-whitelist.picker-truncated-at-20",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context",
+      "to": "b2b.context.token",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.context.token",
+      "to": "b2b.context.token.unusable-org-falls-back",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.token.unusable-org-falls-back",
+      "to": "auth.org.resolve.fallback",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.context",
+      "to": "b2b.context.scope",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.cart-and-addresses",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.pricing",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.lists-user-scoped",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.orders-of-locked-org-readable",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.white-labeling",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.loyalty-pool",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.context.scope",
+      "to": "b2b.context.scope.sales-rep",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher",
+      "to": "b2b.switcher.gate",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.state.switcher.hidden",
+      "to": "b2b.state.switcher.closed",
+      "type": "transitions_to",
+      "via": "b2b.switcher.gate"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.hidden-for-single-or-personal",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.invited-rejected-deleted-not-counted",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.locked-approved-counted",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.null-status-counted",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.control-kept-on-403",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.menu-entry-removed",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate",
+      "to": "b2b.switcher.gate.operator-on-behalf",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.gate.operator-on-behalf",
+      "to": "auth.impersonate",
+      "type": "affected_by"
+    },
+    {
+      "from": "b2b.switcher",
+      "to": "b2b.switcher.open",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.state.switcher.closed",
+      "to": "b2b.state.switcher.open",
+      "type": "transitions_to",
+      "via": "b2b.switcher.open"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.refetch-per-open",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.search-above-threshold",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.paging-30",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.search-pins-current-when-matching",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.search-no-match",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.locked-row-disabled",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.escape-closes",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.state.switcher.open",
+      "to": "b2b.state.switcher.closed",
+      "type": "transitions_to",
+      "via": "b2b.switcher.open.escape-closes"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.tab-out-stays-open",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.open",
+      "to": "b2b.switcher.open.all-locked-every-option-disabled",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher",
+      "to": "b2b.switcher.pick",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.state.switcher.open",
+      "to": "b2b.state.switcher.switching",
+      "type": "transitions_to",
+      "via": "b2b.switcher.pick"
+    },
+    {
+      "from": "b2b.switcher.pick",
+      "to": "b2b.switcher.pick.accepted-reloads-all-tabs",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.state.switcher.switching",
+      "to": "b2b.state.switcher.closed",
+      "type": "transitions_to",
+      "via": "b2b.switcher.pick.accepted-reloads-all-tabs"
+    },
+    {
+      "from": "b2b.switcher.pick",
+      "to": "b2b.switcher.pick.refused-with-code-shows-error",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.state.switcher.switching",
+      "to": "b2b.state.switcher.open",
+      "type": "transitions_to",
+      "via": "b2b.switcher.pick.refused-with-code-shows-error"
+    },
+    {
+      "from": "b2b.switcher.pick.refused-with-code-shows-error",
+      "to": "auth.org.resolve.explicit-switch-refused",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.switcher.pick",
+      "to": "b2b.switcher.pick.code-less-refusal-looks-like-success",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.pick.code-less-refusal-looks-like-success",
+      "to": "b2b.access.membership-write-ends-sessions",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.switcher",
+      "to": "b2b.switcher.persist-last-used",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.switcher.persist-last-used",
+      "to": "auth.org.resolve.last-used-resend",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.switcher.persist-last-used",
+      "to": "auth.org.resolve.write-back",
+      "type": "depends_on"
+    },
+    {
+      "from": "b2b.switcher",
+      "to": "b2b.switcher.mobile",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.switcher.mobile",
+      "to": "b2b.switcher.mobile.locked-row-guard",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.mobile",
+      "to": "b2b.switcher.mobile.org-users-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.mobile",
+      "to": "b2b.switcher.mobile.independent-of-desktop",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher",
+      "to": "b2b.switcher.account-dropdown",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.switcher.account-dropdown",
+      "to": "b2b.switcher.account-dropdown.back-to-operator",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.switcher.account-dropdown.back-to-operator",
+      "to": "auth.impersonate.revert",
+      "type": "affected_by"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.create",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.submit",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.proposal",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.approve",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.decline",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.hold",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.cancel",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.state.quote.draft",
+      "to": "b2b.state.quote.processing",
+      "type": "transitions_to",
+      "via": "b2b.quote.submit"
+    },
+    {
+      "from": "b2b.state.quote.processing",
+      "to": "b2b.state.quote.proposal-sent",
+      "type": "transitions_to",
+      "via": "b2b.quote.proposal"
+    },
+    {
+      "from": "b2b.state.quote.proposal-sent",
+      "to": "b2b.state.quote.ordered",
+      "type": "transitions_to",
+      "via": "b2b.quote.approve"
+    },
+    {
+      "from": "b2b.state.quote.proposal-sent",
+      "to": "b2b.state.quote.declined",
+      "type": "transitions_to",
+      "via": "b2b.quote.decline"
+    },
+    {
+      "from": "b2b.state.quote.processing",
+      "to": "b2b.state.quote.on-hold",
+      "type": "transitions_to",
+      "via": "b2b.quote.hold"
+    },
+    {
+      "from": "b2b.state.quote.processing",
+      "to": "b2b.state.quote.cancelled",
+      "type": "transitions_to",
+      "via": "b2b.quote.cancel"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.expiry",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.visibility",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.quote.visibility",
+      "to": "b2b.quote.visibility.personal-sees-same-page",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.quote.visibility",
+      "to": "b2b.quote.visibility.admin-company-not-defined",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.quote.submit",
+      "to": "b2b.quote.submit.status-vocabulary",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.quotes",
+      "to": "b2b.quote.no-spending-limit",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.admin",
+      "to": "b2b.admin.contacts-list",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.admin.contacts-list",
+      "to": "b2b.admin.contacts-list.status-column-hidden",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.admin.contacts-list",
+      "to": "b2b.admin.contacts-list.no-bulk-lock",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.admin.contacts-list",
+      "to": "b2b.admin.contacts-list.import-export",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.admin",
+      "to": "b2b.admin.membership-blade",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.admin",
+      "to": "b2b.admin.invite-blade",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.storefront",
+      "to": "b2b.storefront.roster",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.storefront.roster",
+      "to": "b2b.storefront.roster.actions-by-row-state",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.storefront.roster",
+      "to": "b2b.storefront.roster.name-fallback-invite-sent",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.storefront.roster",
+      "to": "b2b.storefront.roster.raw-role-names",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.storefront",
+      "to": "b2b.storefront.route-guards",
+      "type": "contains"
+    },
+    {
+      "from": "b2b.storefront.route-guards",
+      "to": "b2b.storefront.route-guards.company-bounces-personal",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.storefront.route-guards",
+      "to": "b2b.storefront.route-guards.addresses-hidden-for-corporate",
+      "type": "branches_to"
+    },
+    {
+      "from": "b2b.storefront.route-guards",
+      "to": "b2b.storefront.route-guards.quotes-not-gated",
+      "type": "branches_to"
+    }
+  ]
+}

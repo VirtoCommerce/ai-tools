@@ -4,7 +4,7 @@
 // Storage belongs to the launcher, which already owns the keystore io; this module only decides
 // what a cached entry means and, separately, who may exchange a refresh token right now. The io
 // that does exist here — acquireLock's socket bind, lockPathFor's reads of process.platform,
-// process.env and os.userInfo — sits behind injectable seams (bind/probe/remove default to the
+// process.env and os.userInfo — sits behind injectable seams (bind/probe/remove/sleep/random default to the
 // real thing, {platform, env, userInfo} default to the real ones), which is what makes the
 // decisions around that io testable without a live bind or a real OS identity. The seams make
 // these functions TESTABLE; they do not make them pure.
@@ -151,6 +151,12 @@ const HELD_BY_OTHER = Symbol("vc-secrets:lock-held-by-other");
 // a cost: the waiter stops as soon as the neighbour publishes. A test asserts this against those
 // constants, because nothing else connects the numbers and they live in three different modules.
 const LOCK_WAIT_MS = 45_000;
+// How long a refused probe waits before it is believed. Node binds a path socket and then listens, two system
+// calls, and a socket that is bound but not yet listening refuses a connection exactly as one a killed process left
+// behind does. Far above that gap even on a loaded machine, and paid only when a socket really was left behind.
+// The wait is this long plus up to as much again, chosen at random, so that two launchers that found the same
+// stale socket together do not re-probe in step.
+const STALE_RECHECK_MS = 100;
 
 function sanitize(value) {
     return String(value).replace(/[^A-Za-z0-9_-]/g, "_");
@@ -227,15 +233,23 @@ function holderFor(server) {
     return { release: severingClose(server) };
 }
 
-// bind/probe/remove are injected for the same reason resolveEnvEntries takes its resolver: the
+// bind/probe/remove/sleep/random are injected for the same reason resolveEnvEntries takes its resolver: the
 // decisions below are the part worth testing, and binding a socket is refused outright in some
 // environments — so without the seam every branch here would be covered only where a real bind
 // is permitted, and the macOS-only branches would be covered nowhere at all.
 async function acquireLock(lockPath, { bind = bindSocket, probe = probeAlive,
-    remove = (p) => fs.rmSync(p, { force: true }) } = {}) {
+    remove = (p) => fs.rmSync(p, { force: true }),
+    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), random = Math.random } = {}) {
     try {
         return holderFor(await bind(lockPath));
     } catch (e) {
+        // macOS: XNU's bind looks the path up and then creates it without serialising the create, so the slower
+        // of two simultaneous binders gets EEXIST where Linux's kernel reports EADDRINUSE. That process is a
+        // few microseconds behind a neighbour who won, the moment the winner is least likely to be listening, so
+        // it is not probed here; a winner that died in that instant is reclaimed by a later poll.
+        if (e.code === "EEXIST") {
+            return HELD_BY_OTHER;
+        }
         if (e.code !== "EADDRINUSE") {
             throw e;
         }
@@ -244,7 +258,19 @@ async function acquireLock(lockPath, { bind = bindSocket, probe = probeAlive,
         return HELD_BY_OTHER;   // abstract name or pipe: occupied can only mean a live holder
     }
     // macOS only. A path can be held by a socket a killed process left behind, and connect()
-    // answering ECONNREFUSED is the only way to tell that from a live listener.
+    // answering ECONNREFUSED is the only way to tell that from a live listener -- but a refusal is
+    // not proof of death: a winner that has bound and not yet listened refuses too. So the socket is
+    // reclaimed only when a second probe, STALE_RECHECK_MS or more later, is refused as well. The wait is
+    // jittered because two launchers that arrive together at a socket that really was left behind both
+    // refuse the first probe, and equal waits would have them re-probe in step: the earlier waker then
+    // removes, binds and listens before the later one's second probe, which connects. Launchers whose waits
+    // land within the time one takes to remove, bind and listen can still both see the second refusal; the
+    // jitter makes that rare, it does not close it. Release unlinks the socket by name, so in such a double
+    // hold the evicted holder's release deletes the reclaimer's socket and lets a third launcher bind.
+    if (await probe(lockPath)) {
+        return HELD_BY_OTHER;
+    }
+    await sleep(STALE_RECHECK_MS + random() * STALE_RECHECK_MS);
     if (await probe(lockPath)) {
         return HELD_BY_OTHER;
     }
@@ -255,8 +281,8 @@ async function acquireLock(lockPath, { bind = bindSocket, probe = probeAlive,
     } catch (e) {
         // Inside the try on purpose: a neighbour reclaiming first is an ordinary contended
         // outcome, and an unhandled rejection here becomes a process.exit in the launcher's run
-        // path — the server would not start at all.
-        if (e.code === "EADDRINUSE") {
+        // path — the server would not start at all. EEXIST is the same outcome on macOS (see above).
+        if (e.code === "EADDRINUSE" || e.code === "EEXIST") {
             return HELD_BY_OTHER;
         }
         throw e;
@@ -265,6 +291,6 @@ async function acquireLock(lockPath, { bind = bindSocket, probe = probeAlive,
 
 export {
     cacheStatus, sameScopes, serializeRefresh, serializeAccess, parseEntry,
-    lockPathFor, acquireLock, sanitize, HELD_BY_OTHER, LOCK_WAIT_MS,
+    lockPathFor, acquireLock, sanitize, HELD_BY_OTHER, LOCK_WAIT_MS, STALE_RECHECK_MS,
     CACHE_SCHEMA, MARGIN_MS, SKEW_TOLERANCE_MS,
 };

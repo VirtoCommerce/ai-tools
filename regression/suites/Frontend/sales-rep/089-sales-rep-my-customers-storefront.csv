@@ -20,7 +20,7 @@ ACME_BUYER is a regular B2B buyer with NO sales-rep:access permission.","front_u
 [DOM] ""Sales Rep hub"" section and ""My customers"" link are absent from the account left rail for ACME_BUYER {DOC}
 [STATE] no salesRepCustomers/salesRepOrders data rendered anywhere on the page {SPEC}","[NETWORK] no /graphql request for salesRepCustomers is issued for this session
 [CONSOLE] no console errors from the blocked navigation attempt","Page renders the My Customers table/columns for a non-rep; URL stays at /company/my-customers instead of redirecting; hub visible for ACME_BUYER","none (read-only)",VCST-5469; Audited: 2026-09-04 (TCA-2026-09-04); Source: vc-frontend/client-app/modules/sales-rep/routes.ts (guardSalesRep); Docs: StorefrontUserGuide §account/sales-rep-hub | Promoted: REG-2026-09-07-1342 (2026-09-07) | Behavior:sr.hub.non-rep-direct-url,Automated
-"SR-FE-003","Module Disabled: Hub and Route Absent Even for a Permissioned Account","Storefront > Sales Rep > Gating","High","BL-SR-011","","[PRE:CLEAR_SESSION]
+"SR-FE-003","Module Disabled: Hub and Route Absent Even for a Permissioned Account","Storefront > Sales Rep > Gating","High","BL-SR-011","","[EXCLUSIVE:store setting SalesRep.Enabled=false] [PRE:CLEAR_SESSION]
 Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STORE_ID}}, then signing in as an account that DOES hold sales-rep:access (e.g. SR_REP_PRIMARY). Disruptive to other concurrent testers on {{STORE_ID}} — run in an isolated window or accept as a one-off manual check, then restore SalesRep.Enabled=true immediately after.","front_url={{FRONT_URL}}","[ADMIN] set store setting SalesRep.Enabled = false on {{STORE_ID}}
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 [NAV] {{FRONT_URL}}/account

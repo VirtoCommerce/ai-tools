@@ -1,0 +1,257 @@
+{
+  "sprint": "Sprint26-23",
+  "startDate": "2026-11-16",
+  "endDate": "2026-11-30",
+  "doneCounts": {
+    "stories": 23,
+    "bugs": 19,
+    "tasks": 32,
+    "spikes": 2,
+    "total": 77
+  },
+  "testRelevantCount": 58,
+  "mergedFrontendPRs": 35,
+  "mergedModulePRs": 188,
+  "domains": [
+    {
+      "name": "Security — xAPI user/contact/org mutations (privilege escalation)",
+      "score": 25,
+      "level": "Critical"
+    },
+    {
+      "name": "Product Subscriptions — storefront (new)",
+      "score": 25,
+      "level": "Critical"
+    },
+    {
+      "name": "Authentication — OTP, MFA, passkeys",
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Storefront UI kit, Bridge soft look, a11y",
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Catalog, compare & search",
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Sales Rep hub",
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "Site Builder / Page Builder",
+      "score": 15,
+      "level": "High"
+    },
+    {
+      "name": "Orders, price protection & Punchout",
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Admin Shell / Admin SPA",
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Account dashboard",
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Platform / infra (no UI)",
+      "score": 2,
+      "level": "Low"
+    }
+  ],
+  "suitesActivated": [
+    "001",
+    "002",
+    "003",
+    "004",
+    "005",
+    "006",
+    "007",
+    "008",
+    "011",
+    "014",
+    "028",
+    "031",
+    "032",
+    "033",
+    "036",
+    "042",
+    "044",
+    "045",
+    "046",
+    "048c",
+    "070",
+    "071",
+    "089",
+    "091",
+    "093",
+    "093b",
+    "098",
+    "104",
+    "107",
+    "109",
+    "111",
+    "114b",
+    "116",
+    "120",
+    "124",
+    "017",
+    "017b",
+    "018",
+    "020",
+    "020b",
+    "026",
+    "027",
+    "027b",
+    "034",
+    "049",
+    "050a",
+    "050b1",
+    "050c",
+    "050d",
+    "050m",
+    "050m3",
+    "050p",
+    "050q",
+    "059",
+    "060",
+    "061",
+    "061b",
+    "066",
+    "078",
+    "095",
+    "101",
+    "105",
+    "108",
+    "110",
+    "110a",
+    "113",
+    "115",
+    "118",
+    "119",
+    "123",
+    "123b",
+    "123c",
+    "125"
+  ],
+  "newCasesEstimate": "103-145",
+  "exploratoryCharters": [
+    {
+      "id": "EXP-01",
+      "domain": "Site Builder / Page Builder",
+      "signals": [
+        "C1",
+        "C2"
+      ],
+      "mission": "Discover what breaks when the Site Builder storefront port, custom section types, \"Preview as\" and the MCP tools meet in one author session; no Frontend suite exists (GAP-24) and 123/123b see only the designer.",
+      "candidateScenarios": [
+        "A page with a custom section type is designed, published and viewed on the storefront in light and dark, then edited again (GAP-24, GAP-27)",
+        "\"Preview as\" a customer, then reload and open a second tab: who the storefront renders (GAP-23)",
+        "An agent creates a page through the MCP tools, the designer opens and publishes it, injected HTML in a text block is checked on preview and live (GAP-25, GAP-26)"
+      ],
+      "technique": "Soap Opera + Boundary-of-features",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-02",
+      "domain": "Admin Shell / Admin SPA",
+      "signals": [
+        "C1",
+        "C2"
+      ],
+      "mission": "Discover seams between the new Dashboard Editor, module-error notices, the profile blade and the admin flag guard, which nine tickets changed at once; the editor has no suite (GAP-34).",
+      "candidateScenarios": [
+        "A dashboard widget rule for everyone and one per role, a user layout saved on the server, then the same user on a second browser (GAP-34)",
+        "A module that failed to load: the notice in the shell and the Errors filter in the Angular list agree (GAP-35)",
+        "The profile blade after a regional format and time zone change, then dates in lists, then login on behalf as a non-admin (GAP-36)"
+      ],
+      "technique": "Feature-pair matrix + Boundary-of-features",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-03",
+      "domain": "Product Subscriptions - storefront",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover what breaks along one subscriber journey that eight tickets and one large PR changed: product page, cart line, account, order history and the emails; 124, 050p and 125 each assert one link.",
+      "candidateScenarios": [
+        "Subscribe on the product page, change the frequency on the cart line, turn it off, turn it on again, check the cart and the account list (GAP-08, GAP-11)",
+        "Pause then skip then cancel a delivery from the delivery settings menu at a short viewport and in a long locale (GAP-10, GAP-12)",
+        "Order placed with a subscription line: order history mark, the new emails and the how-it-works page in a second language (GAP-09, GAP-11, GAP-13)"
+      ],
+      "technique": "Soap Opera + Feature-pair matrix",
+      "lane": "playwright-firefox",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-04",
+      "domain": "Authentication - OTP, MFA, passkeys",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover seams between store authentication types, single-use OTP, MFA with an unconfirmed email and the Sign-in log filter; 104, 105, 111 and 114b each hold one method. OTP and MFA toggles are env-wide: run it when no wave is active and restore the settings.",
+      "candidateScenarios": [
+        "OTP offered by store setting, code used once then replayed, the Sign-in log shows both rows and its Type filter finds them (GAP-05, GAP-06, GAP-07)",
+        "Email changed on the account, confirmation reset, MFA required: where the sign-in code goes (GAP-04)",
+        "Passkey sign-in on an OTP store, then OTP on an MFA store, ending on the right page each time (GAP-06)"
+      ],
+      "technique": "State transitions + Boundary-of-features",
+      "lane": "playwright-edge",
+      "timeboxMin": 30
+    },
+    {
+      "id": "EXP-05",
+      "domain": "Catalog, compare & search",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover what breaks where the binder rewrite, the empty-mapping fix and the server-side compare list meet on the browse path; 050a, 004, 098 and 050q each assert one.",
+      "candidateScenarios": [
+        "Product types side by side (simple, variation, configurable) on listing, PDP and compare: same fields after the binder change (GAP-14)",
+        "A guest compare list, sign-in, organization switch, then the same list from a second browser (BL-CAT-014, BL-CAT-015)",
+        "Search, reindex and search again with facets and sort, watching for an empty result that should not be (GAP-15)"
+      ],
+      "technique": "Saboteur + Galumphing",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30
+    }
+  ],
+  "criticalTickets": [
+    "VCST-7006",
+    "VCST-6974",
+    "VCST-6970",
+    "VCST-6861",
+    "VCST-6862",
+    "VCST-6867",
+    "VCST-6909",
+    "VCST-6910",
+    "VCST-6913",
+    "VCST-6490",
+    "VCST-6498",
+    "VCST-5918",
+    "VCST-5640",
+    "VCST-6255",
+    "VCST-6256",
+    "VCST-6257",
+    "VCST-6670"
+  ],
+  "outOfScopeCount": 19,
+  "artifacts": "docs/Sprint plans/",
+  "release": "sprint-26-23"
+}

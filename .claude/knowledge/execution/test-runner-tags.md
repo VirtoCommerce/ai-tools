@@ -142,6 +142,10 @@ Read `test-data/users/agent-user-pool.csv`, match `server_name` = `{{BROWSER_SER
 
 **Why:** Sharing a user across parallel agents causes cart pollution, order history bleed, flaky auth.
 
+**Take a slot's logins from `npm run -s persona:login -- AGENT_POOL_SLOT_<n>` (and `….b2b_email`), never off the CSV.**
+Two owners running waves at the same time both have slots 1–3; under each wave's persona set the command returns that
+set's clone of the slot account, so the two never share one ([`../../skills/qa-run/release-folder.md`](../../skills/qa-run/release-folder.md) §7.1).
+
 **Fallback:** If pool CSV missing or `seeded: false`, use `.env` creds. Log: `"⚠ Agent user pool not available for {{BROWSER_SERVER}}, falling back to .env credentials"`.
 
 ## Common Failure Signals (monitor even when not listed)
@@ -151,6 +155,36 @@ Read `test-data/users/agent-user-pool.csv`, match `server_name` = `{{BROWSER_SER
 - HTTP 4xx/5xx on any primary API call
 - `console.error` with TypeError or ReferenceError
 - Redirect to `/error` or `/404`
+
+## Shared-cause brake — stop the suite instead of spending it
+
+Sprint 26-22, W2 run 1: the SalesRep storefront plugin did not start on the deployed theme, and all 68 Critical
+cases were run to FAIL/BLOCKED one after another on that one cause. Stopping after the third would have cost minutes.
+
+**Trip it when either holds:**
+
+1. **Site-wide failure, on any case:** a global error toast ("Part of the site could not be loaded" or another), a
+   plugin or remote entry that does not load, a `ChunkLoadError` / failed dynamic import, or a 5xx on the app's own
+   start-up requests (`InitializeApplication`, `me`, `store`).
+2. **Three non-PASS cases in a row with one signature:** the same error toast text, the same failing request
+   (method + path + status, or the same GraphQL error code), or the same element missing from the same component.
+
+**On a trip:** record the cases already run as you observed them; record every remaining case of this suite
+`BLOCKED` with `notes: "halted: shared cause — <signature>"`; add `errors[]`
+`{ "type": "halted", "signature": "<signature>", "cases": ["<the tripping ids>"] }`; write the results file and stop
+this suite. Start the next suite of the batch only if its first case does not show the same signature. No retry —
+the orchestrator stops the wave and asks the owner (`regression-orchestrator.md` §Shared-cause halt).
+
+## `[EXCLUSIVE:<what it changes>]` — a case that changes what every session reads
+
+In `Preconditions`, before any `[PRE:*]` tag: the case changes, or needs changed, state every other session on the
+stand reads — a store or platform setting, a shared price or stock, the pickup-location set, a shared fixture's
+membership. `<what>` names it (`[EXCLUSIVE:store setting Stores.EmailVerificationRequired=true]`). In a parallel
+wave the pre-flight records such a case `BLOCKED` with that reason and it is not run; it runs only in the release's
+exclusive wave, planned with `regression:plan --exclusive`, where nobody else is on the stand and its Cleanup
+restores what it changed. `npm run suites:review` flags likely candidates without the tag (`EXC-001`). A case that
+can create and delete its own data instead needs no tag ([`../../rules/test-data.md`](../../rules/test-data.md)
+§FIFTH RULE).
 
 ## Result Status Definitions
 

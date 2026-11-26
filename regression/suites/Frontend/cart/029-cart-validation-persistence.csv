@@ -81,7 +81,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on cart restore
 [API] addItem mutation response errors[] is empty",cart empty after re-login; items duplicated after merge; quantities wrong; subtotal mismatch,Remove added items from cart,Coverage Gap Analysis,Automated
-CART-020,Cart Persistence - Price Updates While Signed Out,Cart > Persistence,High,BL-CART-008,"ECL-7.3, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+CART-020,Cart Persistence - Price Updates While Signed Out,Cart > Persistence,High,BL-CART-008,"ECL-7.3, ECL-14.2, ECL-14.4","[EXCLUSIVE:price of a shared product] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore price in Cleanup. Allow 30-60s search index lag after price change. User has account, admin access available.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -144,7 +144,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} without signing in 
 [CONSOLE] no JS errors on sign-in and cart page
 [NETWORK] no 4xx/5xx during merge
 [API] addItem mutation response errors[] is empty",guest items silently dropped on login; account items overwritten by guest cart; duplicate line items created; subtotal wrong,Remove all items from cart,Coverage Gap Analysis; VCST-2976,Automated
-CART-023,Cart Validation - Out of Stock After Add,Cart > Validation,Critical,"BL-CART-001, BL-CART-002","ECL-7.3, ECL-14.1, ECL-14.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+CART-023,Cart Validation - Out of Stock After Add,Cart > Validation,Critical,"BL-CART-001, BL-CART-002","ECL-7.3, ECL-14.1, ECL-14.2","[EXCLUSIVE:stock of a shared product set to 0] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Sets product inventory to 0 on shared fixture. Run in isolated environment only; do not run during parallel regression. Restore inventory in Cleanup. Allow 30-60s search index lag after inventory change.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -168,7 +168,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",no indication of out-of-stock on cart page; checkout allowed with out-of-stock item; no option to remove,Restore inventory in admin; remove item from cart,Coverage Gap Analysis; VCST-3926,Manual
-CART-024,Cart Validation - Price Change After Add,Cart > Validation,High,"PROPOSED-BL-PRICE-009, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+CART-024,Cart Validation - Price Change After Add,Cart > Validation,High,"PROPOSED-BL-PRICE-009, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[EXCLUSIVE:price of a shared product] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore price in Cleanup. Allow 30-60s search index lag after price update.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -402,7 +402,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",coupon dropped on re-login; different discount amount after re-login; coupon not shown in summary,Remove coupon and items from cart,Coverage Gap Analysis,Manual
-CART-043,Price Change During Session - Admin Increases Price,Cart > Price Changes,Critical,PROPOSED-BL-PRICE-009,"ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+CART-043,Price Change During Session - Admin Increases Price,Cart > Price Changes,Critical,PROPOSED-BL-PRICE-009,"ECL-4.1, ECL-14.2, ECL-14.4","[EXCLUSIVE:price of a shared product] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag after price update.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -474,7 +474,7 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart (qty 1)
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",no out-of-stock indicator on cart; checkout allowed with out-of-stock item; no removal prompt; other items affected,Restore inventory in admin; remove item from cart,Coverage Gap Analysis; VCST-3926,Manual
-CART-046,Checkout Blocked by Out-of-Stock Item,Cart > Validation,Critical,BL-CART-001,"ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+CART-046,Checkout Blocked by Out-of-Stock Item,Cart > Validation,Critical,BL-CART-001,"ECL-7.3, ECL-14.1","[EXCLUSIVE:stock of a shared product] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Constructs the out-of-stock line via add-while-in-stock-then-admin-reduce-to-zero — the same sequence CART-023/CART-045 use — because a permanently-0-stock SKU's own PDP renders no add-to-cart control (only a stock-alert affordance), so it cannot be placed into a cart through real-user UI actions at all (confirmed live under REG-2026-09-07-1342: BLOCKED, TEST_STEPS_DEFECT — not a product defect). Run in isolated environment only; do not run during parallel regression. Restore inventory in Cleanup. Allow 30-60s search index lag after inventory change.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
@@ -717,7 +717,7 @@ low_stock_sku=@td(PROD_LOW_STOCK.sku)","[NAV] navigate to {{FRONT_URL}}/seed-tes
 [DOM] the cart line renders no stock-exceeded message — specifically the ""You can order maximum N item(s)"" text is ABSENT from the line item — for a quantity that was valid (== max stock) when saved {OBSERVED} (live-verified at qty=5: no such text anywhere on the page)","[API] getCart query response errors[] is empty after re-login
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx on cart restore",quantity is silently reduced below the max-stock value on restore; a spurious over-stock warning appears for a quantity that matches current available stock; quantity resets to 1,Remove item from cart,Coverage Gap Analysis; VCST-3926 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
-CART-097,Price Change During Session - Admin Sets Price to Zero Blocks or Flags the Line (Negative),Cart > Price Changes,High,"PROPOSED-BL-PRICE-009, BL-PRICE-008, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+CART-097,Price Change During Session - Admin Sets Price to Zero Blocks or Flags the Line (Negative),Cart > Price Changes,High,"PROPOSED-BL-PRICE-009, BL-PRICE-008, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[EXCLUSIVE:price of a shared product] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag after price update. Design Technique: Error Guessing (an invalid/degenerate $0.00 price during an active session).","url={{FRONT_URL}}/cart
 user={{ORG_USER_EMAIL}}
