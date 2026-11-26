@@ -1,19 +1,44 @@
 {
-  "runId": "REG-2026-11-26-0805-W0R",
+  "runId": "REG-2026-11-26-1000-RB",
   "status": "completed",
-  "startedAt": "2026-11-26T05:01:09.712Z",
+  "startedAt": "2026-11-26T05:42:09.938Z",
   "env": "vcst",
-  "ticket": "VCST-7026",
-  "selection": "042 --ids SMK-002,SMK-003,SMK-034 (sprint-26-23 W0 re-run: SMK-002/003 rewritten, SMK-034 after saving a Skyflow card)",
+  "ticket": "VCST-7027",
+  "selection": "033,044,028 --ids AUTH-043,SEC-AUTH-001,SEC-AUTH-003,SEC-AUTH-005,CART-001,CART-006,CART-007,CART-133,CART-134 (re-run of W1/W2 cases blocked by missing runner API access)",
   "suites": {
-    "042": {
+    "028": {
       "status": "done",
-      "browser": "playwright-chrome",
       "lane": "browser",
-      "pass": 3,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-26T05:45:37Z",
+      "pass": 5,
       "fail": 0,
-      "blocked": 0
+      "blocked": 0,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T06:49:58.274Z"
+    },
+    "044": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "startedAt": "2026-11-26T05:45:37Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 1,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T06:49:58.279Z"
+    },
+    "033": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-26T06:34:16Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 0,
+      "finishedAt": "2026-11-26T06:49:58.278Z"
     }
   },
-  "finishedAt": "2026-11-26T05:16:19.210Z"
+  "finishedAt": "2026-11-26T06:50:34.116Z"
 }
