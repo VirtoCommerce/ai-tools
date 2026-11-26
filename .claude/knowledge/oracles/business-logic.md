@@ -2769,6 +2769,89 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 
 ---
 
+## Domain 30: Site Builder (BL-SB)
+
+> **Site Builder is NEW: no published documentation page exists for it yet** (VirtoOZ and the Context7
+> docs hold Page Builder pages only). The sources below are the VCST-6963 acceptance criteria, the product
+> owner's decisions on that ticket (X10, X12, X20a) and the module's own contracts in the
+> vc-module-site-builder repository (custom sections, theme snapshot and history API, at 3.1003.0).
+>
+> What it is, in the module README's words: "Site Builder lets a merchandiser build the storefront's pages,
+> catalog templates and theme in a visual designer, next to a live preview of the real storefront." and "It
+> replaces Page Builder (vc-module-pagebuilder). The two cannot be installed together, and Site Builder uses
+> Page Builder's database as it is, so existing pages stay after the switch." (vc-module-site-builder
+> README.md). It is a beta; its APIs and theme formats may change before the first stable release. It is a
+> separate domain from Page Builder: nothing here is a Page Builder rule.
+>
+> Besides the designer, an AI agent works on the same pages, templates and theme through MCP tools that run
+> the same checks, and can define its own section types ("custom sections": a template, its CSS and a
+> settings schema, stored in the store's theme). The rules below cover that surface: what may reach the
+> theme, who may change a block type, what a shopper is protected from, and what an author is told.
+
+### BL-SB-001: The store's theme holds only what the builder made `[P0-security]`
+- **Rule:** Neither a manager nor an AI agent can put a foreign file into the store's theme, and so cannot push anything onto the storefront through it. Only the files the builder itself saves (page and catalog templates, the template rules, the header and footer groups, a custom block type, the brand, the two palettes and the theme settings), inside the store's own theme folder, can be written, discarded or restored; any other path is refused, and nothing is written, no version is recorded and no draft is left behind. Every route that takes a theme path is held to the same list: the designer's save and discard, the legacy save, discarding one file's draft, restoring a version, and the agent's restore.
+- **Verify:** As a store administrator on a store with history enabled: for each non-builder path in the theme folder (default/<name>.json, default/<dir>/<name>.json, default/sections/<name>.json, default/templates/Product.json (case), default/content/templates/product.json) call, in turn, designer/save, designer/discard, designer/theme-file read, the legacy api/site-builder/save, discard-draft, history restore and the agent's restore_version (dry run and real) → assert each answers 400 naming the path, and that no draft, no history version and no theme-status entry appeared. Control: each builder file kind (templates incl. a named one, a custom type, both groups, the 5 config files, brand, both palettes) is still accepted (200 / 204). A path without the theme folder answers the theme-folder message.
+- **Violation signal:** A non-builder path is accepted on any door (200, a draft in theme/status, a history commit), or is stored but invisible and undeletable; OR a builder file kind is refused. Known deviation, not a reason to fail the outcome: on the agent's doors a refusal of a non-builder path is worded wrong (VCST-7046 X57: restore_version asks for confirmation before refusing; X58: discard_draft says "has no unpublished changes" instead of naming the path as not a builder file).
+- **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
+- **Docs:** vc-module-site-builder docs/contracts/theme-snapshot.md §Theme files — the table lists the files a theme holds; "The status and a publication read no file the table does not list, so a save, a discard or a restore naming one is refused with 400 as well."
+- **Docs:** vc-module-site-builder docs/contracts/history-api.md — a restore naming "a theme file the builder does not save, or one outside the store's theme folder" answers 400; discard-draft's path "is checked as the designer's Discard checks it (400 outside the store's theme folder or for a file the builder does not save)"
+- **Source:** VCST-6963 round 2 finding F-2 (theme path outside the store's theme folder refused) and X22 (designer/save stored any JSON path inside the theme folder, invisible and undeletable) — both fixed on module PR #5 and re-verified in round 3 checklist B1–B4
+- **Source:** VCST-6963 round 3 checklist B1–B4, B6 on 3.1003.0-pr-5-01b3: 5 non-builder paths on every door answer 400 naming the path, each builder file kind is still accepted, un-prefixed paths answer the theme-folder message, a theme folder named "sections" accepts no stray file
+- **Trust:** DECLARED
+
+### BL-SB-002: A page with a block the storefront lacks can still be published, and the author is told `[P1-ux]`
+- **Rule:** A page that places a custom block type the store does not have (never created, or its file is gone), or has only as a draft, is never blocked from publishing: it goes live and the storefront shows nothing in place of those blocks. The author is always told plainly, wherever the page is created, edited, checked or published, that the block will not show; for a multilanguage page the warning names each language. The designer marks such a block in the section tree as "Not found" or "Not published" (product-owner decision X12).
+- **Verify:** As an author with the builder permissions, place (a) a type that does not exist and (b) a draft-only type on a page via create_page (landing, language_version with copy_content, multilanguage_page_copy; dry run and real), edit_page_draft, publish_page dry run (all_languages for a two-language page) and get_publish_readiness → assert the call is never refused and each answers the "does not hold … / holds only as a draft … can still be published, but the storefront shows nothing" warning, with the language named for language versions. Approve the page → assert it goes live and the storefront shows nothing in the block's place (no error, no blank page). Designer: the section tree marks (a) "Not found" and (b) "Not published", icon-only in the narrow panel, labelled in the wide one. Variant: a section whose type has an INVALID `custom-` name (`custom-Agent-Test`, `custom-agent-test-`) is warned exactly like a missing type.
+- **Violation signal:** A page placing such a block is refused or blocked from publishing; OR it is created, edited or published with no warning; OR a multilanguage warning carries no language; OR the designer shows no mark. Known violation: a section whose `custom-` type has an invalid name gets no warning on create_page, edit_page_draft, the publish_page dry run or readiness (`ready: true`), no designer badge, and the storefront shows nothing (VCST-7046 X48).
+- **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
+- **Docs:** vc-module-site-builder docs/contracts/custom-sections.md §Validation — "A page's save does not check that a type it places exists, and nothing refuses to publish such a page: it is published, and the storefront shows nothing in place of those sections. edit_page_draft warns … create_page … whatever its kind, naming the language of a language version, and get_publish_readiness and the dry run of publish_page … warn of a page that places one."
+- **Source:** VCST-6963 product-owner decision X12 (2026-11-26) — never block; say the section shows nothing; mark it in the designer
+- **Source:** VCST-6963 round 3 checklist A3 (create_page landing / language_version / multilanguage_page_copy, dry run and real: both warnings every time, language prefix), A5 (publish_page dry run all_languages), V1–V3 and round 2 B8 (badges). Open: round 3 X41 (get_publish_readiness for a multilanguage page repeats the pair per language with no language prefix) and X48
+- **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-7046 X48 — a page section whose custom- type has an invalid name gets no warning anywhere and no designer badge
+
+### BL-SB-003: Only someone allowed to change the site's design can change a block type `[P0-security]`
+- **Rule:** A person or agent who may edit pages but does not hold the right to change the site's design cannot create, change, discard or restore a custom block type. The tools are hidden from such an agent, or refuse it naming the missing right, and the web routes answer 403; the type and its draft stay untouched. Reading is still allowed.
+- **Verify:** Create a role with builder:read, builder:update and builder:create and without builder:theme, and a user in it. Agent: create_section_type and change_section_type are hidden; discard_draft and restore_version of a custom type are refused naming builder:theme (dry run and real). REST: designer/save, designer/discard, history restore, discard-draft and the legacy save of default/custom-sections/<type>.json answer 403; a read answers 200. Assert the type's draft is unchanged. Control: a user holding builder:theme may do each.
+- **Violation signal:** Any of create, change, discard or restore of a custom type succeeds for a user without builder:theme; OR a write route answers anything but 403 / refusal and the draft changed; OR a user holding builder:theme is refused.
+- **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
+- **Docs:** vc-module-site-builder docs/contracts/custom-sections.md §File — "Writing it takes builder:theme"; history-api.md — restore needs builder:templates for templates and the rules, and builder:theme for the other theme files; designer save and discard need the same per theme file
+- **Source:** VCST-6963 round 2 plan R31 / round 3 risk R31b (a role with builder:read/update/create and no builder:theme)
+- **Source:** VCST-6963 round 3 checklist B7 on 3.1003.0-pr-5-01b3: agent discard_draft / restore_version refused (dry and real) naming builder:theme; create / change_section_type hidden; REST save, discard, restore, discard-draft and legacy save 403, read 200; draft unchanged
+- **Trust:** DECLARED
+
+### BL-SB-004: A publication that drops a block type names the pages that lose it `[P1-data]`
+- **Rule:** When a theme publication would drop a block type that pages still place (its file is gone from the theme: the builder and the agent cannot delete a published type, an administrator can remove the file through Content), the publication is not blocked, but whoever approves it, and whoever checks readiness, is told which pages lose the type and that those pages will show nothing there (product-owner decision X20a). The readiness check still says the publication can go ahead, and gives the same warning as the publication's preview.
+- **Verify:** Publish a custom type T and place it on two pages. As an administrator delete T's live file through the Content API. As the author call get_publish_readiness {theme:true} and the publish_theme dry run → assert ready:true, the type reported published → removed, a section-type-removed warning naming both pages and saying they show nothing, the same text in both, and no "nothing to publish". Approve the publication → assert it is not blocked and the pages still render without the block.
+- **Violation signal:** The publication is blocked by the removal; OR it drops the type with no warning, or a warning that does not name the pages; OR readiness says there is nothing to publish; OR readiness and the dry run disagree.
+- **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
+- **Docs:** vc-module-site-builder docs/contracts/custom-sections.md §File — "A type whose file is gone, deleted in storage or by restoring an older theme, leaves the next publication, and the dry run of publish_theme, which its approver sees, and get_publish_readiness warn of it and name the pages that place it."
+- **Source:** VCST-6963 product-owner decision X20a (2026-11-26) — warn of a live type the publication removes, naming the pages; no delete tool
+- **Source:** VCST-6963 round 2 A7 and round 3 checklist A4 on 3.1003.0-pr-5-01b3: after the live type's file was deleted through Content, readiness answered ready:true, part published → removed, finding section-type-removed naming the pages; title word for word as the publish_theme dry run. Open (not a rule violation): round 3 X51 (advisory)
+- **Trust:** DECLARED
+
+### BL-SB-005: A block an agent builds is safe for the shopper `[P0-security]`
+- **Rule:** A block type an agent builds cannot run scripts, track visitors, cover the page or load resources from outside the store's asset library. A block that tries (a script or inline event handler, a form of fixed or overlay positioning, an unknown or tracking binding, a foreign image or url()) is refused, and the refusal names the file and the rule that was broken; nothing is dropped silently. What reaches a draft around that check is still neutralised when the preview or the storefront draws it, and a link that opens a new window cannot reach back to the page that opened it.
+- **Verify:** As an author with builder:theme, dry-run and save a custom type whose template or CSS holds, one at a time: a <script>, an on* attribute, an <iframe>, position: fixed, an unknown binding, an image or url() from a foreign host → assert each is refused with `custom-sections/<type>.json: …` naming the rule, and nothing is saved. Then write the same unsafe markup into a draft around the check (REST draft) → assert the designer preview and the storefront drop it (no script runs, no fixed overlay, no foreign request). A placed value from outside the library renders without its src. A link opening a new window carries rel noopener noreferrer, an existing rel keeps its tokens.
+- **Violation signal:** Unsafe content is saved or accepted by a dry run; OR is refused without naming the file and the rule; OR is dropped silently on save; OR runs, covers the page, tracks or loads a foreign origin in the preview or on the storefront.
+- **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
+- **Docs:** vc-module-site-builder docs/contracts/custom-sections.md §Validation — each refused type answers "custom-sections/{type}.json: …", naming the rule; "nothing is removed silently"; §Template: svg, script, style, template, iframe are refused; §CSS: other at-rules, element()/-moz-element(), foreign url() refused
+- **Source:** VCST-6963 AC-3 — a template or CSS with script, on* attribute, position: fixed, an unknown binding or a foreign url() is refused naming the file and the rule (risk R2); AC-6 — unsafe markup that reaches a draft is dropped by the preview and the storefront (risk R3)
+- **Source:** VCST-6963 round 1 B1, B2, A11 (AC-3 PASS), B3 (AC-6 PASS) and regression runs REG-2026-11-26-1707 / -1813 / -1832 (SB-108, SB-110, SBMCP-026)
+- **Trust:** DECLARED
+
+### BL-SB-006: Discarding a never-published block type deletes it for good, after a warning `[P1-data]`
+- **Rule:** Discarding a block type that was never published deletes it permanently: its draft is its only copy and it cannot be restored. The user is warned before it happens, in the words of the product owner's decision X10: by the agent's preview of the discard, which says so by the type's name and counts the pages that place it, and in the designer's Discard dialog, which lists such a type as never published, warns and turns the confirm button into a danger "Discard and delete". Discarding a published type's draft is not a deletion and keeps the ordinary confirm button.
+- **Verify:** Agent: create a type that was never published, then discard_draft dry run → assert the text says it is removed for good (never published, only copy, cannot be restored) naming the type and counting its pages; the real call (after the chat confirmation) deletes the file and a later read of the type answers not found. Designer: Discard all with the never-published type T and a published type with a draft in the list → T is listed as "(never published)"; with T ticked an alert names T and the confirm button is the danger "Discard and delete"; with only the published type ticked the confirm is the primary "Discard". After confirming, nothing requests T again and the console shows no new 404.
+- **Violation signal:** The never-published type is deleted with no named permanent-delete warning (agent dry run or designer); OR a published type's draft is treated as a deletion or loses its live file; OR the designer confirm is not the danger variant while such a type is ticked; OR the deleted type is read again afterwards.
+- **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
+- **Docs:** vc-module-site-builder docs/contracts/custom-sections.md §File — "Discarding the draft of a type that was never published removes the type for good: the draft is its only copy. The dry run of discard_draft says so by the type's name and counts the pages that place it."
+- **Source:** VCST-6963 product-owner decision X10 (2026-11-26) — an explicit permanent-delete text naming the type, in the agent's dry run and in the designer's Discard dialog
+- **Source:** VCST-6963 round 2 A6, B6, B7 and round 3 checklist B5 (danger "Discard and delete" only while a never-published type is ticked, no request or console 404 for the deleted type afterwards), V3 (button contrast 6.27:1 light, 5.76:1 dark); KB-7897ABB4
+- **Trust:** DECLARED
+
+---
+
 ## Invariant Coverage Summary
 
 Generated from `bl/*.yaml` by `npm run bl:render`. P0 rolls up `[P0-revenue]` + `[P0-security]`; P1 rolls up
@@ -2807,4 +2890,5 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **250** | **77** | **134** | **39** | **142** | **87** |
+| Site Builder | BL-SB-001–006 | 6 | 3 | 3 | 0 | 6 | 1 |
+| **Total** | | **256** | **80** | **137** | **39** | **148** | **88** |
