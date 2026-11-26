@@ -4,13 +4,13 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 390 · PASS 209 · FAIL 22 · BLOCKED 80** · ledger 110 rows
+**Executed 390 · PASS 218 · FAIL 22 · BLOCKED 71** · ledger 101 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 29 | 0 | 0 | 0 | 0 | REG-2026-11-26-0225-W0 REG-2026-11-26-0805-W0R |
 | W1 | Security & sign-in — session, RBAC, xAPI user and role mutations | Elena Kutasina | TRIAGED | 114 | 114 | 52 | 5 | 33 | 0 | 46 | REG-2026-11-26-0300-W1 REG-2026-11-26-1100-W1R REG-2026-11-26-1330-W1D |
-| W2 | Subscriptions, cart, checkout & orders | Elena Kutasina | TRIAGED | 242 | 242 | 128 | 17 | 47 | 0 | 64 | REG-2026-11-26-0357-W2 REG-2026-11-26-1000-RB |
+| W2 | Subscriptions, cart, checkout & orders | Elena Kutasina | RUN_DONE | 242 | 242 | 137 | 17 | 38 | 0 | 55 | REG-2026-11-26-0357-W2 REG-2026-11-26-1000-RB REG-2026-11-26-1540-W2S |
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Company, members & lists | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -24,7 +24,7 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 | REAL_BUG | 1 |
 | BY_DESIGN | 2 |
 | TEST_DEFECT | 13 |
-| DATA | 32 |
+| DATA | 23 |
 | ENV_CONFIG | 22 |
 | NOT_TESTABLE | 26 |
 | DUPLICATE | 8 |
