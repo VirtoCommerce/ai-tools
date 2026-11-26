@@ -510,7 +510,7 @@ test('the Stop hook keys reach on the QUEUE’s session id, never on the payload
   // Its own cadence is paced by the ATTEMPT, marked before the token is looked for (reviews 3, 4)…
   assert.match(src, /const due = keyed && ownReachDue\(dir, session, \{ state: advanced \}\);\s*if \(due\) markTried\(dir, session\);/);
   // …and never spawns a push that has no token to push with (review 2).
-  assert.match(src, /const mine = due && \(Boolean\(writeToken\(env\)\.token\) \|\| viaSecrets\)/);
+  assert.match(src, /const mine = due && \(Boolean\(writeToken\(env\)\.token\) \|\| Boolean\(via\)\)/);
 });
 
 test('a session sends its own counters at once, then only when they grew and the interval passed (VCST-6091)', () => {

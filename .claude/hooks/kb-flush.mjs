@@ -37,7 +37,8 @@ import {
   accessBlock, accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
-import { vcSecretsDeclares, writeToken } from '../../scripts/kb/core/token.mjs';
+import { writeToken } from '../../scripts/kb/core/token.mjs';
+import { viaSecrets } from '../../scripts/kb/core/via-secrets.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -158,8 +159,10 @@ function main() {
   if (due) markTried(dir, session);
   // VIA vc-secrets: the hook holds no token, but a declared `kb-push` task launches the push with one
   // (plugins/vc-secrets/README.md §Tasks). The token in the environment, if any, still goes first.
-  const viaSecrets = !writeToken(env).token && Boolean(env.VC_SECRETS) && vcSecretsDeclares('tasks', 'kb-push', env);
-  const mine = due && (Boolean(writeToken(env).token) || viaSecrets);
+  // A launcher that refuses (untrusted, secret not set) pushes nothing and keeps the queue, which is
+  // what no token did before; the refusal is in push.log, and the attempt is paced like any other.
+  const via = viaSecrets('tasks', 'kb-push', env);
+  const mine = due && (Boolean(writeToken(env).token) || Boolean(via));
   if (!queueHasWork(dir) && !stale && !mine) return;
   // Only log lines from today, or counters alone: they wait for a change or for tomorrow (VCST-6378).
   if (!pushWouldGo(dir, env, session, staleStates)) return;
@@ -189,7 +192,7 @@ function main() {
 
   // The `kb-push` task is declared as exactly this command (`node scripts/kb/kb.mjs push --auto`);
   // the launcher adds the token and the child inherits `env`, session key included.
-  const argv = viaSecrets ? [env.VC_SECRETS, 'task', 'kb-push'] : [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'];
+  const argv = via ? [via.shim, 'task', 'kb-push'] : [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'];
   const child = spawn(process.execPath, argv, {
     cwd: root,
     detached: true,

@@ -31,20 +31,10 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { repoRoot, vcSecretsDeclares } from './core/token.mjs';
+import { repoRoot } from './core/token.mjs';
 
 /** Relative, secret-free, identical on every machine — which is why it can be a constant here. */
 export const KB_SERVER = Object.freeze({ command: 'node', args: ['scripts/kb/mcp.mjs'] });
-
-/**
- * The same server launched by vc-secrets, which puts `KB_GITHUB_TOKEN` into its environment, so
- * the server's own pushes can write with no token in any file. `${VC_SECRETS}` is expanded by Claude
- * Code, as for the `github` entry `/project-init` writes. Chosen only when a declaration names a `kb`
- * server: without one, `run kb` would refuse and the server would not start at all.
- */
-export const KB_SERVER_VIA_SECRETS = Object.freeze({ command: 'node', args: ['${VC_SECRETS}', 'run', 'kb'] });
-
-export const kbServer = (env = process.env) => (vcSecretsDeclares('servers', 'kb', env) ? KB_SERVER_VIA_SECRETS : KB_SERVER);
 
 export function merge(existingText, server = KB_SERVER) {
   let doc = {};
@@ -128,7 +118,7 @@ export function uninstall({ env = process.env, write = atomicWrite, read = readF
 export function install({ env = process.env, write = atomicWrite, read = readFileSync, exists = existsSync } = {}) {
   const path = join(repoRoot(env), '.mcp.json');
   const current = exists(path) ? read(path, 'utf8') : '';
-  const r = merge(current, kbServer(env));
+  const r = merge(current);
   if (r.state === 'invalid') return { ...r, path };
   if (r.state !== 'already') write(path, r.text, 'utf8');
   return { ...r, path, created: !current };

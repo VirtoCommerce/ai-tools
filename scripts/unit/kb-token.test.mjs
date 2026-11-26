@@ -39,6 +39,8 @@ test('no other env layer is a token source', () => {
 test('KB_GITHUB_TOKEN wins, so the base can use a least-privilege token of its own', () => {
   withRoot({ '.env.local': 'GITHUB_TOKEN=shared\nKB_GITHUB_TOKEN=scoped\n' }, (env) => {
     assert.deepEqual(writeToken(env), { token: 'scoped', from: '.env.local:KB_GITHUB_TOKEN' });
+    // …also across sources: a shell's shared GITHUB_TOKEN must not override the base's own token.
+    assert.deepEqual(writeToken({ ...env, GITHUB_TOKEN: 'shell' }), { token: 'scoped', from: '.env.local:KB_GITHUB_TOKEN' });
   });
 });
 

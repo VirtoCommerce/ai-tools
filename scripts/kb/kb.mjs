@@ -24,7 +24,8 @@ import { accessBlock, accessWhy, liveRateHold, pushConfirmRequired, queueDir } f
 /** Minutes after which a still-queued line means the queue is not draining (`stat`, VCST-6378). */
 const STALE_QUEUE_MIN = 6 * 60;
 import { resolveWho } from './core/who.mjs';
-import { vcSecretsDeclares, writeToken } from './core/token.mjs';
+import { writeToken } from './core/token.mjs';
+import { viaSecrets } from './core/via-secrets.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
@@ -170,7 +171,7 @@ async function main(argv) {
     // The one place an operator can ask "what will my lines say about me?" before writing any.
     out(`who       ${r.who ?? 'none — no write token, or the lookup has not succeeded here'}`);
     // A token kept in vc-secrets reaches only the processes vc-secrets launches, never this shell.
-    if (!writeToken().token && vcSecretsDeclares('tasks', 'kb-push')) out('token     in vc-secrets (task kb-push) — not visible to this shell; the Stop hook pushes through it');
+    { const via = viaSecrets('tasks', 'kb-push'); if (via) out(`token     in vc-secrets — not visible to this shell; the Stop hook pushes through it, by hand: node "${via.shim}" task kb-push`); }
     out(`queue     ${r.queue}  (${r.queueDepth} line(s), ${r.pending} pending change(s)`
       + `${r.malformedQueueLines ? `, ${r.malformedQueueLines} malformed` : ''})`);
     if (r.backlog?.lines) {

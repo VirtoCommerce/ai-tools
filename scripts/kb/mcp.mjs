@@ -23,8 +23,8 @@
 // STDOUT IS THE JSON-RPC CHANNEL. Nothing but a frame may ever be written to it. That is why this
 // file does NOT import `config.js` (it writes `[config] TEST_ENV=…` to stdout at import and can
 // `process.exit(1)` over unrelated variables — session 3, finding 1) and why every diagnostic here
-// goes to stderr. The token comes from `core/token.mjs`, which reproduces `config.js`'s layer
-// precedence with no stdout, no exit and no dependence on the working directory.
+// goes to stderr. The token comes from `core/token.mjs` (environment, then `.env.local`) with no stdout,
+// no exit and no dependence on the working directory — or from vc-secrets, through `core/via-secrets.mjs`.
 //
 // ── WHAT HAPPENS WHEN STDIN CLOSES ───────────────────────────────────────────────────────────
 //
@@ -55,6 +55,7 @@ import { askLines, captureLines, evidenceLines, noneLines, showLines } from './c
 import { accessBlock, accessWhy, queueDir } from './core/queue.mjs';
 import { CONDITIONS_SOURCE, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
+import { relayThroughSecrets, viaSecrets } from './core/via-secrets.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { liveBuild } from './core/build.mjs';
 import { resolveWho } from './core/who.mjs';
@@ -644,5 +645,11 @@ export function runStdio({ env = process.env, input = process.stdin, output = pr
   return { server, close, dispatch };
 }
 
-// `node scripts/kb/mcp.mjs` starts the server; importing this file starts nothing.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) runStdio();
+// `node scripts/kb/mcp.mjs` starts the server; importing this file starts nothing. With no token of its
+// own and a `kb` server declared in vc-secrets, it relaunches itself through the launcher for the token,
+// and serves here, read-only, if the launcher refuses (core/via-secrets.mjs says why).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const via = viaSecrets('servers', 'kb');
+  if (via) relayThroughSecrets({ ...via, fallback: (input) => runStdio({ input }) });
+  else runStdio();
+}

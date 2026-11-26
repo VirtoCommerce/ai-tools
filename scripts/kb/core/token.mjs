@@ -46,26 +46,28 @@ const TOKEN_NAMES = ['KB_GITHUB_TOKEN', 'GITHUB_TOKEN'];
 const clean = (v) => (v && String(v).trim() ? String(v).trim() : null);
 
 /**
- * The token the push uses. TWO sources, in this order:
+ * The token the push uses. TWO sources — the process environment (where vc-secrets puts it:
+ * `vc-secrets run kb`, `... task kb-push`, plugins/vc-secrets/README.md; and where CI passes one),
+ * then `.env.local`, the fallback for a machine without vc-secrets.
  *
- *   1. the process environment — where vc-secrets puts it (`node $VC_SECRETS run kb`, `... task kb-push`,
- *      plugins/vc-secrets/README.md), and where CI passes one;
- *   2. `.env.local` — the fallback for a machine without vc-secrets.
+ * THE NAME DECIDES FIRST, THEN THE SOURCE: `KB_GITHUB_TOKEN` from either source beats `GITHUB_TOKEN`
+ * from either. Source-first would let a shell's shared `GITHUB_TOKEN` (every `gh` user has one, so
+ * does CI) silently override a token kept for the base in `.env.local` — and push with a token that
+ * may have no write on `vc-knowledge`. Within one name the environment wins, so a token moved into
+ * vc-secrets is used even while an old copy is still in `.env.local`.
  *
- * The environment wins, so a token moved into vc-secrets is the one used even while an old copy is
- * still in `.env.local`. No other `.env.*` layer is read: a token belongs in neither the committed
- * per-env files nor the legacy `.env`. ABSENT IS NOT AN ERROR (PLAN §6.4): reading works without
- * it, the queue is durable, and the first later session with a token pushes what this one queued.
+ * No other `.env.*` layer is read: a token belongs in neither the committed per-env files nor the
+ * legacy `.env`. ABSENT IS NOT AN ERROR (PLAN §6.4): reading works without it, the queue is durable,
+ * and the first later session with a token pushes what this one queued.
  */
 export function writeToken(env = process.env) {
+  let local = null;
   for (const name of TOKEN_NAMES) {
     const v = clean(env[name]);
     if (v) return { token: v, from: `env:${name}` };
-  }
-  const local = readMap(join(repoRoot(env), '.env.local'));
-  for (const name of TOKEN_NAMES) {
-    const v = clean(local.get(name));
-    if (v) return { token: v, from: `.env.local:${name}` };
+    local ??= readMap(join(repoRoot(env), '.env.local'));
+    const f = clean(local.get(name));
+    if (f) return { token: f, from: `.env.local:${name}` };
   }
   return { token: null, from: null };
 }
