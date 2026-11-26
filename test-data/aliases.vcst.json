@@ -2952,7 +2952,13 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": true,
+    "configurationId": "vcst-punchout-0",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_1": {
     "storeId": "QA-STORE",
@@ -2965,7 +2971,13 @@
     "sessionLifetime": "00:10:00",
     "tokenLifetimeMinutes": 2,
     "sessionLifetimeMinutes": 10,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": true,
+    "configurationId": "vcst-punchout-1",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_2": {
     "storeId": "AGENT-TEST-no-such-store",
@@ -2978,7 +2990,13 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": true,
+    "configurationId": "vcst-punchout-2",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_3": {
     "storeId": "",
@@ -2987,11 +3005,19 @@
     "senderDomainCheck": false,
     "allowedReturnUrl": "",
     "returnUrlCheck": false,
-    "tokenLifetime": "00:15:00",
-    "sessionLifetime": "04:00:00",
-    "tokenLifetimeMinutes": 15,
-    "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": null,
+    "sessionLifetimeMinutes": null,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": false,
+    "retired": true,
+    "retiredReason": "not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The \"no StoreId\" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.",
+    "configurationId": "",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_MAPPING_MULTI_ORG": {
     "persona_email_var": "MULTI_ORG_USER_EMAIL",
@@ -3000,7 +3026,7 @@
     "id": "1726b489-fdd9-4619-9eca-9fc1ac9e356f",
     "userId": "0cc0a829-d7fe-448c-b98c-a621e34ba788",
     "memberId": "54729f13-9fd0-47d2-af72-1a04a41175ed",
-    "currentOrganizationId": "organization-acme-store",
+    "currentOrganizationId": "organization-double-quotes",
     "otherOrganizationId": "organization-redwood-provisions",
     "organizationCount": 12
   },
@@ -4073,5 +4099,108 @@
     "primary_contact_id": "5d7595cf-92d2-45b4-a402-c3e59908a823",
     "contact_V12C": "5d7595cf-92d2-45b4-a402-c3e59908a823",
     "default_href": ""
+  },
+  "PUNCHOUT_CONFIG_DEFAULTS": {
+    "deployed": true,
+    "configurationId": "vcst-punchout-defaults",
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "NetworkId",
+    "senderDomainCheck": true,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "defaultShipmentMethodCode": "FixedRate",
+    "defaultPaymentMethodCode": "DefaultManualPaymentMethod",
+    "defaultMethodsDeclared": true,
+    "defaultMethodsActive": true,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)"
+  },
+  "PUNCHOUT_CONFIG_BADCODES": {
+    "deployed": false,
+    "retired": false,
+    "retiredReason": "",
+    "configurationId": "",
+    "storeId": "",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": null,
+    "sessionLifetimeMinutes": null,
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null,
+    "notDeployedReason": "PUNCHOUT_CONFIG_BADCODES is not deployed on this env",
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)"
+  },
+  "PUNCHOUT_MAPPING_REQUISITION": {
+    "id": "b2d0a7eb-6e1e-4af1-862f-c690d1a723e6",
+    "userId": "f0de3d5f-1178-4298-aff3-a1dda8b9ad01",
+    "memberId": "6165c0e8-4bdc-415b-931e-fd1102e6ebef",
+    "currentOrganizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173",
+    "otherOrganizationId": "",
+    "organizationCount": 1,
+    "organizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173"
+  },
+  "PUNCHOUT_MAPPING_SECOND": {
+    "id": "a2da3169-3080-498c-a994-b54a1309a505",
+    "userId": "f5c2a34c-4fd8-423e-aae0-a6ea4dd3cdd2",
+    "memberId": "eaab266f-14a3-4be7-a82e-4ea7c4df0cd0",
+    "currentOrganizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173",
+    "otherOrganizationId": "",
+    "organizationCount": 1,
+    "organizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173"
+  },
+  "PUNCHOUT_PRODUCT_UOM": {
+    "id": "18f882c2-b505-4cbf-974a-1f34935843cd",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "categoryId": "6953a9a2-32fb-45fa-8271-680d9c74b36e",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3"
+  },
+  "PUNCHOUT_PRODUCT_PLAIN": {
+    "id": "7c3ef222-cfe7-4637-9fc5-3091825f7cb5",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "categoryId": "6953a9a2-32fb-45fa-8271-680d9c74b36e",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3"
+  },
+  "PUNCHOUT_PRICELIST_USD": {
+    "id": "a40a36a1-6fd4-4a39-a2ba-f82dc3587e37",
+    "currency": "USD",
+    "storeIds": "B2B-store,QA-STORE",
+    "assignmentIds": "2828390a-1743-43c8-9da7-35c17b4b1892,52bd7183-f745-41cd-8158-b211af2f63c0"
+  },
+  "PUNCHOUT_PRICELIST_EUR": {
+    "id": "2bf08b24-41e8-4cbf-9924-2032d887ab34",
+    "currency": "EUR",
+    "storeIds": "B2B-store",
+    "assignmentIds": "fadfba4f-78a5-4ae6-abf5-72813e465205"
+  },
+  "PUNCHOUT_STORE_FFC_CONFIG_1": {
+    "storeId": "QA-STORE",
+    "sourceStoreId": "B2B-store",
+    "field": "mainFulfillmentCenterId",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3",
+    "assignedFfcId": "",
+    "previousValue": "",
+    "owned": false
+  },
+  "PUNCHOUT_MAPPING_DEFAULT": {
+    "persona_email_var": "ORG_USER_EMAIL",
+    "persona_email": "{{ORG_USER_EMAIL}}",
+    "persona_password": "{{ORG_USER_PASSWORD}}",
+    "id": "0f96be82-451b-49e6-839c-c3382ab76558",
+    "userId": "852c8fcc-9b29-45c3-8328-021a01537659",
+    "memberId": "aaf0bee1-e3dd-4501-874a-3b77cb7f78b2",
+    "currentOrganizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+    "otherOrganizationId": "",
+    "organizationCount": 1
   }
 }
