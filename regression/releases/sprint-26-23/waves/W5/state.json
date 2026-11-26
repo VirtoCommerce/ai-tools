@@ -1,8 +1,20 @@
 {
   "wave": "W5",
   "owner": "Elena Kutasina",
-  "status": "RUNNING",
-  "runIds": [],
+  "status": "RUN_DONE",
+  "runIds": [
+    "REG-2026-11-26-0955-W5"
+  ],
   "updatedAt": "2026-11-26",
-  "personas": "none — original shared accounts (persona:use --clear)"
+  "personas": "none — original shared accounts (persona:use --clear)",
+  "totals": {
+    "planned": 189,
+    "executed": 189,
+    "pass": 134,
+    "fail": 10,
+    "blocked": 25,
+    "skipped": 20,
+    "ambiguous": 0
+  },
+  "untriaged": 35
 }

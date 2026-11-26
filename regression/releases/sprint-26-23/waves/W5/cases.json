@@ -1,0 +1,765 @@
+{
+ "suites": {
+  "006": 72,
+  "007": 77,
+  "008": 40
+ },
+ "cases": {
+  "006|B2C-ORG-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-005": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-007": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-008": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-009": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-010": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-011": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-012": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-013": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-014": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-015": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-016": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-017": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-018": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-019": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-020": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-021": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-022": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-023": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-024": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-025": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-026": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-027": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-028": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-029": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-030": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-031": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-032": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-033": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-034": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-035": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-036": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-037": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-038": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-039": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-040": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-041": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-042": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-043": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-044": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-045": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-046": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-047": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-048": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-049": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-050": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-051": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-052": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-053": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-054": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-056": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-059": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-062": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-063": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-064": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-065": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-066": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-067": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-068": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-069": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-070": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-071": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-072": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-073": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-074": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-076": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-077": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "006|B2C-ORG-078": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-001": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-004": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-005": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-006": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-007": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-008": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-009": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-010": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-011": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-012": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-013": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-014": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-015": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-016": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-017": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-018": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-019": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-020": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-021": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-022": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-023": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-024": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-025": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-026": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-032": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-033": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-034": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-035": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-036": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-037": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-038": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-039": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-040": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-041": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-042": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-043": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-044": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-045": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-046": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-047": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-048": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-049": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-050": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-051": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-052": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-053": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-054": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-055": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-058": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-059": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-060": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-061": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-056": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-057": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-062": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-063": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-064": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-065": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-066": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-067": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-068": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-069": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-070": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-071": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-072": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-073": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-074": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-075": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-076": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-077": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-078": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-079": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-080": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-081": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "007|B2C-LIST-082": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-001": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-002": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-003": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-004": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-005": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-006": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-007": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-008": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-009": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-010": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-011": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-012": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-013": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-014": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-015": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-016": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-017": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-018": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-019": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-020": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-021": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-022": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-023": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-024": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-025": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-026": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-027": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-028": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-029": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-031": {
+   "status": "FAIL",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-032": {
+   "status": "SKIPPED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-033": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-034": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-035": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-036": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-037": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-038": {
+   "status": "BLOCKED",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-039": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-040": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  },
+  "008|B2C-MBR-041": {
+   "status": "PASS",
+   "run": "REG-2026-11-26-0955-W5"
+  }
+ }
+}
