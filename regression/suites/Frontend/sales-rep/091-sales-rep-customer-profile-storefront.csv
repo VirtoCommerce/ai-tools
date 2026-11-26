@@ -272,7 +272,7 @@ STATE NOTE (2026-08-04): the customerProfile layout currently saved for the sign
 [ACT] click the x on the 'Customer activity' widget
 [WAIT] all three hidden","[DOM] after hiding only 'Quick actions' and 'Customer information', the rail STILL renders (it holds the visible 'Customer activity' block) {OBSERVED}
 [DOM] with all three mainRight blocks hidden, no aside/rail column renders at all on the page {OBSERVED}
-[DOM] the mainLeft column ('My recent orders', 'Top sellers') now spans the full width previously shared with the rail {OBSERVED}
+[DOM] the mainLeft column (every mainLeft block: 'My recent orders', 'Top sellers' and, on a vc-module-sales-rep#38 build, 'Sales statistics') now spans the full width previously shared with the rail {OBSERVED}
 [DOM] a 'Hidden widgets' tray lists 'Quick actions', 'Customer information' and 'Customer activity' {OBSERVED}","none (draft-local, pre-save)","an empty rail column remains visible, holding its desktop width, after all three blocks are hidden; the rail unmounts while a visible block is still in it; mainLeft does not expand to fill the freed space","[ACT] click 'Cancel' -- draft discarded, nothing persisted","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.rail-mount | VCST-5337 r2 2026-10-20: mainRight now holds a third block, Customer activity (VCST-5337), so hiding the two named blocks leaves the rail mounted; case extended to hide all three (REG-2026-10-19-1950: intent verified, hiding all three unmounts the rail) · Synced: qa-test-lifecycle suite 091 (2026-11-03) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile)",Reviewed
 SR-CP-037,Hiding Only ONE mainRight Block Keeps the Rail Mounted,Storefront > Sales Rep > Customer Profile > Saved Layout > mainRight,Medium,BL-SR-032,,"state from SR-CP-036 (rep signed in, profile in edit mode, both mainRight blocks currently hidden).",front_url={{FRONT_URL}},"[ACT] click the 'Quick actions' pill in the hidden widgets tray to restore it (leave 'Customer information' hidden)
 [WAIT] 'Quick actions' restored, 'Customer information' still hidden","[DOM] the rail (aside element) is now mounted, showing only 'Quick actions' {OBSERVED}
@@ -379,7 +379,7 @@ STATE NOTE (2026-08-04): the customerProfile layout currently saved for the sign
 SR-CP-047,"Failed Layout Read on Customer Profile Still Renders All Three Regions' Defaults, With an Alert and Edit Disabled",Storefront > Sales Rep > Customer Profile > Saved Layout > Failure Handling,Critical,PROPOSED-BL-SR-LAYOUT-003,ECL-10.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 MANUAL (EX-200), decided 2026-11-03 after REG-2026-11-03-1732 left it BLOCKED. The case needs ONE request to fail while the rest of the page works -- the layout GraphQL request -- and nothing a real-user lane can reach does that: the Playwright lanes (the only ones that authenticate) offer no request interception and refuse browser_evaluate / browser_run_code_unsafe for it; Chrome DevTools can intercept but cannot authenticate (B-09 in docs/repo-findings-backlog.md); an 'Offline' emulation fails every request, which is a different scenario; and the layout API is live on vcst, so a plain load returns null for a never-saved rep -- the NON-failing path. A person runs it in a browser's DevTools: sign in as SR_REP_PRIMARY, open the Network panel, block only the layout read, the GetLayout operation, which the plugin posts to the host /graphql like every other operation, not to /graphql/sales-rep {OBSERVED}, then open the profile. The reachable half of this behaviour -- the registry defaults rendering in one piece -- is walked by the Reset case SR-CP-049; the failure branch (alert + Edit disabled) is only reachable here.
-Customer-profile-specific because it has a THIRD region, mainRight, whose registry defaults ('actions' and 'info' visible, neither defaultHidden, plus 'customer_activity' (title 'Customer activity', mainRight order 30) on a build that registers it -- vc-module-sales-rep registers it only while vc-module-google-ecommerce-analytics is installed and enabled, layout/customer-activity-block.ts) must ALSO render despite the read failure -- a dashboard-only check (SR-HD-035) cannot exercise this. 'Available coupons' (`coupons`, mainLeft, order 30) is part of the mainLeft defaults only on a build that registers it (vc-module-sales-rep#30, open at the time of writing, with the Marketing module); the released registry has two mainLeft blocks (orders order 10, top_sellers order 20). COUPONS_REGISTERED, recorded first while the request is still unblocked for this never-saved rep (so the rendered widgets are the registry defaults), selects the expected mainLeft shape, and ACTIVITY_REGISTERED the mainRight shape. The case is never BLOCKED for the absence of either block: every combination is a valid build.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+Customer-profile-specific because it has a THIRD region, mainRight, whose registry defaults ('actions' and 'info' visible, neither defaultHidden, plus 'customer_activity' (title 'Customer activity', mainRight order 30) on a build that registers it -- vc-module-sales-rep registers it only while vc-module-google-ecommerce-analytics is installed and enabled, layout/customer-activity-block.ts) must ALSO render despite the read failure -- a dashboard-only check (SR-HD-035) cannot exercise this. 'Available coupons' (`coupons`, mainLeft, order 30) is part of the mainLeft defaults only on a build that registers it (vc-module-sales-rep#30, open at the time of writing, with the Marketing module); with vc-module-sales-rep#38 (SalesRep 3.1026.0-pr-38-5280 or later, not deployed when this was rewritten) the customer-profile registry also holds `sales` ('Sales statistics', mainLeft, order 5), so it comes FIRST in mainLeft; the pre-#38 registry has two mainLeft blocks (orders order 10, top_sellers order 20). COUPONS_REGISTERED, recorded first while the request is still unblocked for this never-saved rep (so the rendered widgets are the registry defaults), selects the expected mainLeft shape, and ACTIVITY_REGISTERED the mainRight shape. The case is never BLOCKED for the absence of either block: every combination is a valid build.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
 [ACT] click the @td(ORG_ACME.name) row to open its profile
 [WAIT] profile page rendered with the layout request still unblocked
 [KEY] record whether the 'Available coupons' widget is rendered on the profile (COUPONS_REGISTERED)
@@ -391,10 +391,10 @@ Customer-profile-specific because it has a THIRD region, mainRight, whose regist
 [COUNT] the stats row renders 5 stat cards despite the failed layout read {SPEC}
 [DOM] ACTIVITY_REGISTERED is true: the mainRight rail renders 'Quick actions', 'Customer information' and 'Customer activity' (order 30) {OBSERVED}
 [DOM] ACTIVITY_REGISTERED is false: the mainRight rail renders 'Quick actions' and 'Customer information' only, and no 'Customer activity' {SPEC}
-[DOM] COUPONS_REGISTERED is true: mainLeft renders 'My recent orders' (order 10), 'Top sellers' (order 20) and 'Available coupons' (order 30) {OBSERVED}
-[DOM] COUPONS_REGISTERED is false: mainLeft renders 'My recent orders' (order 10) and 'Top sellers' (order 20) only, and no 'Available coupons' {SPEC}
+[DOM] COUPONS_REGISTERED is true: mainLeft renders 'Sales statistics' (order 5) first, then 'My recent orders' (order 10), 'Top sellers' (order 20) and 'Available coupons' (order 30) {SPEC}
+[DOM] COUPONS_REGISTERED is false: mainLeft renders 'Sales statistics' (order 5) first, then 'My recent orders' (order 10) and 'Top sellers' (order 20) only, and no 'Available coupons' {SPEC}
 [DOM] no 'Edit layout' button is rendered/enabled {SPEC}","[NETWORK] the layout request shows as a GraphQL error / non-2xx
-[CONSOLE] a logged error accompanies it, no toast","the mainRight rail is blank/absent despite its blocks having no defaultHidden; COUPONS_REGISTERED is true but 'Available coupons' is missing from the defaults, or false yet it renders; 'Edit layout' remains clickable; the page crashes instead of degrading gracefully; a `null` (never-saved) result is wrongly treated as a failure (must NOT disable Edit -- see SR-CP-015)",[SETUP] (manual) remove the DevTools request block,"VCST-5367, PR vc-frontend#2400; requires deliberately-induced failure as of 2026-08-04 (layout API now live on vcptcore-qa); Re-based 2026-11-03 (REG-2026-11-03-1732): mainLeft defaults are now My recent orders (10) + Top sellers (20) + Available coupons (30); marked Manual because the forced failure is unreachable on the real-user lanes | Behavior:sr.layout.never-saved-defaults · Synced: qa-test-lifecycle suite 091 (2026-11-03) · verified live vcst 2026-11-03 (opening block, COUPONS_REGISTERED true branch) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile)",Manual
+[CONSOLE] a logged error accompanies it, no toast","the mainRight rail is blank/absent despite its blocks having no defaultHidden; COUPONS_REGISTERED is true but 'Available coupons' is missing from the defaults, or false yet it renders; 'Sales statistics' is missing from mainLeft or is not its first block; 'Edit layout' remains clickable; the page crashes instead of degrading gracefully; a `null` (never-saved) result is wrongly treated as a failure (must NOT disable Edit -- see SR-CP-015)",[SETUP] (manual) remove the DevTools request block,"VCST-5367, PR vc-frontend#2400; requires deliberately-induced failure as of 2026-08-04 (layout API now live on vcptcore-qa); Re-based 2026-11-03 (REG-2026-11-03-1732): mainLeft defaults are now My recent orders (10) + Top sellers (20) + Available coupons (30); marked Manual because the forced failure is unreachable on the real-user lanes | Behavior:sr.layout.never-saved-defaults · Synced: qa-test-lifecycle suite 091 (2026-11-03) · verified live vcst 2026-11-03 (opening block, COUPONS_REGISTERED true branch) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile) | Synced: VCST-6257 vc-module-sales-rep#38 (2026-11-23): mainLeft defaults now start with Sales statistics (sales, order 5); statuses untouched",Manual
 SR-CP-048,Failed Save on Customer Profile Preserves the Draft Across ALL Three Regions at Once,Storefront > Sales Rep > Customer Profile > Saved Layout > Failure Handling,High,PROPOSED-BL-SR-LAYOUT-003,ECL-10.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 LAYOUT API GATE (see SR-CP-036) -- requires the layout READ to succeed; force-fail ONLY the saveLayout mutation. Mirrors 093 SR-HD-036's mechanism; profile-specific because it is the only surface with three regions to verify simultaneously -- a partial-region rollback would be a subtler bug than losing everything.
@@ -416,19 +416,20 @@ SR-CP-049,Reset on Customer Profile Restores All Three Regions' Registry Default
 [ACT] click 'Edit layout'
 [WAIT] edit bar visible
 [ACT] click 'Reset'
-[WAIT] draft re-renders","[DOM] immediately after Reset, all three regions show registry defaults in one action: the 5-card stats row in its default order, mainLeft ('My recent orders' before 'Top sellers'), and mainRight ('Quick actions' before 'Customer information') {OBSERVED}
-[STATE] no mutation has fired from Reset alone {OBSERVED}",[NETWORK] no saveLayout request fires from Reset alone,"Reset only restores one or two of the three regions, leaving another still showing the prior saved order","[ACT] click 'Save layout' to actually persist the registry defaults now that Reset staged them, finishing the restoration SR-CP-039's mutation asked for","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.explicit-save · Synced: qa-test-lifecycle suite 091 (2026-11-03) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile)",Reviewed
+[WAIT] draft re-renders","[DOM] immediately after Reset, all three regions show registry defaults in one action: the 5-card stats row in its default order and mainRight ('Quick actions' before 'Customer information') {OBSERVED}
+[DOM] immediately after Reset, mainLeft shows 'Sales statistics' first, then 'My recent orders' before 'Top sellers' (registry order 5, 10, 20) {SPEC}
+[STATE] no mutation has fired from Reset alone {OBSERVED}",[NETWORK] no saveLayout request fires from Reset alone,"Reset only restores one or two of the three regions, leaving another still showing the prior saved order; mainLeft after Reset omits 'Sales statistics' or leaves it below 'My recent orders'","[ACT] click 'Save layout' to actually persist the registry defaults now that Reset staged them, finishing the restoration SR-CP-039's mutation asked for","VCST-5367, PR vc-frontend#2400; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32) | Behavior:sr.layout.explicit-save · Synced: qa-test-lifecycle suite 091 (2026-11-03) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile) | Synced: VCST-6257 vc-module-sales-rep#38 (2026-11-23): mainLeft defaults now start with Sales statistics (sales, order 5); statuses untouched",Reviewed
 SR-CP-050,customerProfile Save Payload Carries No organizationId -- API-Side Twin of the Scope-Wide Invariant (BL-SR-023),Storefront > Sales Rep > Customer Profile > Saved Layout > Persistence,High,"BL-SR-023, BL-SR-025",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_LAYOUT]
 LAYOUT API GATE (see SR-CP-036). State from SR-CP-042 (SR_REP_LAYOUT signed in, profile open for @td(ORG_ACME.id), edit mode entered, 'Top sellers' dragged above 'My recent orders'). API-side twin of SR-CP-042's storefront-level scope-wide proof -- this case inspects the SaveLayout mutation's own command payload directly (via network capture) rather than the rendered UI on a second customer.
-COUPONS BLOCK: the customer-profile layout has a third block, 'Available coupons' (id/type `coupons`, region mainLeft, order 30, one `maxRows` setting with default 5), only on a build that registers it (vc-module-sales-rep#30, StorefrontApp/src/layout/coupons-block.ts, open at the time of writing, with the Marketing module); the released registry has two mainLeft blocks (orders order 10, top_sellers order 20). COUPONS_REGISTERED, recorded first, selects the expected payload. The case is never BLOCKED for its absence: both builds are valid. Re-based 2026-11-03 (REG-2026-11-03-1732), made build-independent 2026-11-03 (suite 091 sync).",front_url={{FRONT_URL}},"[KEY] in the edit mode left by SR-CP-042, record whether the 'Available coupons' widget is offered, rendered on the page or listed in the 'Hidden widgets' tray (COUPONS_REGISTERED)
+COUPONS BLOCK: the customer-profile layout has a third block, 'Available coupons' (id/type `coupons`, region mainLeft, order 30, one `maxRows` setting with default 5), only on a build that registers it (vc-module-sales-rep#30, StorefrontApp/src/layout/coupons-block.ts, open at the time of writing, with the Marketing module); with vc-module-sales-rep#38 (SalesRep 3.1026.0-pr-38-5280 or later, not deployed when this was rewritten) the customer-profile registry also holds `sales` ('Sales statistics', mainLeft, order 5), so it comes FIRST in mainLeft; the pre-#38 registry has two mainLeft blocks (orders order 10, top_sellers order 20). COUPONS_REGISTERED, recorded first, selects the expected payload. The case is never BLOCKED for its absence: both builds are valid. Re-based 2026-11-03 (REG-2026-11-03-1732), made build-independent 2026-11-03 (suite 091 sync).",front_url={{FRONT_URL}},"[KEY] in the edit mode left by SR-CP-042, record whether the 'Available coupons' widget is offered, rendered on the page or listed in the 'Hidden widgets' tray (COUPONS_REGISTERED)
 [ACT] click 'Save layout'
 [WAIT] save network request captured","[NETWORK] the SaveLayout mutation's command variable is inspected directly {OBSERVED}
 [STATE] the command payload contains no organizationId field and no customer/org-scoping argument anywhere in its structure; its top-level keys are exactly scope:""salesRepCustomerProfile"", storeId, schemaVersion and regions. storeId is the STORE key (it keys one layout document per store, exactly as the layout read does), not a customer scope -- see References {OBSERVED}
 [STATE] all three regions are present in the payload in fixed order statistics, mainLeft, mainRight, with hidden blocks (if any) included after visible ones and id===type on every block {OBSERVED}
-[STATE] COUPONS_REGISTERED is true: mainLeft holds 'My recent orders' (orders), 'Top sellers' (top_sellers) and 'Available coupons' (coupons), in the order the rep saved them {OBSERVED}
-[STATE] COUPONS_REGISTERED is false: mainLeft holds 'My recent orders' (orders) and 'Top sellers' (top_sellers), in the order the rep saved them, and the payload contains no coupons block {SPEC}
-[STATE] every block's settings equal the registry defaults for its type -- [{key:""maxRows"", value:5}] for each configurable block the customer profile registers (orders and top_sellers, plus coupons when COUPONS_REGISTERED is true), [] for every other block -- and schemaVersion:1 is a command-level field of the SaveLayout command, not a per-block field {OBSERVED}","[API] saveLayout errors[] empty; the subsequent layout(scope:""salesRepCustomerProfile"") read on a DIFFERENT served customer reflects the same saved document (cross-reference SR-CP-042's storefront-level proof)","the payload includes an organizationId or any customer-scoping field (would mean the layout is wrongly per-customer, contradicting BL-SR-023; storeId alone is not one); a block's settings differ from its registry default (a configurable block with no maxRows, or any other block with a setting); the three regions are not all present or not in fixed order; COUPONS_REGISTERED is true but the payload carries no coupons block, or false yet it carries one","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400, BL-SR-023; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32); Corrected: 2026-09-07 (REG-2026-09-07-1342 triage) -- precondition re-pointed from the shared SR_REP_PRIMARY to the designated disposable SR_REP_LAYOUT fixture (fixture mis-binding: this Save-mutating case was writing into the shared happy-path rep's never-saved baseline, which ~40 other cases depend on) | Re-based 2026-11-03 (REG-2026-11-03-1732, VCST-6158): vc-module-sales-rep#30 adds the 'Available coupons' block (layout/coupons-block.ts: region mainLeft, order 30, maxRows default 5) -- the product change is correct and the assertion pre-dated it. storeId on the command is NOT new with VCST-6158: the PR touches no layout document or command code, and the layout read/write are store-keyed (suite 050m, SR-GQL-104 'storeId keys a distinct document'), so the earlier 'only scope + regions + schemaVersion' wording was already imprecise. `tasks` is a dashboard block and is absent from the observed customerProfile payload | Behavior:sr.layout.scope-keys · Synced: qa-test-lifecycle suite 091 (2026-11-03) · verified live vcst 2026-11-03 (COUPONS_REGISTERED true branch) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile)",Reviewed
+[STATE] COUPONS_REGISTERED is true: mainLeft holds 'Sales statistics' (sales), 'My recent orders' (orders), 'Top sellers' (top_sellers) and 'Available coupons' (coupons), in the order the rep saved them (sales stays where the registry put it, first, because SR-CP-042 only dragged Top sellers) {SPEC}
+[STATE] COUPONS_REGISTERED is false: mainLeft holds 'Sales statistics' (sales), 'My recent orders' (orders) and 'Top sellers' (top_sellers), in the order the rep saved them, and the payload contains no coupons block {SPEC}
+[STATE] every block's settings equal the registry defaults for its type -- [{key:""maxRows"", value:5}] for each configurable block the customer profile registers (orders and top_sellers, plus coupons when COUPONS_REGISTERED is true), [] for every other block -- and schemaVersion:1 is a command-level field of the SaveLayout command, not a per-block field {OBSERVED}","[API] saveLayout errors[] empty; the subsequent layout(scope:""salesRepCustomerProfile"") read on a DIFFERENT served customer reflects the same saved document (cross-reference SR-CP-042's storefront-level proof)","the payload includes an organizationId or any customer-scoping field (would mean the layout is wrongly per-customer, contradicting BL-SR-023; storeId alone is not one); a block's settings differ from its registry default (a configurable block with no maxRows, or any other block with a setting); mainLeft lacks the `sales` block; the three regions are not all present or not in fixed order; COUPONS_REGISTERED is true but the payload carries no coupons block, or false yet it carries one","[ACT] Edit layout, then Reset, then Save layout to restore registry defaults","VCST-5367, PR vc-frontend#2400, BL-SR-023; LIVE-VERIFIED 2026-08-04 (vcptcore-qa, theme 2.55.0-pr-2400-c6ca, SalesRep 3.1001.0-pr-6-4f32); Corrected: 2026-09-07 (REG-2026-09-07-1342 triage) -- precondition re-pointed from the shared SR_REP_PRIMARY to the designated disposable SR_REP_LAYOUT fixture (fixture mis-binding: this Save-mutating case was writing into the shared happy-path rep's never-saved baseline, which ~40 other cases depend on) | Re-based 2026-11-03 (REG-2026-11-03-1732, VCST-6158): vc-module-sales-rep#30 adds the 'Available coupons' block (layout/coupons-block.ts: region mainLeft, order 30, maxRows default 5) -- the product change is correct and the assertion pre-dated it. storeId on the command is NOT new with VCST-6158: the PR touches no layout document or command code, and the layout read/write are store-keyed (suite 050m, SR-GQL-104 'storeId keys a distinct document'), so the earlier 'only scope + regions + schemaVersion' wording was already imprecise. `tasks` is a dashboard block and is absent from the observed customerProfile payload | Behavior:sr.layout.scope-keys · Synced: qa-test-lifecycle suite 091 (2026-11-03) · verified live vcst 2026-11-03 (COUPONS_REGISTERED true branch) | VCST-6078 REPAIR 2026-11-09 (mechanics only): layout API re-pointed salesRepLayout/saveSalesRepLayout -> layout/saveLayout (X-Frontend, scopes salesRepDashboard/salesRepCustomerProfile) | Synced: VCST-6257 vc-module-sales-rep#38 (2026-11-23): mainLeft defaults now start with Sales statistics (sales, order 5); statuses untouched",Reviewed
 SR-CP-051,Customer Profile Statistics Refetch On Remount With Byte-Identical organizationId (State Transition),Storefront > Sales Rep > Customer Profile > Cache Freshness,High,PROPOSED-BL-SR-FRESHNESS-001,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 1. @td(ORG_ACME.id) has >=1 order (statistics tiles show a non-zero value).
@@ -760,3 +761,462 @@ SR_REP_CALL is the dedicated VCST-6256 rep (seed:sales-rep-call) serving exactly
 [ASSERT] record the 'Primary contact' row value","[DOM] the 'Primary contact' row is visible and reads ""@td(ORG_SR_CALL_OWNERLESS.expected_primary_contact)"" {SPEC} (VCST-6256 PR #37 body)
 [DOM] the 'Primary contact' row does not read ""@td(SR_REP_CALL.fullName)"" {SPEC} (VCST-6256 PR #37 body)","[API] salesRepCustomer(organizationId).primaryContact.fullName is the same name
 [CONSOLE] no application-origin TypeError or JS error on the page under test",the profile names the rep as the customer primary contact; the Primary contact row is missing for an ownerless organization that has a buyer contact,none (read-only),VCST-6256 · Archetype:RENDER · Technique:EG · Purpose:FUNC,Draft
+SR-CP-089,"Journey: Rep Who Never Arranged the Profile Sees 'Sales statistics' First in the Left Column, Current Year Pressed",Storefront > Sales Rep > Customer Profile > Sales Statistics > Default Placement [JOURNEY],Medium,BL-SR-026,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. SR_REP_PRIMARY has never saved a customer-profile layout (layout(scope: salesRepCustomerProfile) returns null) and serves @td(ORG_ACMEWEST.name). Clear localStorage key vc-sales-rep-customer-sales-period first so no earlier period is remembered.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"--- SCREEN: My customers ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] UI settles
+--- SCREEN: Customer profile ---
+[WAIT] customer profile rendered
+[ASSERT] profile reached for the clicked customer
+[KEY] record the title of every block in the left column, top to bottom (LEFT_ORDER)
+[KEY] read the layout document the page loaded: the layout read for scope salesRepCustomerProfile (LAYOUT_READ)","[DOM] the first block of the left column is titled 'Sales statistics' and it sits above 'My recent orders' and 'Top sellers' (block id sales, region mainLeft, order 5) {SPEC}
+[DOM] the 'Current year' period tab is pressed {SPEC}
+[DOM] the block header carries an 'Open in Reporting' link {SPEC}
+[STATE] the block title equals the title of the card on the Reporting page (the same text) {SPEC}
+[STATE] LAYOUT_READ is null for SR_REP_PRIMARY (never saved), so the order in LEFT_ORDER comes from the registry defaults, not a saved document {BL}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors
+[API] layout(scope: salesRepCustomerProfile) returns null, errors[] empty","the block is missing, is not first in the left column, is titled differently from the Reporting card, or opens on a period other than Current year; a never-saved rep is treated as a failed layout read (BL-SR-026)",none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-1, AC-13; BL-SR-026 | Behavior:sr.profile.sales-statistics.default-placement | Archetype:FALLBACK Technique:FLOW | Catches: a rep who never arranged the profile finds the block missing, not first, or on the wrong period | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.layout.never-saved-defaults",Draft
+SR-CP-090,"Block Figures Equal the Reporting Page for the Same Customer and Period: Sales, Orders, AOV, Month-to-Date, Projection",Storefront > Sales Rep > Customer Profile > Sales Statistics > Parity With Reporting [JOURNEY],High,BL-SR-005,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. Run on any day except the 1st of the month.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"--- SCREEN: Customer profile ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] in the 'Sales statistics' block press the 'Current year' tab
+[WAIT] block figures loaded
+[KEY] record the Sales, Orders and AOV tiles, the month-to-date tile, the projected tile, and the tooltip of every chart column (BLOCK_VALUES)
+--- SCREEN: Reporting ---
+[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] Reporting page rendered
+[ACT] select @td(ORG_ACMEWEST.name) in the customer select
+[WAIT] figures reloaded
+[ACT] press the 'Current year' tab
+[WAIT] figures reloaded
+[KEY] record the same tiles and tooltips (REPORT_VALUES)
+[ACT] select 'All my customers' in the customer select
+[KEY] record the month-to-date tile (ALL_MTD)","[STATE] every tile value and chart tooltip in BLOCK_VALUES equals the same item in REPORT_VALUES, with the same rounding {SPEC}
+[STATE] the month-to-date figure in BLOCK_VALUES differs from ALL_MTD: the block shows its own customer's figure, not the rep-wide total {SPEC}
+[STATE] the month-to-date order count equals BASELINE plus SR_MTD_ORDER_WEST_1 and SR_MTD_ORDER_WEST_2 only {BL}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors
+[API] the SalesRepMonthlyOrderStatistics request of the block carries organizationId = the opened customer's id, not null",the block shows the rep-wide figures instead of the opened customer's; a tile or tooltip differs from Reporting by rounding or by a month; month-to-date differs between the two surfaces,[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-3; BL-SR-005 | Behavior:sr.profile.sales-statistics.matches-reporting | Archetype:PARITY Technique:FLOW | Catches: the block and the Reporting page tell the rep two different numbers for one customer and period | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Observed: KB-C2AD28C1 (Reporting reads the same SalesRepMonthlyOrderStatistics query)",Draft
+SR-CP-091,"Block Matches Reporting for 6 Months, 12 Months and a Past Quarter, Not Only the Default Period",Storefront > Sales Rep > Customer Profile > Sales Statistics > Parity With Reporting > Periods,High,BL-SR-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the '6 months' tab in the 'Sales statistics' block
+[WAIT] block reloaded
+[KEY] record tiles, chart column labels and tooltips (P6)
+[ACT] press the '12 months' tab
+[WAIT] block reloaded
+[KEY] record the same (P12)
+[ACT] press a past quarter tab (the earliest quarter tab shown that is before the current one)
+[WAIT] block reloaded
+[KEY] record the same (PQ)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[ACT] select @td(ORG_ACMEWEST.name) in the customer select
+[ACT] press the '6 months' tab
+[KEY] record tiles, column labels and tooltips (R6)
+[ACT] press the '12 months' tab
+[KEY] record the same (R12)
+[ACT] press the same past quarter tab as above
+[KEY] record the same (RQ)","[STATE] P6 equals R6, P12 equals R12 and PQ equals RQ item by item: tiles, number of chart columns, column labels and tooltips {SPEC}
+[COUNT] the number of chart columns differs between the 6-months and the 12-months view, so the period actually changed the data window {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",one period shows another period's figures; the column labels do not belong to the pressed tab; the block drifts from Reporting for any period other than the default,[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-2, AC-3 | Behavior:sr.profile.sales-statistics.matches-reporting | Archetype:PARITY Technique:EP | Catches: the block computes the data window differently from Reporting for a period nobody opened by default | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-092,"Flag-Cancelled Order (IsCancelled) Is in No Tile, Bar or Tooltip of the Block",Storefront > Sales Rep > Customer Profile > Sales Statistics > Cancelled Orders,High,BL-SR-005,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. SR_MTD_ORDER_FLAG_CANCELLED is in @td(ORG_ACMEWEST.name), status Processing, isCancelled=true, created by the rep: only the flag can exclude it.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); order=@td(SR_MTD_ORDER_FLAG_CANCELLED.number),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the 'Current year' tab in the 'Sales statistics' block
+[WAIT] block loaded
+[KEY] record the month-to-date order count and revenue (MTD)
+[ACT] hover the current month column
+[KEY] record its tooltip (TIP)","[STATE] MTD order count equals BASELINE plus 2 (SR_MTD_ORDER_WEST_1 and SR_MTD_ORDER_WEST_2) and MTD revenue equals BASELINE plus the totals of those two orders, so the total of SR_MTD_ORDER_FLAG_CANCELLED is in no figure {SPEC}
+[STATE] TIP shows the same month totals, without the flag-cancelled order {BL}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","MTD includes the flag-cancelled order's amount or order count in a tile, bar or tooltip",[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-4; BL-SR-005 | Behavior:sr.profile.sales-statistics.cancelled-excluded | Archetype:SILENT Technique:DT | Catches: a cancelled order still inflates the customer's sales figures | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Observed: KB-C2AD28C1 (the IsCancelled flag excludes an order on the Reporting query)",Draft
+SR-CP-093,Status-Only 'Cancelled' Order (IsCancelled=false) Is Not Counted in the Block (AC-4 as Written),Storefront > Sales Rep > Customer Profile > Sales Statistics > Cancelled Orders,High,BL-SR-005,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. SR_MTD_ORDER_STATUS_CANCELLED is in @td(ORG_TECHFLOW.name): status 'Cancelled', isCancelled=false, created by the rep. AC-4 says a Cancelled order is not counted. The Reporting query was OBSERVED to count it on the older build (KB-C2AD28C1, bug VCST-6683): a count here is a FAIL deduplicated to open VCST-6683, not a new bug.",front_url={{FRONT_URL}}; org=@td(ORG_TECHFLOW.platform_id); order=@td(SR_MTD_ORDER_STATUS_CANCELLED.number),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_TECHFLOW.name) row
+[WAIT] customer profile rendered
+[ACT] press the 'Current year' tab in the 'Sales statistics' block
+[WAIT] block loaded
+[KEY] record the month-to-date order count and revenue (MTD)
+[ACT] hover the current month column
+[KEY] record its tooltip (TIP)","[STATE] MTD order count equals BASELINE plus 1 (SR_MTD_ORDER_TECH_1 only) and MTD revenue equals BASELINE plus the total of SR_MTD_ORDER_TECH_1 only, so the status-only Cancelled order is not counted {SPEC}
+[STATE] TIP and the Orders and AOV tiles exclude the same order {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","the block counts an order whose status is Cancelled (one order more and its total in MTD, tiles and tooltip than the expectation above)",[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-4 | Behavior:sr.profile.sales-statistics.cancelled-excluded | Archetype:SILENT Technique:DT | Catches: VCST-6683 | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Catches:VCST-6683 | Observed: KB-C2AD28C1",Draft
+SR-CP-094,AOV Equals Sales Divided by Orders for Every Month With Orders and Shows a Dash for a Month Without,Storefront > Sales Rep > Customer Profile > Sales Statistics > Average Order Value,Medium,BL-SR-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the '12 months' tab
+[WAIT] block loaded
+[KEY] for every chart month record Sales, Orders and the AOV in its tooltip
+[KEY] record the AOV tile and the Sales and Orders tiles","[MATH] for every month with Orders > 0, tooltip AOV = Sales / Orders, to the displayed rounding {SPEC}
+[MATH] the AOV tile = the Sales tile / the Orders tile {SPEC}
+[DOM] a month with no orders shows '—' as AOV, never 0, NaN or Infinity {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","AOV is an average of monthly AOVs instead of Sales / Orders; a month with no orders shows 0, NaN or Infinity",[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-4 | Behavior:sr.profile.sales-statistics.matches-reporting | Archetype:BOUNDARY Technique:DT | Catches: the AOV tile is wrong whenever the months have different order counts | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-095,Current-Month Bar Is Month-to-Date Inside a Dashed Outline Up to the Projection,Storefront > Sales Rep > Customer Profile > Sales Statistics > Projection,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. Run on any day except the 1st of the month (day count passed = 0 makes the projection undefined).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the 'Current year' tab
+[WAIT] block loaded
+[KEY] record the month-to-date revenue, the days passed and the days in the current month (from today's date), and the projected tile
+[ACT] hover the current month column
+[KEY] record the filled bar and the dashed outline","[MATH] projected = month-to-date revenue x days in month / days passed, to the displayed rounding {SPEC}
+[STATE] the filled bar equals month-to-date revenue and the dashed outline reaches the projected value {SPEC}
+[STATE] the projected tile equals the top of the dashed outline {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",the projection uses the wrong day count (calendar days instead of days passed); the outline is missing; the tile and the outline differ,[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-5 | Behavior:sr.profile.sales-statistics.month-to-date-projection | Archetype:BOUNDARY Technique:BVA | Catches: the projection is off by a day or divides by the wrong number | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-096,Months With No Last-Year Sales Show No 'vs last year' Badge and a Dash in the Tooltip,Storefront > Sales Rep > Customer Profile > Sales Statistics > Projection > Last Year,Medium,BL-SR-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. Use a period and customer for which no month has rep-authored last-year orders (@td(ORG_ACMEWEST.name) has none: last-year non-empty badges are a FIXTURE-GAP and have no case here). Last year switch off.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the 'Current year' tab
+[WAIT] block loaded
+[ACT] hover each chart column in turn
+[KEY] record the tooltip text and badge of every column","[DOM] no column carries a 'vs last year' badge {SPEC}
+[DOM] the last-year line in every tooltip shows '—' {SPEC}
+[NEG] no badge or tooltip reads 0%, NaN or Infinity {BL}
+[COUNT] number of columns carrying a 'vs last year' badge = 0 {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","a change versus last year is computed against 0 and shown as 0%, NaN or Infinity instead of being omitted",[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-5; BL-SR-003 | Behavior:sr.profile.sales-statistics.month-to-date-projection | Archetype:BOUNDARY Technique:BVA | Catches: a division by a zero last-year baseline surfaces as a badge | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-097,An Order Placed by a Buyer in the Customer's Organization Is Not Counted in the Block,Storefront > Sales Rep > Customer Profile > Sales Statistics > Attribution,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. SR_MTD_ORDER_OTHER_CREATOR is in @td(ORG_TECHFLOW.name) (served), status New, created by @td(TECHFLOW_BUYER.email), not by the rep. (The testing checklist names ACMEWEST for this order; the fixture and its alias notes place it in TechFlow, so this case follows the fixture.)",front_url={{FRONT_URL}}; org=@td(ORG_TECHFLOW.platform_id); order=@td(SR_MTD_ORDER_OTHER_CREATOR.number),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_TECHFLOW.name) row
+[WAIT] customer profile rendered
+[ACT] press the 'Current year' tab
+[WAIT] block loaded
+[KEY] record month-to-date order count and revenue (MTD)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[ACT] select @td(ORG_TECHFLOW.name), press 'Current year'
+[KEY] record month-to-date order count and revenue (RMTD)","[STATE] MTD equals RMTD: the buyer-created order is excluded in the block exactly as in Reporting {SPEC}
+[STATE] MTD order count equals BASELINE plus 1 (SR_MTD_ORDER_TECH_1) and revenue does not include the total of SR_MTD_ORDER_OTHER_CREATOR {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","an order created by someone other than the rep is counted in the customer's figures, or the block and Reporting disagree about it",[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-3 | Behavior:sr.profile.sales-statistics.matches-reporting | Archetype:SCOPE Technique:DT | Catches: a buyer's own order leaks into the rep's customer statistics | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.scope.creator-only-statistics | Observed: KB-C2AD28C1",Draft
+SR-CP-098,Switching From One Customer to Another Without a Reload Shows the Second Customer's Figures Only,Storefront > Sales Rep > Customer Profile > Sales Statistics > Customer Switch Isolation [JOURNEY],High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. MTD data: run `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only MTD` first (TIME-TERMINAL: re-seed each run; teardown `--teardown --only MTD`). [KEY] BASELINE: take the rep's pre-seed figures with `npm run sales-rep:stats` BEFORE seeding. @td(ORG_ACMEWEST.name) and @td(ORG_TECHFLOW.name) hold different month-to-date figures (the seed makes them differ).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); org2=@td(ORG_TECHFLOW.platform_id),"--- SCREEN: ACMEWEST profile ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[WAIT] 'Sales statistics' block loaded
+[KEY] record its month-to-date order count and revenue (WEST_MTD)
+--- SCREEN: My customers ---
+[ACT] use the in-app navigation back to 'My customers' (no page reload)
+[ACT] click the @td(ORG_TECHFLOW.name) row
+[WAIT] UI settles
+--- SCREEN: TECHFLOW profile ---
+[ASSERT] the block shows a loading state or TechFlow's figures, never ACMEWEST's
+[WAIT] block loaded
+[KEY] record its month-to-date order count and revenue (TECH_MTD)","[STATE] TECH_MTD differs from WEST_MTD and equals TechFlow's figure on Reporting for the same period {SPEC}
+[NEG] at no moment after the click does the block display WEST_MTD under TechFlow's profile {SPEC}
+[NETWORK] the last SalesRepMonthlyOrderStatistics request carries organizationId = TechFlow's id {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",the second customer shows the first customer's figures (stale cache or a query key that ignores the customer); figures flash and stay,[SETUP] teardown by ledger: `node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only MTD`,"VCST-6257, PR vc-module-sales-rep#38 AC-1 | Behavior:sr.profile.sales-statistics.default-placement | Archetype:STALE Technique:ST | Catches: the next customer's profile shows the previous customer's revenue | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.profile.customer-switch-isolation",Draft
+SR-CP-099,"Journey: Period Chosen on One Customer Carries to the Next Customer and Survives a Reload, While Reporting Keeps Its Own URL Period",Storefront > Sales Rep > Customer Profile > Sales Statistics > Period Memory [JOURNEY],Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. Clear localStorage key vc-sales-rep-customer-sales-period first. 'Current quarter' means the current quarter's tab.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); org2=@td(ORG_TECHFLOW.platform_id),"--- SCREEN: ACMEWEST profile ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the current quarter tab in the 'Sales statistics' block
+[WAIT] block reloaded
+--- SCREEN: TECHFLOW profile ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_TECHFLOW.name) row
+[WAIT] block loaded
+[ASSERT] the current quarter tab is pressed on TechFlow's profile
+[KEY] record tiles, both charts, badges and tooltips (TQ)
+--- SCREEN: After reload ---
+[ACT] reload the browser
+[WAIT] block loaded
+[ASSERT] the current quarter tab is still pressed
+--- SCREEN: Reporting ---
+[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] Reporting page rendered","[STATE] TQ shows the quarter's data window: chart labels and tooltips belong to the current quarter {SPEC}
+[DOM] after the reload the current quarter tab of the 'Sales statistics' block is pressed and the other period tabs are not (the choice is stored per browser in localStorage vc-sales-rep-customer-sales-period) {SPEC}
+[DOM] the Reporting page opens on its own URL period ('Current year' pressed), not on the profile's quarter {SPEC}
+[STATE] the stored value of localStorage vc-sales-rep-customer-sales-period = the current quarter's period value after the switch {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",the period resets to Current year on the next customer or after reload; the profile's stored period leaks into the Reporting URL (or Reporting's into the profile),[ACT] clear localStorage key vc-sales-rep-customer-sales-period,"VCST-6257, PR vc-module-sales-rep#38 AC-2 | Behavior:sr.profile.sales-statistics.period-memory | Archetype:STALE Technique:ST | Catches: the rep chooses a quarter once and every next customer opens on a different period | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Observed: KB-54502E1C (Reporting keeps its own ?period= in the URL)",Draft
+SR-CP-100,A Bogus or Empty Stored Period Falls Back to Current Year Without an Error,Storefront > Sales Rep > Customer Profile > Sales Statistics > Period Memory > Invalid Stored Value,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}.","front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); stored_values=bogus, empty string","[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] set localStorage vc-sales-rep-customer-sales-period to 'bogus'
+[ACT] click the @td(ORG_ACMEWEST.name) row (reload the profile page)
+[WAIT] block loaded
+[KEY] record the pressed tab and the Sales tile (BOGUS)
+[ACT] set localStorage vc-sales-rep-customer-sales-period to ''
+[ACT] reload the profile page
+[WAIT] block loaded
+[KEY] record the pressed tab and the Sales tile (EMPTY)","[DOM] with 'bogus' stored, the 'Current year' tab is pressed {SPEC}
+[DOM] with '' stored, the 'Current year' tab is pressed {SPEC}
+[STATE] BOGUS and EMPTY show the same figures as a clean Current year view {SPEC}
+[NEG] no error message in the block and no console error for either stored value {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","an unknown stored value leaves no tab pressed, throws, or shows a period's labels over no data",[ACT] clear localStorage key vc-sales-rep-customer-sales-period,"VCST-6257, PR vc-module-sales-rep#38 AC-2 | Behavior:sr.profile.sales-statistics.period-memory | Archetype:FALLBACK Technique:EP | Catches: a stale or hand-edited stored value breaks the block for that browser | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-101,Fast Period-Tab Switching Ends on the Last Period With Its Own Labels and Figures,Storefront > Sales Rep > Customer Profile > Sales Statistics > Period Memory > Rapid Switching,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] click the tabs in quick succession without waiting: 'Current year', '6 months', 'Q1', '12 months'
+[WAIT] network idle
+[KEY] record the labels and figures (FINAL)
+[ACT] press '12 months' again after FINAL settled
+[KEY] record the labels and figures (CLEAN)","[STATE] FINAL equals CLEAN: the figures and column labels belong to the 12 months tab {SPEC}
+[NEG] no rendered frame shows one period's figures under another period's labels {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",a slower earlier response overwrites the latest tab's figures (last response wins instead of last click); the pressed tab and the labels disagree after the last response arrives,[ACT] clear localStorage key vc-sales-rep-customer-sales-period,"VCST-6257, PR vc-module-sales-rep#38 AC-2 | Behavior:sr.profile.sales-statistics.period-memory | Archetype:RACE Technique:EG | Catches: a late response for an earlier period is painted under the pressed tab | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-102,'Open in Reporting' Opens /company/customer-sales With This Customer and the Chosen Period Selected,Storefront > Sales Rep > Customer Profile > Sales Statistics > Open in Reporting,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. The route is /company/customer-sales, not /company/reporting (which is 404 for a rep, KB-342559F1).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] press the current quarter tab in the 'Sales statistics' block
+[ACT] click 'Open in Reporting' in the block header
+[WAIT] navigation settles","[NAV] the URL path is /company/customer-sales and its query carries customer=@td(ORG_ACMEWEST.platform_id) and the current quarter as period {SPEC}
+[DOM] on the Reporting page the customer select reads '@td(ORG_ACMEWEST.name)' and the current quarter period tab is pressed {SPEC}
+[NEG] the page is not '404 Page not found' {OBSERVED} (KB-342559F1)","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","the link opens the 404 route /company/reporting, or a Reporting page with 'All my customers' or another period",[ACT] clear localStorage key vc-sales-rep-customer-sales-period,"VCST-6257, PR vc-module-sales-rep#38 AC-6 | Behavior:sr.profile.sales-statistics.open-in-reporting | Archetype:PARITY Technique:EP | Catches: the link drops the customer or period, or points to the 404 route | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Observed: KB-342559F1",Draft
+SR-CP-103,The Block Has No 'Show as table' Control or Table and Keeps Its Footnote,Storefront > Sales Rep > Customer Profile > Sales Statistics > Compact Layout,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[WAIT] 'Sales statistics' block loaded
+[KEY] record every control and heading inside the block
+[NAV] {{FRONT_URL}}/company/customer-sales
+[WAIT] Reporting page rendered
+[KEY] record whether 'Show as table' and a table exist there (REPORT_TABLE)","[DOM] no 'Show as table' control and no table inside the profile block {SPEC}
+[DOM] the block's footnote is present {SPEC}
+[STATE] REPORT_TABLE is true: the Reporting page still has its table, so the block's reduced form is a property of the block, not a removal in the shared panel {SPEC}
+[COUNT] number of 'Show as table' controls inside the block = 0 {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",the profile block renders the table section meant only for Reporting; the footnote is lost,none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-7, AC-10 | Behavior:sr.profile.sales-statistics.compact-layout | Archetype:PARITY Technique:EP | Catches: the shared panel's table leaks into the compact block | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-104,"A Customer With No Rep Orders in the Period Shows Zeros and Dashes, No Badges and No Error",Storefront > Sales Rep > Customer Profile > Sales Statistics > Empty And Loading States,Medium,BL-SR-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. live-discover a served organization that has no rep-created order this year (read the rep's served list and the organization's year figures through the Reporting page; discard any with orders). If none exists, report FIXTURE-GAP, never PASS.","front_url={{FRONT_URL}}; org=live-discover(served org, rep orders this year = 0)","[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the live-discovered organization's row
+[WAIT] profile rendered
+[ACT] press the 'Current year' tab
+[WAIT] block loaded
+[KEY] record tiles, tooltips and any message in the block","[DOM] Sales, Orders and the month-to-date tile show zero values and AOV shows '—' {SPEC}
+[NEG] no 'vs last year' badge is rendered, and no error message is displayed in the block {SPEC}
+[NEG] no console error {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","an empty customer shows an error, NaN or a badge instead of zeros and dashes",none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-14; BL-SR-003 | Behavior:sr.profile.sales-statistics.states | Archetype:FALLBACK Technique:EG | Catches: an empty customer is displayed as a failure | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-105,A Slow Statistics Request Shows the Loader Overlay Over Tiles and Charts Until the Response Arrives,Storefront > Sales Rep > Customer Profile > Sales Statistics > Empty And Loading States > Loading,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. The throttle is a network delay on the SalesRepMonthlyOrderStatistics request only (a request route with delay); if the lane offers no request interception, report BLOCKED (EX-200), not PASS.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[SETUP] delay only the SalesRepMonthlyOrderStatistics GraphQL request by several seconds
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[WAIT] block shown while the request is pending
+[KEY] record whether the loader overlay covers tiles and charts (WHILE)
+[WAIT] response arrived
+[KEY] record the block (AFTER)","[DOM] WHILE: a VcLoaderOverlay element is rendered over the 'Sales statistics' KPI tiles and both charts {SPEC}
+[COUNT] AFTER: the number of VcLoaderOverlay elements inside the 'Sales statistics' block = 0 and the 'Sales' tile reads a figure, not the loader {SPEC}
+[NEG] the profile's other blocks are not covered by the overlay {SPEC}
+[COUNT] number of loader overlays covering a block other than 'Sales statistics' = 0 {SPEC}",[CONSOLE] no console errors,the overlay never disappears; tiles show zeros instead of a loader while pending; the overlay covers the whole profile,[SETUP] remove the request delay,"VCST-6257, PR vc-module-sales-rep#38 AC-14 | Behavior:sr.profile.sales-statistics.states | Archetype:SILENT Technique:EG | Catches: loading is rendered as zeros | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-106,A Failed Statistics Request Shows an Error Inside the Block While the Rest of the Profile Keeps Working,Storefront > Sales Rep > Customer Profile > Sales Statistics > Empty And Loading States > Failure,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. The failure is a network intercept of ONLY the SalesRepMonthlyOrderStatistics request returning HTTP 500; if the lane offers no request interception, report BLOCKED (EX-200), not PASS.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[SETUP] make only the SalesRepMonthlyOrderStatistics GraphQL request fail with HTTP 500
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[WAIT] profile settles","[DOM] an error message is displayed inside the 'Sales statistics' block {SPEC}
+[DOM] the customer information card, 'My recent orders', 'Top sellers' and the quick actions still render {SPEC}
+[STATE] a quick action and an order row link are still clickable (the profile did not crash) {SPEC}
+[COUNT] number of blocks showing an error message = 1 (the 'Sales statistics' block only) {SPEC}",[NETWORK] the failing request is the only failure; the other /graphql requests succeed,the whole profile goes blank or shows its own error; the block silently shows zeros with no message,[SETUP] remove the request intercept,"VCST-6257, PR vc-module-sales-rep#38 AC-14 | Behavior:sr.profile.sales-statistics.states | Archetype:SILENT Technique:EG | Catches: one failed statistics query takes the whole customer profile down | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-107,Profile of a Customer the Rep Does Not Serve Shows 'Customer not found' and No Statistics Block,Storefront > Sales Rep > Customer Profile > Sales Statistics > Permission Scope,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. @td(SR_UNSERVED_ORG.name) exists but SR_REP_PRIMARY does not serve it.",front_url={{FRONT_URL}}; org=@td(SR_UNSERVED_ORG.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(SR_UNSERVED_ORG.platform_id)
+[WAIT] page settles","[DOM] the page shows 'Customer not found or not in your customers.' {OBSERVED} (KB-E1585C7A)
+[NEG] no 'Sales statistics' block and no figures of that organization appear anywhere on the page {SPEC}
+[NEG] no SalesRepMonthlyOrderStatistics request returns figures for that organization (the field is null) {BL}
+[COUNT] number of 'Sales statistics' blocks on the page = 0 {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",an unserved organization's statistics render in the block; the block shows another organization's or all customers' figures,none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-9; BL-SR-002 | Behavior:sr.profile.sales-statistics.permission-scope | Archetype:SCOPE Technique:EP | Catches: a rep sees sales figures of a customer who is not theirs | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.scope.unserved-org | Observed: KB-E1585C7A, KB-54502E1C",Draft
+SR-CP-108,Parent Organization Whose Child Holds Rep Orders: Block Figures Equal Reporting's for the Parent,Storefront > Sales Rep > Customer Profile > Sales Statistics > Permission Scope > Parent And Child,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. live-discover a served parent organization that has a child organization holding rep-created orders. If no served parent has one, report BLOCKED FIXTURE-GAP, never PASS. Reporting was OBSERVED to leave a parent's figure without its child's orders (KB-C2AD28C1); the block must treat child orders the same way as Reporting.",front_url={{FRONT_URL}}; org=live-discover(served parent org with a child holding rep orders),"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the parent organization's row
+[WAIT] block loaded
+[ACT] press 'Current year'
+[KEY] record tiles and tooltips (BLOCK)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[ACT] select the parent organization in the customer select
+[WAIT] figures reloaded
+[ACT] press the 'Current year' tab
+[KEY] record the same (REPORT)","[STATE] BLOCK equals REPORT item by item for the parent {SPEC}
+[NEG] neither surface shows a figure of an organization the rep does not serve {BL}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","the block includes the child's orders while Reporting does not (or the reverse), or a child the rep does not serve leaks into the parent's figure",none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-3; BL-SR-002 | Behavior:sr.profile.sales-statistics.permission-scope | Archetype:SCOPE Technique:EP | Catches: the block aggregates organizations differently from Reporting | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-109,"A Buyer of the Organization Opening the Profile URL Gets No Hub, No Block and No Statistics Request",Storefront > Sales Rep > Customer Profile > Sales Statistics > Permission Scope > Non-Rep,High,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_BUYER]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. TECHFLOW_BUYER is a buyer of @td(ORG_TECHFLOW.name) without sales-rep:access.",front_url={{FRONT_URL}}; org=@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] navigation settles
+[KEY] record every /graphql operation name sent during the load (REQS)
+[KEY] record whether the 'Sales rep hub' section is in the account sidebar (HUB)","[NAV] the final URL is not the customer profile route (the buyer is redirected away) {SPEC}
+[NEG] no 'Sales statistics' block, no hub section and no customer figures are visible {SPEC}
+[NEG] no SalesRepMonthlyOrderStatistics request is issued for the session {BL}
+[COUNT] number of SalesRepMonthlyOrderStatistics requests issued = 0 {BL}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors",a user without sales-rep:access reaches the profile or the block; the statistics request is sent anyway,none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-9; BL-SR-011 | Behavior:sr.profile.sales-statistics.permission-scope | Archetype:SCOPE Technique:EP | Catches: a plain buyer reaches the rep's per-customer sales figures | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.scope.unserved-org",Draft
+SR-CP-110,With SalesRep.Enabled Off for the Store the Profile Is Unreachable and No Block Renders; Back On It Returns,Storefront > Sales Rep > Customer Profile > Sales Statistics > Store Toggle,Medium,BL-SR-011,,"[PRE:CLEAR_SESSION]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STORE_ID}} then a FRESH sign-in as SR_REP_PRIMARY. Disruptive to concurrent testers on {{STORE_ID}}: run in an isolated window and restore SalesRep.Enabled=true immediately after.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[ADMIN] set store setting SalesRep.Enabled = false on {{STORE_ID}}
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACMEWEST.platform_id)
+[WAIT] navigation settles
+[KEY] record the page and the network requests (OFF)
+[ADMIN] set store setting SalesRep.Enabled = true on {{STORE_ID}}
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACMEWEST.platform_id)
+[WAIT] block loaded","[NEG] OFF: no 'Sales rep hub' section, the profile does not render and no 'Sales statistics' block is shown {SPEC}
+[NEG] OFF: no SalesRepMonthlyOrderStatistics request is sent {SPEC}
+[DOM] after restoring: the profile renders with the 'Sales statistics' block {SPEC}","[NETWORK] no 4xx/5xx on /graphql while the block loads
+[CONSOLE] no console errors","the profile or the block renders while the module is disabled, or the block stays hidden after the setting is restored",[ADMIN] restore SalesRep.Enabled=true on {{STORE_ID}} before ending the session,"VCST-6257, PR vc-module-sales-rep#38 AC-9; BL-SR-011 | Behavior:sr.profile.sales-statistics.store-off | Archetype:CONFIG Technique:DT | Catches: the block survives with the feature off for the store | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.store-toggle.off-hides-ui",Draft
+SR-CP-111,Moving 'Sales statistics' Below 'Top sellers' Is Saved and Applies to the Next Customer (Scope-Wide),Storefront > Sales Rep > Customer Profile > Sales Statistics > Layout > Move,Medium,BL-SR-023,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+SR_REP_LAYOUT is the disposable layout fixture: every case that writes the customer-profile layout uses it, never SR_REP_PRIMARY (whose never-saved layout other cases depend on). Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. The disposable layout starts from the registry defaults (Reset + Save first if it was changed).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); org2=@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] click 'Edit layout'
+[WAIT] UI settles
+[ACT] drag the 'Sales statistics' block below 'Top sellers' in the left column
+[WAIT] UI settles
+[ACT] click 'Save layout'
+[WAIT] save finished
+[ACT] reload the browser
+[WAIT] profile rendered
+[KEY] record the left-column order (AFTER_RELOAD)
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_TECHFLOW.name) row
+[WAIT] customer profile rendered
+[KEY] record the left-column order (OTHER_CUSTOMER)","[STATE] AFTER_RELOAD lists 'My recent orders', 'Top sellers', 'Sales statistics' in this order {SPEC}
+[STATE] OTHER_CUSTOMER equals AFTER_RELOAD: the layout is one document per rep, not per customer {BL}
+[NEG] the saveLayout command carries no organizationId {BL}",[API] saveLayout errors[] empty,the moved block returns to the top after reload or on another customer; the layout is saved per customer,"[ACT] Edit layout, Reset, Save layout to restore the registry defaults","VCST-6257, PR vc-module-sales-rep#38 AC-8; BL-SR-023 | Behavior:sr.profile.sales-statistics.layout-block | Archetype:LIFECYCLE Technique:ST | Catches: a rep arranges the block once and it is not kept | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.layout.roundtrip",Draft
+SR-CP-112,Hiding 'Sales statistics' Is Saved and Stops Its Statistics Query; Restoring It From the Hidden Tray Brings It Back,Storefront > Sales Rep > Customer Profile > Sales Statistics > Layout > Hide And Restore,Medium,BL-SR-031,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+SR_REP_LAYOUT is the disposable layout fixture: every case that writes the customer-profile layout uses it, never SR_REP_PRIMARY (whose never-saved layout other cases depend on). Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] click 'Edit layout'
+[WAIT] UI settles
+[ACT] hide the 'Sales statistics' block
+[WAIT] UI settles
+[ACT] click 'Save layout'
+[WAIT] UI settles
+[ACT] reload the browser
+[WAIT] profile rendered
+[KEY] record the left column and the SalesRepMonthlyOrderStatistics requests issued during the load (HIDDEN)
+[ACT] click 'Edit layout', restore 'Sales statistics' from the 'Hidden widgets' tray, click 'Save layout'
+[WAIT] UI settles
+[ACT] reload the browser
+[WAIT] profile rendered
+[KEY] record the left column (RESTORED)","[DOM] HIDDEN: no 'Sales statistics' block in the left column and it is listed in the hidden tray in edit mode {SPEC}
+[NEG] HIDDEN: no SalesRepMonthlyOrderStatistics request is sent while the block is hidden {BL}
+[DOM] RESTORED: the 'Sales statistics' block is back and loads figures {SPEC}
+[COUNT] number of SalesRepMonthlyOrderStatistics requests issued in HIDDEN = 0 {BL}",[API] saveLayout errors[] empty for both saves,the hidden block still queries statistics; hiding is not persisted; a restored block cannot be saved,"[ACT] Edit layout, Reset, Save layout to restore the registry defaults","VCST-6257, PR vc-module-sales-rep#38 AC-8; BL-SR-031 | Behavior:sr.profile.sales-statistics.layout-block | Archetype:LIFECYCLE Technique:ST | Catches: a hidden block keeps firing its query or cannot be brought back | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.layout.roundtrip",Draft
+SR-CP-113,A Layout Saved Before This Story Gets 'Sales statistics' at the END of the Left Column; Saved Order Is Kept,Storefront > Sales Rep > Customer Profile > Sales Statistics > Layout > Saved Before The Block Existed,Medium,BL-SR-025,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+SR_REP_LAYOUT is the disposable layout fixture: every case that writes the customer-profile layout uses it, never SR_REP_PRIMARY (whose never-saved layout other cases depend on). Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. PLANT the pre-story layout in this case: as SR_REP_LAYOUT call saveLayout(command: {scope: salesRepCustomerProfile, storeId: {{STORE_ID}}, schemaVersion: 1}) with a document whose mainLeft holds top_sellers then orders (that order, `sales` absent), plus the registry's statistics and mainRight regions. That is a layout saved before the block existed; it survives redeploys, unlike a layout saved by hand before a deploy.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[SETUP] POST saveLayout for scope salesRepCustomerProfile with the document above (as SR_REP_LAYOUT, X-Frontend)
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[WAIT] profile rendered
+[KEY] record the left-column order (LEFT)
+[KEY] record the right-column order (RIGHT)","[STATE] LEFT lists 'Top sellers', 'My recent orders', then 'Sales statistics' last: the saved order is kept and the block missing from the document is appended at the end of its region {BL}
+[STATE] RIGHT equals the saved mainRight order {BL}
+[NEG] the page does not reset the rep's saved order to the registry defaults {SPEC}","[API] layout(scope: salesRepCustomerProfile) returns the planted document unchanged (the block is reconciled in the UI, not written back)","the new block is inserted first, overwrites the rep's saved order, or is dropped for being absent from the document","[ACT] Edit layout, Reset, Save layout to restore the registry defaults","VCST-6257, PR vc-module-sales-rep#38 AC-8; BL-SR-025 | Behavior:sr.profile.sales-statistics.layout-block | Archetype:LIFECYCLE Technique:ST | Catches: a rep with an old saved layout loses the new block or has their arrangement reset | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.layout.registry-reconcile",Draft
+SR-CP-114,Reset Layout Puts 'Sales statistics' Back First in the Left Column,Storefront > Sales Rep > Customer Profile > Sales Statistics > Layout > Reset,Medium,BL-SR-024,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+SR_REP_LAYOUT is the disposable layout fixture: every case that writes the customer-profile layout uses it, never SR_REP_PRIMARY (whose never-saved layout other cases depend on). Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. State: a layout is SAVED with 'Sales statistics' last in the left column (plant it as in SR-CP-113 or move it by hand and save).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ASSERT] 'Sales statistics' is last in the left column
+[ACT] click 'Edit layout'
+[WAIT] UI settles
+[ACT] click 'Reset'
+[WAIT] draft re-renders
+[KEY] record the left column (DRAFT)
+[ACT] click 'Save layout'
+[WAIT] UI settles
+[ACT] reload the browser
+[KEY] record the left column (PERSISTED)","[STATE] DRAFT lists 'Sales statistics' first, then 'My recent orders', then 'Top sellers' (registry order 5, 10, 20) {SPEC}
+[STATE] PERSISTED equals DRAFT after Save and reload {BL}",[NETWORK] no saveLayout request fires from Reset alone,Reset leaves the block where it was or hides it; the reset is not persisted after Save,none (the case ends on the registry defaults),"VCST-6257, PR vc-module-sales-rep#38 AC-1, AC-8; BL-SR-024 | Behavior:sr.profile.sales-statistics.layout-block | Archetype:LIFECYCLE Technique:ST | Catches: Reset does not restore the new block's default position | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed) | Behavior:sr.layout.explicit-save",Draft
+SR-CP-115,"Block Layout at 1920, 1280, 1024, 768 and 375 px: KPI Tiles Two by Two, Charts Fit the Column, No Horizontal Scroll",Storefront > Sales Rep > Customer Profile > Sales Statistics > Visual > Responsive,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. Visual lane (vc-test:ui-ux-expert, playwright-firefox).","front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); widths=1920,1280,1024,768,375","[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] resize the viewport to 1920 px wide
+[KEY] record the tile layout, the chart extents, the page scroll width (W1920)
+[ACT] resize the viewport to 1280 px wide
+[KEY] record the same items (W1280)
+[ACT] resize the viewport to 1024 px wide
+[KEY] record the same items (W1024)
+[ACT] resize the viewport to 768 px wide
+[KEY] record the same items (W768)
+[ACT] resize the viewport to 375 px wide
+[KEY] record the same items (W375)","[STATE] at every width the KPI tiles are laid out two by two {SPEC}
+[STATE] at every width each chart's right edge is within the block's right edge {SPEC}
+[NEG] no horizontal scrollbar on the page at any width {SPEC}
+[DOM] at narrow widths month labels are one letter and no 'vs last year' badges are drawn {SPEC}",[CONSOLE] no console errors,tiles in a row of four inside the narrow column; a chart overflows the column; a horizontal scrollbar appears,[ACT] restore the viewport to 1920 px,"VCST-6257, PR vc-module-sales-rep#38 AC-7, AC-11 | Behavior:sr.profile.sales-statistics.compact-layout | Archetype:RENDER Technique:EP | Catches: the compact block still lays out like the full-width Reporting panel | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-116,"Dark Mode and Two Non-Default Theme Presets Keep Bars, Dashed Outline, Badges, Link and Text Readable",Storefront > Sales Rep > Customer Profile > Sales Statistics > Visual > Theme,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. Visual lane. Presets: use two presets the stand offers other than the default (read the preset list from the theme settings, do not assume names).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[ACT] switch to dark mode
+[WAIT] UI settles
+[KEY] record text and graphic colours and their backgrounds of bars, the dashed outline, badges, the 'Open in Reporting' link and tile text (DARK)
+[ACT] switch back to light mode
+[WAIT] theme applied
+[ACT] apply theme preset 1
+[WAIT] theme applied
+[KEY] record the same items (P1)
+[ACT] apply theme preset 2
+[WAIT] theme applied
+[KEY] record the same items (P2)","[STATE] in DARK, P1 and P2 the contrast ratio of every text and bar against its background meets WCAG AA (4.5:1 text, 3:1 graphics) {SPEC}
+[NEG] no element keeps a light-theme hard-coded colour in dark mode {SPEC}",[CONSOLE] no console errors,"an unreadable bar, outline or link in dark mode or a preset; hard-coded light colours",[ACT] restore the light mode and the default preset,"VCST-6257, PR vc-module-sales-rep#38 AC-11 | Behavior:sr.profile.sales-statistics.compact-layout | Archetype:RENDER Technique:EP | Catches: the block was built for the default light theme only | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-117,"'Open in Reporting' and the Block Title Are Translated in All 13 Sales-Rep Locales, With No Raw Key",Storefront > Sales Rep > Customer Profile > Sales Statistics > Visual > Localization,Medium,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. Visual lane. The 13 locales are the sales-rep plugin's (read the list from the plugin's locales folder / the store's culture list, do not transcribe it).",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id); url={{FRONT_URL}}/<locale>/company/my-customers/@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/<locale>/company/my-customers/@td(ORG_ACMEWEST.platform_id) for each of the 13 locales
+[WAIT] block loaded
+[KEY] per locale record the block title and the link text","[NEG] no text of the form sales_rep. (a raw i18n key) in any locale {BL}
+[STATE] per locale the block title equals the Reporting card title in the same locale {SPEC}
+[STATE] per locale the 'Open in Reporting' link text differs from the English text, except where the translation is legitimately identical {SPEC}",[CONSOLE] no missing-translation warnings,a raw key or English text in a non-English locale; the block title in a locale differs from the Reporting card title in that locale,none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-12; BL-SR-013 | Behavior:sr.profile.sales-statistics.localization | Archetype:MONEY Technique:EP | Catches: a locale shows sales_rep.customer_profile.sales.open_in_reporting instead of text | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
+SR-CP-118,"Block Colours and Spacing Come From Theme Tokens, the Same as the Reporting Card",Storefront > Sales Rep > Customer Profile > Sales Statistics > Visual > Tokens,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Requires the vc-module-sales-rep PR #38 build (SalesRep 3.1026.0-pr-38-5280 or later) deployed on the stand. It was NOT deployed when this case was written (vcptcore ran 3.1027.0-pr-46), so on an older build report NOT_DEPLOYED, never FAIL. Store setting SalesRep.Enabled=true on {{STORE_ID}}. Visual lane. The expected token values are read from the theme (computed styles of the Reporting card), never transcribed.",front_url={{FRONT_URL}}; org=@td(ORG_ACMEWEST.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] customers table loaded
+[ACT] click the @td(ORG_ACMEWEST.name) row
+[WAIT] customer profile rendered (URL /company/my-customers/@td(ORG_ACMEWEST.platform_id))
+[KEY] record the computed colours, paddings and gaps of the block's tiles, header and chart elements (BLOCK_STYLES)
+[NAV] {{FRONT_URL}}/company/customer-sales
+[KEY] record the computed colours, paddings and gaps of the same elements of the Reporting card (CARD_STYLES)","[STATE] each colour and spacing value in BLOCK_STYLES that has a counterpart in CARD_STYLES equals it {SPEC}
+[NEG] BLOCK_STYLES holds no colour value that is absent from the theme's token palette {SPEC}",[CONSOLE] no console errors,a hard-coded colour or off-scale spacing in the compact block; the block's tile padding differs from the Reporting card's tiles for no design reason,none (read-only),"VCST-6257, PR vc-module-sales-rep#38 AC-11 | Behavior:sr.profile.sales-statistics.compact-layout | Archetype:RENDER Technique:EP | Catches: the compact variant drifts from the design tokens | Authored 2026-11-23 from the VCST-6257 test model (not yet run: PR #38 not deployed)",Draft
