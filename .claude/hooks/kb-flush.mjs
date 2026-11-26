@@ -37,7 +37,7 @@ import {
   accessBlock, accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
-import { writeToken } from '../../scripts/kb/core/token.mjs';
+import { vcSecretsDeclares, writeToken } from '../../scripts/kb/core/token.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -156,7 +156,10 @@ function main() {
   // both are asked once per `OWN_REACH_EVERY_MS`.
   const due = keyed && ownReachDue(dir, session, { state: advanced });
   if (due) markTried(dir, session);
-  const mine = due && Boolean(writeToken(env).token);
+  // VIA vc-secrets: the hook holds no token, but a declared `kb-push` task launches the push with one
+  // (plugins/vc-secrets/README.md §Tasks). The token in the environment, if any, still goes first.
+  const viaSecrets = !writeToken(env).token && Boolean(env.VC_SECRETS) && vcSecretsDeclares('tasks', 'kb-push', env);
+  const mine = due && (Boolean(writeToken(env).token) || viaSecrets);
   if (!queueHasWork(dir) && !stale && !mine) return;
   // Only log lines from today, or counters alone: they wait for a change or for tomorrow (VCST-6378).
   if (!pushWouldGo(dir, env, session, staleStates)) return;
@@ -184,7 +187,10 @@ function main() {
     out = openSync(logFile, 'a');
   } catch { /* an unwritable log must not cost the push */ }
 
-  const child = spawn(process.execPath, [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'], {
+  // The `kb-push` task is declared as exactly this command (`node scripts/kb/kb.mjs push --auto`);
+  // the launcher adds the token and the child inherits `env`, session key included.
+  const argv = viaSecrets ? [env.VC_SECRETS, 'task', 'kb-push'] : [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'];
+  const child = spawn(process.execPath, argv, {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],
