@@ -1,34 +1,43 @@
 {
-  "runId": "REG-2026-11-24-1024",
+  "runId": "REG-2026-11-26-0357-W2",
   "status": "completed",
-  "startedAt": "2026-11-24T09:24:54.324Z",
+  "startedAt": "2026-11-26T00:57:33.177Z",
   "env": "vcst",
-  "selection": "027,104 --ids CUST-173,OTP-039 --no-promote",
-  "ticket": "VCST-6237",
-  "note": "scoped run of the A9 case CUST-173 and the rewritten OTP-039",
+  "ticket": "VCST-7028",
+  "selection": "028,011,014,120 (sprint-26-23 W2, --no-promote; 124 NOT_DEPLOYED)",
   "suites": {
-    "104": {
+    "120": {
       "status": "done",
       "lane": "browser",
-      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-24T09:26:20.896Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-24T09:32:31.123Z"
+      "pass": 22,
+      "fail": 3,
+      "blocked": 10
     },
-    "027": {
+    "028": {
       "status": "done",
       "lane": "browser",
-      "cases": 1,
       "browser": "playwright-edge",
-      "startedAt": "2026-11-24T09:26:20.895Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-24T09:32:31.123Z"
+      "pass": 31,
+      "fail": 4,
+      "blocked": 14
+    },
+    "011": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "pass": 30,
+      "fail": 9,
+      "blocked": 2
+    },
+    "014": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "pass": 55,
+      "fail": 1,
+      "blocked": 11
     }
   },
-  "finishedAt": "2026-11-24T09:32:33.065Z"
+  "finishedAt": "2026-11-26T02:18:25.339Z"
 }
