@@ -24,7 +24,7 @@ Owner Elena Kutasina · vcst · Platform 3.1101.0 · theme 2.63.0-alpha.2681 · 
 ## Triage (49 rows in ledger.csv, 0 untriaged)
 CART-001/006/007/133/134 passed in REG-2026-11-26-1000-RB (disposable customer allowed).
 - **Bugs — all already filed:** VCST-6820 (CHK-089), VCST-6821 (CHK-096), VCST-6606 (CHK-114), VCST-6933 (CART-051), VCST-6768 (CART-130/131), VCST-6482 (ORD-105).
-- **Product-owner questions:** address validation — ZIP "ABCDE" and phone "123" accepted (CHK-004/027/028, KB-A370A56A); duplicate-address guard OQ-8 (CHK-106); dashboard "Max rows" clamps instead of refusing (ORD-DASH-015); orders widget error has no retry (ORD-DASH-010).
+- **Product-owner questions:** address validation — ZIP "ABCDE" and phone "123" accepted (CHK-004/027/028, KB-A370A56A); duplicate-address guard OQ-8 (CHK-106); dashboard "Max rows" → VCST-7040 (ORD-DASH-015, task); orders widget error has no retry (ORD-DASH-010).
 - **Test defects:** CHK-005 (no per-method cost in the option list), CHK-009 (confirmation page minimal, KB-50EBEEE9), CHK-095 (0 addresses → form opens directly, KB-6D20A8C3), ORD-DASH-021 (widget reworked by VCST-6258); CHK-048 is by design (invoice Admin-only).
 - **Flaky:** CART-016 — did not reproduce live (0/17); the night delay came from three lanes on one account.
 - **Data / env:** order fixtures for the S2 personas (CHK-012/041/042, ORD-002/009/010/034/036), no default address (CHK-058), dashboard fixtures (ORD-DASH-006/013); SR_REP_PRIMARY cannot sign in (ORD-085); buyer cancel off on the store (ORD-011 → WX).
