@@ -1,7 +1,20 @@
 {
   "wave": "W0",
-  "owner": null,
-  "status": "NOT_STARTED",
-  "runIds": [],
-  "updatedAt": "2026-11-26"
+  "owner": "Elena Kutasina",
+  "status": "RUN_DONE",
+  "runIds": [
+    "REG-2026-11-26-0225-W0"
+  ],
+  "updatedAt": "2026-11-26",
+  "personas": "persona set S1 (npm run persona:use -- S1): clones agent-test-wave-s1-* of the shared accounts, from seed:wave-personas on vcst",
+  "totals": {
+    "planned": 34,
+    "executed": 34,
+    "pass": 28,
+    "fail": 0,
+    "blocked": 1,
+    "skipped": 5,
+    "ambiguous": 0
+  },
+  "untriaged": 1
 }

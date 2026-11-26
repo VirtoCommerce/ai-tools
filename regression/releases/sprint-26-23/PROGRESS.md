@@ -4,11 +4,11 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 0 · PASS 0 · FAIL 0 · BLOCKED 0** · ledger 0 rows
+**Executed 34 · PASS 28 · FAIL 0 · BLOCKED 1** · ledger 0 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| W0 | Smoke gate | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W0 | Smoke gate | Elena Kutasina | RUN_DONE | 34 | 34 | 28 | 0 | 1 | 1 | 0 | REG-2026-11-26-0225-W0 |
 | W1 | Security & sign-in — session, RBAC, xAPI user and role mutations | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W2 | Subscriptions, cart, checkout & orders | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
