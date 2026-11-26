@@ -536,10 +536,10 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" \
   --shim "<the VC_RUN path from §0d>"
 ```
 Writes `.claude/vc-secrets.local.json` (gitignored first): one `local` secret per PAT axis <!-- doclint:may-not-exist -->
-(`github-pat` / `ado-pat` / `jira-token`), the `vc-init-<group>` tasks the bridge dispatches to, and a
-stable `projectId`. Prints a JSON report — keep `secrets` and `trustNeeded`. With no PAT axis at all
-it declares nothing (every axis is a session login) and 3d's token block is empty. A re-run with the
-same answers changes nothing and asks for no new trust.
+(`github-pat` / `ado-pat` / `jira-token`), the `vc-init-<group>` tasks the bridge dispatches to, the
+project's `config/vc-secrets-uses/` launchables, a stable `projectId`. Prints a
+JSON report — keep `secrets` and `trustNeeded`. No PAT axis at all: it declares nothing and 3d's token
+block is empty. A re-run with the same answers asks no new trust.
 
 When either role goes to vc-secrets (2d) add `--password-envs <env> --password-roles <those roles>`
 (`admin`, `user` or `admin,user`): it also declares, for that env, one `local` secret per such password
