@@ -23,7 +23,14 @@ const KEY_RE = /\b([A-Z][A-Z0-9]+-\d+)\b/g;
 
 /** A build reference in one repo: a git ref (tag or sha) that the PR's merge commit must be an ancestor of. */
 export interface BuildRef { repo: string; ref: string | null; label: string; note?: string; /** a PR build: its PR number */ pr?: number }
-export type PrState = "IN" | "OUT" | "NOT_MERGED" | "NOT_ON_STAND" | "UNKNOWN";
+/** OTHER_LINE: merged into a support/X.Y branch while the stand runs another line — a backport, not this build's code.
+ *  CI_ONLY: changes nothing but `.github/` — no product code the stand could miss. */
+export type PrState = "IN" | "OUT" | "NOT_MERGED" | "NOT_ON_STAND" | "OTHER_LINE" | "CI_ONLY" | "UNKNOWN";
+
+/** True when every changed file is under `.github/` (workflows, actions pins). An empty list is not CI-only. */
+export function ciOnly(files: string[]): boolean {
+  return files.length > 0 && files.every((f) => f.startsWith(".github/"));
+}
 export interface PrDelivery { repo: string; number: number; url: string; state: PrState; note: string }
 export type Verdict = "DELIVERED" | "PARTIAL" | "INCOMPLETE" | "MASS" | "NOT_DELIVERED" | "NO_CODE" | "UNKNOWN";
 export interface TicketDelivery { key: string; sources: string[]; prs: PrDelivery[]; verdict: Verdict }
@@ -122,6 +129,17 @@ export async function themeBuildRef(http: Http, themeFile: string, blobBase: str
   return { repo: FRONTEND_REPO, ref: null, label, note: "no theme-ci publish step matches the blob time" };
 }
 
+/** The X.Y of a support-line base branch (`support/3.1076` → "3.1076"), or null for any other branch. */
+export function supportLine(baseRef: string | null | undefined): string | null {
+  return /^support\/(\d+\.\d+)(?:\.x)?$/i.exec(String(baseRef ?? ""))?.[1] ?? null;
+}
+
+/** Whether a build is on support line `line` (X.Y): its version, ref or label starts a version with that X.Y. */
+export function onLine(target: { label: string; version?: string; ref: string | null }, line: string): boolean {
+  const re = new RegExp(`(^|[^0-9.])${line.replace(".", "\\.")}\\.\\d`);
+  return re.test(`${target.version ?? ""} ${target.ref ?? ""} ${target.label}`);
+}
+
 /** IN when `sha` is an ancestor of (or equal to) `ref` in `repo`. */
 export async function contains(http: Http, repo: string, sha: string, ref: string): Promise<PrState> {
   const c = await http.gh(`/repos/${repo}/compare/${sha}...${encodeURIComponent(ref)}`);
@@ -179,6 +197,13 @@ export async function deliveryOfTicket(http: Http, key: string, sources: string[
     if (!target) { prs.push({ ...p, state: "NOT_ON_STAND", note: "repo not deployed on this stand" }); continue; }
     if (!p.merged) { prs.push({ ...p, state: "NOT_MERGED", note: "not merged" }); continue; }
     const pr = await http.gh(`/repos/${p.repo}/pulls/${p.number}`);
+    // A backport into another support line is not code this build is meant to hold (Sprint 26-23: vc-platform
+    // support/3.1076 and 3.1039 PRs of VCST-6935 / VCST-6129 made a dev-line stand read PARTIAL).
+    const line = supportLine(pr?.base?.ref);
+    if (line && !onLine(target, line)) { prs.push({ ...p, state: "OTHER_LINE", note: `backport to support/${line}; the stand runs ${target.label}` }); continue; }
+    // A CI-only PR (VCST-6129: vc-platform#3170 pins .github actions) ships no code to a stand.
+    const files = (await http.ghAll(`/repos/${p.repo}/pulls/${p.number}/files`, 3)).map((f: any) => String(f.filename));
+    if (ciOnly(files)) { prs.push({ ...p, state: "CI_ONLY", note: "changes only .github/ — no product code" }); continue; }
     if (!pr?.merge_commit_sha || !target.ref) { prs.push({ ...p, state: "UNKNOWN", note: target.ref ? "no merge commit" : `build of ${target.label} unknown${target.note ? ` (${target.note})` : ""}` }); continue; }
     // A PR build of this very PR: a squash merge commit is never in it, so ask whether the build holds the PR's
     // final head — a push after the deploy leaves the build behind it.
