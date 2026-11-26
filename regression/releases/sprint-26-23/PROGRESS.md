@@ -4,7 +4,7 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 1112 · PASS 661 · FAIL 50 · BLOCKED 211** · ledger 0 rows
+**Executed 1112 · PASS 661 · FAIL 50 · BLOCKED 211** · ledger 28 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -13,7 +13,7 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 | W2 | Subscriptions, cart, checkout & orders | Elena Kutasina | RUN_DONE | 242 | 242 | 138 | 17 | 37 | 54 | 0 | REG-2026-11-26-0357-W2 |
 | W3 | Catalog, search & BOPIS | Elena Kutasina | RUN_DONE | 258 | 258 | 114 | 8 | 57 | 65 | 0 | REG-2026-11-26-0425-W3 |
 | W4 | Sales Rep hub | Elena Kutasina | RUN_DONE | 275 | 275 | 196 | 5 | 62 | 67 | 0 | REG-2026-11-26-0512-W4 |
-| W5 | Company, members & lists | Elena Kutasina | RUN_DONE | 189 | 189 | 141 | 12 | 16 | 28 | 0 | REG-2026-11-26-0955-W5 REG-2026-11-26-1200-RC |
+| W5 | Company, members & lists | Elena Kutasina | TRIAGED | 189 | 189 | 141 | 12 | 16 | 0 | 28 | REG-2026-11-26-0955-W5 REG-2026-11-26-1200-RC |
 | W6 | UI kit, Bridge soft look, a11y & i18n | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window — OTP, MFA, compare and punchout settings + env-wide cases | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
@@ -21,5 +21,24 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 
 | Verdict | Rows |
 |---|---|
+| REAL_BUG | 2 |
+| TEST_DEFECT | 5 |
+| DATA | 7 |
+| ENV_CONFIG | 2 |
+| NOT_TESTABLE | 4 |
+| PENDING_DECISION | 8 |
+
+## Decisions pending
+
+| Wave | Case | Question | Who decides |
+|---|---|---|---|
+| W5 | B2C-ORG-078 | Locked org pick drops the user to guest silently | triage · Elena Kutasina |
+| W5 | B2C-LIST-045 | Shared-list order summary has no list-level action | triage · Elena Kutasina |
+| W5 | B2C-LIST-051 | 403 page for a list the user cannot open shows no cause | triage · Elena Kutasina |
+| W5 | B2C-LIST-052 | Rep-shared list missing from the recipient's /account/lists | triage · Elena Kutasina |
+| W5 | B2C-LIST-053 | Share notification does not name the rep or the list | triage · Elena Kutasina |
+| W5 | B2C-LIST-054 | Recipient with Write access gets /403 and no remove control | triage · Elena Kutasina |
+| W5 | B2C-LIST-070 | Share notification has no organization name | triage · Elena Kutasina |
+| W5 | B2C-LIST-071 | Rep-shared list missing from the buyer's own lists | triage · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

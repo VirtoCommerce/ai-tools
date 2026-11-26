@@ -24,3 +24,11 @@ Owner Elena Kutasina · vcst · Platform 3.1101.0 · theme 2.63.0-alpha.2681 · 
 - B2C-MBR-033/038 blocked: BUILDRIGHT_ADMIN (test-carlos) cannot sign in. B2C-MBR-008 passed with an adapted check (same account).
 - Invite e-mails are not delivered on vcst: SendGrid "Maximum credits exceeded" (MBR-006 verified on the notification journal).
 - Promoted to Automated: B2C-MBR-006, 023, 036.
+
+## Triage (28 rows in ledger.csv, 0 untriaged)
+- **Bugs:** VCST-7038 (MBR-019, filed today), VCST-6823 (MBR-031, known).
+- **Product-owner question — rep-shared lists:** LIST-045/051/052/053/054/070/071 (list missing for the recipient, notification without names, `/403` despite Write) and ORG-078 (silent guest reload on a locked org). The cases call several of these known gaps; file or keep as gaps?
+- **Test defects:** LIST-016/043 (share dialog redesigned), LIST-072 (copy, fixed here), MBR-037 (fixed here), ORG-034 (wrong persona).
+- **Data:** LIST-017..025 — `same_org_pair` in the account pool is wrong on vcst; ORG-040 fixture.
+- **Env:** MBR-033/038 — BUILDRIGHT_ADMIN cannot sign in (reset needs the owner's OK).
+- **Not testable on the MCP lane:** ORG-037/070, LIST-035/082.

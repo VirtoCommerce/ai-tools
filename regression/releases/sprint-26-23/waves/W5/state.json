@@ -1,7 +1,7 @@
 {
   "wave": "W5",
   "owner": "Elena Kutasina",
-  "status": "RUN_DONE",
+  "status": "TRIAGED",
   "runIds": [
     "REG-2026-11-26-0955-W5",
     "REG-2026-11-26-1200-RC"
@@ -17,5 +17,5 @@
     "skipped": 20,
     "ambiguous": 0
   },
-  "untriaged": 28
+  "untriaged": 0
 }

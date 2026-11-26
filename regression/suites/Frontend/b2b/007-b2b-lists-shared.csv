@@ -1110,7 +1110,7 @@ Rep serves AcmeCorp; readerA = ACME_BUYER. AC3 (drift noted): the shipped confir
 20. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
 21. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 22. [WAIT] the 'Stop sharing this list?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
-23. [ASSERT] the body reads 'Everyone the list is shared with will lose access. You can share it again at any time.'
+23. [ASSERT] the body reads 'Everyone the list is shared with will lose access. You can share it again any time.'
 24. [ASSERT] the buttons are 'Cancel' (`[data-test-id=""stop-sharing-cancel-button""]`) and 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`) and focus starts on 'Cancel'
 25. [ACT] click 'Cancel' (`[data-test-id=""stop-sharing-cancel-button""]`)
 26. [WAIT] the confirmation has closed
@@ -1125,7 +1125,7 @@ Rep serves AcmeCorp; readerA = ACME_BUYER. AC3 (drift noted): the shipped confir
 35. [WAIT] the signed-in header is visible
 36. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
 37. [WAIT] the shared-list page settles (readerA)
-38. [ASSERT] readerA still reads the list","[DOM] the confirmation titled 'Stop sharing this list?' shows the body 'Everyone the list is shared with will lose access. You can share it again at any time.' with 'Cancel' and 'Stop sharing' buttons, focus on 'Cancel' {OBSERVED}
+38. [ASSERT] readerA still reads the list","[DOM] the confirmation titled 'Stop sharing this list?' shows the body 'Everyone the list is shared with will lose access. You can share it again any time.' with 'Cancel' and 'Stop sharing' buttons, focus on 'Cancel' {OBSERVED}
 [STATE] after 'Cancel' the card status still reads 'Shared with 1 customer' {OBSERVED}
 [NAV] readerA still reads the list through the original link after the cancelled Stop sharing {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
 [CONSOLE] no TypeError or JS error on any page in the flow
@@ -1221,7 +1221,7 @@ Rep serves AcmeCorp. Confirmation is required ONLY where an audience is lost: no
 41. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
 42. [ACT] click the primary button (`[data-test-id=""wishlist-sharing-save-button""]`; it reads 'Save' for the Private scope)
 43. [WAIT] the 'Stop sharing this list?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible — leaving My organization loses an audience (the organization's members)
-44. [ASSERT] the body reads 'Everyone the list is shared with will lose access. You can share it again at any time.' with 'Cancel' and 'Stop sharing' buttons
+44. [ASSERT] the body reads 'Everyone the list is shared with will lose access. You can share it again any time.' with 'Cancel' and 'Stop sharing' buttons
 45. [ACT] click 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`)
 46. [WAIT] the Share dialog has closed","[DOM] no confirmation dialog (`[data-test-id=""stop-sharing-modal""]`) appears on the first share from Private (an add-only edit); a recipient REMOVAL inside Specific customers opens 'Change who can access?' because an audience is lost {SPEC}
 [DOM] Specific customers -> My organization opens 'Change who can access?' with the body 'The link stays the same. Some users may lose access.' and the buttons 'Cancel' / 'Change access' {SPEC}
