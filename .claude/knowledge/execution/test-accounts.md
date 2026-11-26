@@ -16,7 +16,7 @@ ran it.
 | Command | What it answers | Writes |
 |---|---|---|
 | `npm run creds:check [-- <env>]` | which password names an env still lacks; a credential left in a `.env` file; which running lane is behind the store | nothing |
-| `npm run creds:verify [-- <env>...]` | does every account in the store still SIGN IN on its stand (one attempt per account, never locks one out); an account whose login no longer exists there is `GONE`, with the command that removes it | nothing |
+| `npm run creds:verify [-- <env>...]` | does every account in the store still SIGN IN on its stand (one attempt per account, never locks one out); an account whose login no longer exists there is `GONE`, with the command that removes it; one refused with the right password (no failed attempt counted — a fixture on another store, refused on purpose) is reported, not failed | nothing |
 | `npm run creds:forget -- <env> <login\|KEY>... [--dry-run]` | removes a `GONE` entry: a login, or a retired persona by its KEY — that env's own entry only | store |
 | `npm run creds:migrate` | dry run: would moving the old `.env` credentials into the store change any value | nothing |
 | `npm run creds:migrate -- --apply` | the move itself, proven; deletes its backup when the proof is green (`--keep-backup` keeps it) | store, `.env.*`, `.mcp.json` |

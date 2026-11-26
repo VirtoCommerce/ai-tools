@@ -15,7 +15,9 @@
  *     so running this again never locks an account out.
  * Each failure is one of two classes: GONE — the login no longer exists on the stand (the admin lookup says so; no
  * sign-in is spent), so the entry is stale: a teardown that deleted it would have removed it (accountUnset), and the
- * line gives the `npm run creds:forget` that does it now; or a failed sign-in (wrong password, locked, …).
+ * line gives the `npm run creds:forget` that does it now; or a failed sign-in (wrong password, locked, …). A refused
+ * sign-in that counted no failed attempt (re-read after it) had the right password — a fixture the stand refuses on
+ * purpose (another store, none) — and is reported as such, not as a failure.
  * Prints logins, password NAMES and the token endpoint's error code — never a value, and no token is kept.
  * A production stand (ENV_RISK=production) is left out unless named. Exit 1 when an account is GONE or does not sign in.
  */
@@ -132,8 +134,9 @@ async function verifyEnv(env) {
     // Without the admin's token no account's lockout state can be read: trying them would spend unguarded failed sign-ins.
     if (adminSignIn && !token) return { ok: true, skipped: true, line: `– ${label}: not tried — the admin did not sign in, so its lockout state cannot be checked` };
     let sid = a.kind === 'admin' ? null : storeId;
+    let user = null;
     if (token) {
-      const user = await lookUp(backUrl, token, a.login);
+      user = await lookUp(backUrl, token, a.login);
       if (user?.absent) return { ok: false, gone: true, line: `✗ GONE ${label}: no such account on the stand — ${goneFix(env, a)}` };
       if (user && isLockedOut(user)) return { ok: true, skipped: true, line: `– ${label}: locked until ${user.lockoutEnd} — not tried` };
       if ((user?.accessFailedCount ?? 0) >= MAX_FAILED) return { ok: false, line: `✗ ${label}: ${user.accessFailedCount} failed sign-ins already — not tried (fix the password, then reset the count by a good sign-in or a re-seed)` };
@@ -141,13 +144,23 @@ async function verifyEnv(env) {
     }
     const s = await signIn(backUrl, a.login, a.password, sid);
     if (s.ok) return { ok: true, line: `✓ ${label}${sid ? ` storeId=${sid}` : ''}` };
+    // A refusal that counted no failed attempt is not a wrong password: the stand checked the password, accepted it and
+    // refused the sign-in for another reason — a fixture on another store, or on none, refused on purpose (OTP-024).
+    // Only where lockout is on: an account with it off never counts a failed attempt, wrong password or not.
+    if (!s.unreachable && user && !user.absent && user.lockoutEnabled !== false) {
+      const after = await lookUp(backUrl, token, a.login);
+      if (after && !after.absent && (after.accessFailedCount ?? 0) <= (user.accessFailedCount ?? 0)) {
+        return { ok: true, refused: true, line: `– ${label}: password right (no failed attempt counted), sign-in refused by the stand (${s.reason}) — account store ${JSON.stringify(user.storeId ?? null)}, tried with storeId=${sid ?? 'none'}` };
+      }
+    }
     return { ok: false, line: `✗ ${label}: ${s.unreachable ? 'unreachable ' : ''}${s.reason}` };
   });
   const failed = results.filter((x) => !x.ok).length;
   const gone = results.filter((x) => x.gone).length;
   const skipped = results.filter((x) => x.skipped).length;
-  lines.push(`  ${header}: ${results.length - failed - skipped} sign in, ${failed - gone} do not${gone ? `, ${gone} GONE` : ''}${skipped ? `, ${skipped} skipped` : ''}${token ? '' : admin ? ' (admin did not sign in — no lookup)' : ' (no admin account — no lookup)'}`);
-  for (const x of results) if (!x.ok || x.skipped || process.argv.includes('--all')) lines.push(`    ${x.line}`);
+  const refused = results.filter((x) => x.refused).length;
+  lines.push(`  ${header}: ${results.length - failed - skipped - refused} sign in, ${failed - gone} do not${gone ? `, ${gone} GONE` : ''}${refused ? `, ${refused} refused with the right password` : ''}${skipped ? `, ${skipped} skipped` : ''}${token ? '' : admin ? ' (admin did not sign in — no lookup)' : ' (no admin account — no lookup)'}`);
+  for (const x of results) if (!x.ok || x.skipped || x.refused || process.argv.includes('--all')) lines.push(`    ${x.line}`);
   return { env, lines, failed: failed - gone, gone };
 }
 
