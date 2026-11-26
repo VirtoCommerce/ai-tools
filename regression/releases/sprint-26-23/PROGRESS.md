@@ -14,7 +14,7 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Company, members & lists | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | UI kit, Bridge soft look, a11y & i18n | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W6 | UI kit, Bridge soft look, a11y & i18n | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
 | WX | Exclusive window — OTP, MFA, compare and punchout settings + env-wide cases | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts
