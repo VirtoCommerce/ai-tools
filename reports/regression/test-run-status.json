@@ -1,34 +1,19 @@
 {
-  "runId": "REG-2026-11-24-1024",
+  "runId": "REG-2026-11-26-0805-W0R",
   "status": "completed",
-  "startedAt": "2026-11-24T09:24:54.324Z",
+  "startedAt": "2026-11-26T05:01:09.712Z",
   "env": "vcst",
-  "selection": "027,104 --ids CUST-173,OTP-039 --no-promote",
-  "ticket": "VCST-6237",
-  "note": "scoped run of the A9 case CUST-173 and the rewritten OTP-039",
+  "ticket": "VCST-7026",
+  "selection": "042 --ids SMK-002,SMK-003,SMK-034 (sprint-26-23 W0 re-run: SMK-002/003 rewritten, SMK-034 after saving a Skyflow card)",
   "suites": {
-    "104": {
+    "042": {
       "status": "done",
-      "lane": "browser",
-      "cases": 1,
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-24T09:26:20.896Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-24T09:32:31.123Z"
-    },
-    "027": {
-      "status": "done",
       "lane": "browser",
-      "cases": 1,
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-24T09:26:20.895Z",
-      "pass": 1,
+      "pass": 3,
       "fail": 0,
-      "blocked": 0,
-      "finishedAt": "2026-11-24T09:32:31.123Z"
+      "blocked": 0
     }
   },
-  "finishedAt": "2026-11-24T09:32:33.065Z"
+  "finishedAt": "2026-11-26T05:16:19.210Z"
 }

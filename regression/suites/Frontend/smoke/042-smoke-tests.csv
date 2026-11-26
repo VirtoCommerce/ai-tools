@@ -14,6 +14,7 @@ SMK-001,Homepage — Load and Hero Navigation,Smoke > Homepage,Critical,BL-CROSS
 [NETWORK] no 4xx/5xx on initial page load
 [NETWORK] no failed GraphQL requests on homepage render",Homepage blank or spinner stuck >10s (BL-CROSS-011); hero banner absent; JS TypeError on load; 4xx on homepage GraphQL queries,none,"VCST-4499; Corrected: 2026-10-29 (REG-2026-10-28-1915): the home hero slider has no CTA link and 'Popular categories' is only in the footer on this build (runner-observed; the home is the built-in component, KB-A788D882) - CTA steps made conditional / DESIGN-CONFIRM, category section retargeted to the footer; whether a hero CTA and a body categories section are required is a product question (no docs page evidenced)",Automated
 SMK-002,Registration — Personal Account,Smoke > Registration,Critical,"BL-AUTH-002, BL-AUTH-003","ECL-4.1, ECL-4.4",Fresh browser; {{FRONT_URL}} accessible,"front_url={{FRONT_URL}}, reg_email=random (AGENT-TEST- prefix, generated at runtime)","[SETUP] generate unique email: AGENT-TEST-smk002-{unix_ms}@test.com — store as reg_email
+[SETUP] read the store's emailVerificationRequired (xAPI store query for {{STORE_ID}}, settings.emailVerificationRequired) — store as verification_required
 [NAV] {{FRONT_URL}}/sign-up
 [WAIT] account type selector visible
 [ACT] select the 'Personal account' radio
@@ -21,15 +22,26 @@ SMK-002,Registration — Personal Account,Smoke > Registration,Critical,"BL-AUTH
 [ACT] fill 'Last name': 'User'
 [ACT] fill 'Email': reg_email
 [ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] fill 'Confirm password': {{USER_PASSWORD}}
+[WAIT] 'Sign up' button enabled
 [ACT] click 'Sign up'
-[WAIT] redirect to homepage or confirmation message","[DOM] success toast/confirmation message visible, OR '[data-test-id=""account-button""]' visible in header (authenticated redirect)
-[DOM] user name visible in header after redirect
-[STATE] login with new credentials succeeds on retry","[API] POST /connect/token returns 200 with access_token after registration
+[WAIT] URL is /successful-registration
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] if the form opens in one-time-code mode, click 'Sign in with a password instead'
+[WAIT] Email and Password fields visible
+[ACT] fill 'Email': reg_email
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] sign-in settles (redirect away from /sign-in, or an error on the form)","[DOM] /successful-registration shows the registration-completed notice asking to verify the email
+[DOM] before sign-in the header shows no '[data-test-id=""account-button""]' (registration does not sign the user in)
+[DOM] verification_required=false: after sign-in the header shows the new user's name (KB-AC4B6E46)
+[DOM] verification_required=true: sign-in is refused until the email is confirmed — the user stays on /sign-in, not signed in","[API] POST /connect/token returns 200 with access_token after registration
 [ADMIN] user visible under Customers in admin panel
 [CONSOLE] no TypeError or JS errors during form submit
-[NETWORK] no 4xx/5xx on account creation request",Validation error on valid email format; form stays on same page with no feedback; 400/500 on account create API; spinner stuck >5s,Delete test account via admin after test (AGENT-TEST- prefix identifies it),"VCST-4499; Synced 2026-07-27 (TLC-2026-07-27-0900): removed T&C consent step — /sign-up has no consent control on this build (verified live, both account types); submit button is 'Sign up' not 'Create Account'; field labels are 'First name'/'Last name'",Automated
+[NETWORK] no 4xx/5xx on account creation request",Validation error on valid email format; form stays on same page with no feedback; 400/500 on account create API; spinner stuck >5s,Delete test account via admin after test (AGENT-TEST- prefix identifies it),"VCST-4499; Synced 2026-07-27 (TLC-2026-07-27-0900): removed T&C consent step — /sign-up has no consent control on this build (verified live, both account types); submit button is 'Sign up' not 'Create Account'; field labels are 'First name'/'Last name'; 2026-11-26 (Sprint 26-23 W0): sign-up always lands on /successful-registration unauthenticated (sign-up.vue pushes Welcome unconditionally); sign-in outcome depends on Stores.EmailVerificationRequired — read at runtime; Confirm password added | Promoted: REG-2026-11-26-0805-W0R (2026-11-26)",Automated
 SMK-003,Registration — Organization Account,Smoke > Registration,Critical,"BL-B2B-005, BL-AUTH-002","ECL-4.1, ECL-4.4",Fresh browser; {{FRONT_URL}} accessible,"front_url={{FRONT_URL}}, reg_email=random (AGENT-TEST- prefix), company_name=random (AGENT-TEST- prefix)","[SETUP] generate unique email: AGENT-TEST-smk003-{unix_ms}@test.com — store as reg_email
 [SETUP] generate unique company name: AGENT-TEST-Org-{unix_ms} — store as company_name
+[SETUP] read the store's emailVerificationRequired (xAPI store query for {{STORE_ID}}, settings.emailVerificationRequired) — store as verification_required
 [NAV] {{FRONT_URL}}/sign-up
 [WAIT] account type selector visible
 [ACT] select the 'Company account' radio
@@ -39,14 +51,24 @@ SMK-003,Registration — Organization Account,Smoke > Registration,Critical,"BL-
 [ACT] fill 'Last name': 'User'
 [ACT] fill 'Email': reg_email
 [ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] fill 'Confirm password': {{USER_PASSWORD}}
+[WAIT] 'Sign up' button enabled
 [ACT] click 'Sign up'
-[WAIT] redirect to homepage or confirmation","[DOM] success message or authenticated homepage visible
-[DOM] organization name visible in account context area
+[WAIT] URL is /successful-registration
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] if the form opens in one-time-code mode, click 'Sign in with a password instead'
+[WAIT] Email and Password fields visible
+[ACT] fill 'Email': reg_email
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] sign-in settles (redirect away from /sign-in, or an error on the form)","[DOM] /successful-registration shows the registration-completed notice asking to verify the email; the user is not signed in yet
+[DOM] verification_required=false: after sign-in the header account button shows company_name and the user's name
+[DOM] verification_required=true: sign-in is refused until the email is confirmed — the user stays on /sign-in, not signed in
 [STATE] user has B2B navigation items accessible (Quotes, Company Members)","[API] POST account creation returns 200
 [ADMIN] organization appears in Organizations list
 [ADMIN] user assigned as organization admin role
 [CONSOLE] no errors during submission
-[NETWORK] no 4xx/5xx",'Company account' option missing from selector; 'Company name' field absent after selecting company type; org not created in admin; B2B nav absent,Delete test org and user via admin after test (AGENT-TEST- prefix),VCST-4499; Synced 2026-07-27 (TLC-2026-07-27-0900): removed T&C consent step — /sign-up has no consent control on this build (verified live); account type is 'Company account' not 'Organization'; submit button is 'Sign up' not 'Create Account',Automated
+[NETWORK] no 4xx/5xx",'Company account' option missing from selector; 'Company name' field absent after selecting company type; org not created in admin; B2B nav absent,Delete test org and user via admin after test (AGENT-TEST- prefix),VCST-4499; Synced 2026-07-27 (TLC-2026-07-27-0900): removed T&C consent step — /sign-up has no consent control on this build (verified live); account type is 'Company account' not 'Organization'; submit button is 'Sign up' not 'Create Account'; 2026-11-26 (Sprint 26-23 W0): sign-up always lands on /successful-registration unauthenticated (sign-up.vue pushes Welcome unconditionally); sign-in outcome depends on Stores.EmailVerificationRequired — read at runtime; Confirm password added | Promoted: REG-2026-11-26-0805-W0R (2026-11-26),Automated
 SMK-004,Authentication — Sign In Personal Account,Smoke > Auth,Critical,"BL-AUTH-001, BL-AUTH-003",ECL-4.2,Valid personal account credentials available; fresh browser,"email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in form visible with Email and Password fields
 [ACT] fill 'Email': {{USER_EMAIL}}
@@ -635,7 +657,7 @@ User logged in as {{USER_EMAIL}}; /account/orders accessible with ≥1 order in 
 [NETWORK] no 4xx/5xx on filtered orders request",Filter control absent on /account/orders (BL-ORD-003); filter panel does not open on click; orders with non-matching statuses visible after filter applied; clearing filter does not restore full list; JS error on filter open or apply; filter panel has no 'Apply' button (agent must not skip it — explicit click required per project rule),none,VCST-4499 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
 SMK-034,Payment — Saved Skyflow Card Cart Payment Succeeds (Revenue-Path Guard),Smoke > Payment,Critical,"BL-PAY-003, BL-CHK-002, BL-ORD-001","ECL-1.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Lean daily GO/NO-GO guard for the saved-Skyflow-card cart-payment revenue path (VCST-5009 / vc-frontend PR#2328). USER_DEFAULT ({{USER_EMAIL}}) must hold the saved canonical Mastercard ending 0015 (SKYFLOW_MC, seeded by PAY-SKY-009). Skyflow configured with AllowCartPayment=true (cart-inline form). Deep vault-PUT / race-guard coverage lives in suite 040a (PAY-SKY-016/017) — this smoke case only confirms a saved-card order completes. No DevTools network capture, no multi-card switching.","front_url={{FRONT_URL}}, sky_cvv=@td(SKYFLOW_MC.cvv)","[NAV] {{FRONT_URL}}/cart with one item in cart
+Lean daily GO/NO-GO guard for the saved-Skyflow-card cart-payment revenue path (VCST-5009 / vc-frontend PR#2328). USER_DEFAULT ({{USER_EMAIL}}) must hold the saved canonical Mastercard ending 0015 (SKYFLOW_MC) and a saved shipping address. The card is saved by one /cart Skyflow payment with 'Save card for future payments' ticked (KB-2A76DF9E; PAY-SKY-009 flow). Skyflow configured with AllowCartPayment=true (cart-inline form). Deep vault-PUT / race-guard coverage lives in suite 040a (PAY-SKY-016/017) — this smoke case only confirms a saved-card order completes. No DevTools network capture, no multi-card switching.","front_url={{FRONT_URL}}, sky_cvv=@td(SKYFLOW_MC.cvv)","[NAV] {{FRONT_URL}}/cart with one item in cart
 [ACT] select a Delivery shipping method (e.g. 'Fixed Rate Ground') so payment is the only remaining Place-order gate
 [WAIT] shipping method selected; payment section becomes the active gate
 [ACT] select 'Bank card (Skyflow)' payment method if not pre-selected
