@@ -1,7 +1,8 @@
 {
   "wave": "W2",
-  "owner": null,
-  "status": "NOT_STARTED",
+  "owner": "Elena Kutasina",
+  "status": "RUNNING",
   "runIds": [],
-  "updatedAt": "2026-11-26"
+  "updatedAt": "2026-11-26",
+  "personas": "persona set S2 (npm run persona:use -- S2): clones agent-test-wave-s2-* of the shared accounts"
 }
