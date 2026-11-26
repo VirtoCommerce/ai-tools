@@ -104,3 +104,28 @@ export function relayThroughSecrets({
   });
   return child;
 }
+
+// ── THE PUSH TASK ────────────────────────────────────────────────────────────────────────────
+//
+// A task's argv is fixed by its declaration — the caller picks only WHICH task (README §Tasks) — so
+// `kb-push` is declared as the neutral `node scripts/kb/kb.mjs push`, and the caller's flags travel in
+// the environment the launcher passes down: the Stop hook sends `auto` (log-only lines wait for
+// company, VCST-6378), a person's `npm run kb -- push` sends nothing and means now. Only these boolean
+// flags travel, and they are read only by a push the relay started (HOP set), so a stray variable in
+// somebody's shell changes nothing.
+
+export const PUSH_FLAGS_ENV = 'KB_PUSH_FLAGS';
+export const RELAYED_PUSH_FLAGS = Object.freeze(['auto', 'dry-run', 'no-sweep', 'json']);
+
+/** The environment for `node <shim> task kb-push`: the caller's, the loop guard, the flags. */
+export function pushTaskEnv(env = process.env, flags = {}) {
+  const on = RELAYED_PUSH_FLAGS.filter((f) => flags[f]);
+  return { ...env, [HOP]: '1', [PUSH_FLAGS_ENV]: on.join(' ') };
+}
+
+/** The flags a relayed push was started with — `{}` for any push the relay did not start. */
+export function relayedPushFlags(env = process.env) {
+  if (!env[HOP]) return {};
+  const asked = String(env[PUSH_FLAGS_ENV] ?? '').split(/\s+/).filter(Boolean);
+  return Object.fromEntries(asked.filter((f) => RELAYED_PUSH_FLAGS.includes(f)).map((f) => [f, true]));
+}

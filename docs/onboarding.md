@@ -289,15 +289,15 @@ read. (`KB_GITHUB_TOKEN` is an optional override, for a machine whose shared tok
 
 ```jsonc
 "servers": { "kb":      { "command": "node", "args": ["scripts/kb/mcp.mjs"],                "env": { "GITHUB_TOKEN": "secret:github-pat" } } },
-"tasks":   { "kb-push": { "command": "node", "args": ["scripts/kb/kb.mjs", "push", "--auto"], "env": { "GITHUB_TOKEN": "secret:github-pat" } } }
+"tasks":   { "kb-push": { "command": "node", "args": ["scripts/kb/kb.mjs", "push"],           "env": { "GITHUB_TOKEN": "secret:github-pat" } } }
 ```
 
 then `node "$VC_SECRETS" trust` in a terminal in the repo, and restart. Nothing else changes: `.mcp.json`
 keeps `node scripts/kb/mcp.mjs`, and the server, finding no token of its own and a declared `kb`, relaunches
 itself through vc-secrets. **If vc-secrets refuses** (not trusted, the declaration changed since, the secret
 not set) the server still starts, read-only, and says why on stderr — reading never depends on the token.
-The `Stop` hook pushes through the `kb-push` task the same way; a push by hand is
-`node "$VC_SECRETS" task kb-push`. `npm run kb -- stat` from a plain shell cannot see a token held there and
+The `Stop` hook pushes through the `kb-push` task the same way, and so does `npm run kb -- push` from a
+plain shell (it relaunches itself as the task; a flag the task cannot carry, like `--base`, keeps it local). `npm run kb -- stat` from a plain shell cannot see a token held there and
 says so on its `token` line.
 
 **A token that can read but not write.** Writing needs push access to `VirtoCommerce/vc-knowledge`:

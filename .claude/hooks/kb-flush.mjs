@@ -38,7 +38,7 @@ import {
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
-import { viaSecrets } from '../../scripts/kb/core/via-secrets.mjs';
+import { pushTaskEnv, viaSecrets } from '../../scripts/kb/core/via-secrets.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -190,15 +190,15 @@ function main() {
     out = openSync(logFile, 'a');
   } catch { /* an unwritable log must not cost the push */ }
 
-  // The `kb-push` task is declared as exactly this command (`node scripts/kb/kb.mjs push --auto`);
-  // the launcher adds the token and the child inherits `env`, session key included.
+  // The `kb-push` task is declared as `node scripts/kb/kb.mjs push`; `--auto` travels in the environment
+  // (core/via-secrets.mjs `pushTaskEnv`). The launcher adds the token; the child inherits `env`, session key included.
   const argv = via ? [via.shim, 'task', 'kb-push'] : [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'];
   const child = spawn(process.execPath, argv, {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],
     // The push publishes under THIS session's key, so it gets the same environment the key came from.
-    env,
+    env: via ? pushTaskEnv(env, { auto: true }) : env,
   });
   child.unref();
   if (typeof out === 'number') closeSync(out);

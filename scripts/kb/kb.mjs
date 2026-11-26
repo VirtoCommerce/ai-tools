@@ -25,7 +25,9 @@ import { accessBlock, accessWhy, liveRateHold, pushConfirmRequired, queueDir } f
 const STALE_QUEUE_MIN = 6 * 60;
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
-import { viaSecrets } from './core/via-secrets.mjs';
+import { HOP, RELAYED_PUSH_FLAGS, pushTaskEnv, relayedPushFlags, viaSecrets } from './core/via-secrets.mjs';
+import { spawnSync } from 'node:child_process';
+import { repoRoot } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
@@ -142,6 +144,25 @@ async function main(argv) {
   const verb = args._[0];
   if (!verb || args.flags.help) { out(USAGE); return verb ? EXIT.ANSWER : EXIT.NO_BASE; }
 
+  // A PUSH FROM A SHELL THAT CANNOT SEE THE TOKEN: it is in vc-secrets, which hands it only to a process
+  // it launches. So the push relaunches itself as the declared `kb-push` task (core/via-secrets.mjs), its
+  // flags in the environment. A flag the task cannot carry (`--base`) keeps it here, where it reports
+  // `no-token` and keeps the queue — as before. The relaunched push reads its flags back.
+  if (verb === 'push' || verb === 'flush') {
+    if (process.env[HOP]) Object.assign(args.flags, relayedPushFlags(process.env));
+    else {
+      const via = viaSecrets('tasks', 'kb-push');
+      const portable = Object.keys(args.flags).every((f) => RELAYED_PUSH_FLAGS.includes(f)) && args._.length === 1;
+      if (via && portable) {
+        process.stderr.write('kb push: the token is in vc-secrets — pushing through its task kb-push\n');
+        const r = spawnSync(process.execPath, [via.shim, 'task', 'kb-push'], {
+          cwd: repoRoot(), stdio: 'inherit', env: pushTaskEnv(process.env, args.flags),
+        });
+        return r.status ?? EXIT.NO_BASE;
+      }
+    }
+  }
+
   // WHO THIS PROCESS IS, resolved ONCE and before any verb runs, so the first line of a cold
   // machine carries an identity like every line after it. Everything downstream reads the cache
   // this fills, synchronously and off the filesystem — the network is touched here or nowhere.
@@ -171,7 +192,7 @@ async function main(argv) {
     // The one place an operator can ask "what will my lines say about me?" before writing any.
     out(`who       ${r.who ?? 'none — no write token, or the lookup has not succeeded here'}`);
     // A token kept in vc-secrets reaches only the processes vc-secrets launches, never this shell.
-    { const via = viaSecrets('tasks', 'kb-push'); if (via) out(`token     in vc-secrets — not visible to this shell; the Stop hook pushes through it, by hand: node "${via.shim}" task kb-push`); }
+    if (viaSecrets('tasks', 'kb-push')) out('token     in vc-secrets — not visible to this shell; `npm run kb -- push` and the Stop hook push through its task kb-push');
     out(`queue     ${r.queue}  (${r.queueDepth} line(s), ${r.pending} pending change(s)`
       + `${r.malformedQueueLines ? `, ${r.malformedQueueLines} malformed` : ''})`);
     if (r.backlog?.lines) {
