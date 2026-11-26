@@ -132,7 +132,7 @@ try {
       const list = rows.filter((r) => r.verdict === v && (v === "PARTIAL" || v === "UNKNOWN" || r.sources.includes("sprint")));
       if (!list.length) continue;
       console.log(`\n${v} (${list.length})`);
-      for (const r of list) console.log(`  ${r.key} [${r.sources.join("; ")}]: ${r.prs.filter((p) => p.state !== "NOT_ON_STAND" && p.state !== "OTHER_LINE").map((p) => `${p.repo.replace("VirtoCommerce/", "")}#${p.number} ${p.state}`).join(", ")}`);
+      for (const r of list) console.log(`  ${r.key} [${r.sources.join("; ")}]: ${r.prs.filter((p) => p.state !== "NOT_ON_STAND" && p.state !== "OTHER_LINE" && p.state !== "CI_ONLY").map((p) => `${p.repo.replace("VirtoCommerce/", "")}#${p.number} ${p.state}`).join(", ")}`);
     }
     const counts: Record<string, number> = {};
     for (const r of rows) counts[r.verdict] = (counts[r.verdict] ?? 0) + 1;

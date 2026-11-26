@@ -23,8 +23,14 @@ const KEY_RE = /\b([A-Z][A-Z0-9]+-\d+)\b/g;
 
 /** A build reference in one repo: a git ref (tag or sha) that the PR's merge commit must be an ancestor of. */
 export interface BuildRef { repo: string; ref: string | null; label: string; note?: string; /** a PR build: its PR number */ pr?: number }
-/** OTHER_LINE: merged into a support/X.Y branch while the stand runs another line — a backport, not this build's code. */
-export type PrState = "IN" | "OUT" | "NOT_MERGED" | "NOT_ON_STAND" | "OTHER_LINE" | "UNKNOWN";
+/** OTHER_LINE: merged into a support/X.Y branch while the stand runs another line — a backport, not this build's code.
+ *  CI_ONLY: changes nothing but `.github/` — no product code the stand could miss. */
+export type PrState = "IN" | "OUT" | "NOT_MERGED" | "NOT_ON_STAND" | "OTHER_LINE" | "CI_ONLY" | "UNKNOWN";
+
+/** True when every changed file is under `.github/` (workflows, actions pins). An empty list is not CI-only. */
+export function ciOnly(files: string[]): boolean {
+  return files.length > 0 && files.every((f) => f.startsWith(".github/"));
+}
 export interface PrDelivery { repo: string; number: number; url: string; state: PrState; note: string }
 export type Verdict = "DELIVERED" | "PARTIAL" | "INCOMPLETE" | "MASS" | "NOT_DELIVERED" | "NO_CODE" | "UNKNOWN";
 export interface TicketDelivery { key: string; sources: string[]; prs: PrDelivery[]; verdict: Verdict }
@@ -195,6 +201,9 @@ export async function deliveryOfTicket(http: Http, key: string, sources: string[
     // support/3.1076 and 3.1039 PRs of VCST-6935 / VCST-6129 made a dev-line stand read PARTIAL).
     const line = supportLine(pr?.base?.ref);
     if (line && !onLine(target, line)) { prs.push({ ...p, state: "OTHER_LINE", note: `backport to support/${line}; the stand runs ${target.label}` }); continue; }
+    // A CI-only PR (VCST-6129: vc-platform#3170 pins .github actions) ships no code to a stand.
+    const files = (await http.ghAll(`/repos/${p.repo}/pulls/${p.number}/files`, 3)).map((f: any) => String(f.filename));
+    if (ciOnly(files)) { prs.push({ ...p, state: "CI_ONLY", note: "changes only .github/ — no product code" }); continue; }
     if (!pr?.merge_commit_sha || !target.ref) { prs.push({ ...p, state: "UNKNOWN", note: target.ref ? "no merge commit" : `build of ${target.label} unknown${target.note ? ` (${target.note})` : ""}` }); continue; }
     // A PR build of this very PR: a squash merge commit is never in it, so ask whether the build holds the PR's
     // final head — a push after the deploy leaves the build behind it.
