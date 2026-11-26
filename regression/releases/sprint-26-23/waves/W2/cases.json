@@ -571,8 +571,8 @@
    "run": "REG-2026-11-26-0357-W2"
   },
   "028|CART-001": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0357-W2"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1000-RB"
   },
   "028|CART-002": {
    "status": "PASS",
@@ -591,12 +591,12 @@
    "run": "REG-2026-11-26-0357-W2"
   },
   "028|CART-006": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0357-W2"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1000-RB"
   },
   "028|CART-007": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0357-W2"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1000-RB"
   },
   "028|CART-008": {
    "status": "PASS",
@@ -827,12 +827,12 @@
    "run": "REG-2026-11-26-0357-W2"
   },
   "028|CART-133": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0357-W2"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1000-RB"
   },
   "028|CART-134": {
-   "status": "BLOCKED",
-   "run": "REG-2026-11-26-0357-W2"
+   "status": "PASS",
+   "run": "REG-2026-11-26-1000-RB"
   },
   "120|ORD-DASH-001": {
    "status": "PASS",

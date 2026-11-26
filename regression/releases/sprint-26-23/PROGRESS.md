@@ -4,13 +4,13 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 390 · PASS 210 · FAIL 25 · BLOCKED 76** · ledger 0 rows
+**Executed 390 · PASS 215 · FAIL 25 · BLOCKED 71** · ledger 49 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | RUN_DONE | 34 | 34 | 28 | 0 | 1 | 1 | 0 | REG-2026-11-26-0225-W0 |
 | W1 | Security & sign-in — session, RBAC, xAPI user and role mutations | Elena Kutasina | RUN_DONE | 114 | 114 | 44 | 8 | 38 | 46 | 0 | REG-2026-11-26-0300-W1 |
-| W2 | Subscriptions, cart, checkout & orders | Elena Kutasina | RUN_DONE | 242 | 242 | 138 | 17 | 37 | 54 | 0 | REG-2026-11-26-0357-W2 |
+| W2 | Subscriptions, cart, checkout & orders | Elena Kutasina | TRIAGED | 242 | 242 | 143 | 17 | 32 | 0 | 49 | REG-2026-11-26-0357-W2 REG-2026-11-26-1000-RB |
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Company, members & lists | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -21,5 +21,24 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 
 | Verdict | Rows |
 |---|---|
+| REAL_BUG | 7 |
+| BY_DESIGN | 1 |
+| TEST_DEFECT | 4 |
+| DATA | 11 |
+| ENV_CONFIG | 2 |
+| NOT_TESTABLE | 17 |
+| FLAKY | 1 |
+| PENDING_DECISION | 6 |
+
+## Decisions pending
+
+| Wave | Case | Question | Who decides |
+|---|---|---|---|
+| W2 | CHK-004 | ZIP 'ABCDE' accepted for a US address | triage · Elena Kutasina |
+| W2 | CHK-027 | Phone '123' accepted | triage · Elena Kutasina |
+| W2 | CHK-028 | Invalid address fields accepted | triage · Elena Kutasina |
+| W2 | CHK-106 | Duplicate-address guard (AC-13 / OQ-8) | triage · Elena Kutasina |
+| W2 | ORD-DASH-010 | Orders widget error has no retry control | triage · Elena Kutasina |
+| W2 | ORD-DASH-015 | 'Max rows' clamps instead of refusing an out-of-range value | triage · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
