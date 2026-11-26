@@ -44,7 +44,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, ensureMemberIndex,
   writeEnvAliasOverride, DRY_RUN, TEARDOWN, STORE_ID, ROOT,
 } from '../../lib/seed-common.mjs';
-import { accountSet, resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
 import {
   SEED_PREFIX, EMAIL_PREFIX, PASSWORD_VAR, ORGS, PEOPLE, MEMBER_QUERY,
   orgBody, memberBody, seedOuterId, isSeededOuterId,
@@ -161,6 +161,7 @@ async function teardown() {
   // 1) logins first (a security account outlives its member and keeps counting as a recipient)
   for (const p of PEOPLE) {
     const u = await findUser(p.email);
+    accountUnset(p.email);
     if (!u) continue;
     if (!DRY_RUN) {
       // The security delete query param is `names` (NOT ids / userNames — see user-provision.mjs).
@@ -366,6 +367,7 @@ async function main() {
         // A stray login on the no-login contact silently turns the parent's 3 into 4.
         if (!DRY_RUN) await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(p.email)}`, null, { expectStatus: [200, 204, 404] });
         log(`  ✗ removed stray login on ${p.email} — it would collapse the login gate (3 becomes 4)`);
+        accountUnset(p.email);
       } else {
         log(`  — ${p.email}: NO security account (by design — this is what makes the login gate falsifiable)`);
       }

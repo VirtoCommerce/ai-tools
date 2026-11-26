@@ -26,7 +26,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, loadAliases, BACK_URL, ADMIN, ADMIN_PASSWORD,
   uploadAsset, writeEnvAliasOverride, verifyRemoved, resetSecurityPassword, ensureVirtoPagesEnabled,
 } from '../../lib/seed-common.mjs';
-import { accountSet, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   TICKET_PREFIX, PAGE_ALIASES, USER_ALIAS, MODULE_ID, STATUS, EMPTY_CONTENT, pageSpecs, moduleExportJson, restoreManifest,
   buildStoredZip, roleBody, accountBody,
@@ -220,6 +220,7 @@ async function teardown() {
     await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(USER.role)}`, null, { expectStatus: [200, 204, 404] });
     log(`  x deleted user ${USER.login} + role "${USER.role}"`);
   }
+  if (WANT_USER) accountUnset(USER.login);
   const residuePages = await verifyRemoved(async () => leftovers(await allPages(), SPECS));
   const residueUser = WANT_USER && !DRY_RUN
     ? ((await api('GET', `/api/platform/security/users/${encodeURIComponent(USER.login)}`, null, { expectStatus: [200, 204, 404] }))?.id ? 1 : 0) : 0;

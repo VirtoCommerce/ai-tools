@@ -45,7 +45,7 @@ import {
   writeEnvAliasOverride, syncEnvAliases, uploadScopedFile, resetSecurityPassword,
   DRY_RUN, TEARDOWN, ONLY, verifyRemoved, idsParam,
 } from '../../lib/seed-common.mjs';
-import { accountSet, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, isGeneratedPassword, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   UPLOAD_SCOPE, SEED_PREFIX, DOCUMENTS, DOC_REPS_COLUMNS, DOC_REP_KEYS,
   buildFileBytes, buildCreateRequest, expectedDisplayName, isSeededDocument,
@@ -259,6 +259,7 @@ async function teardown() {
   if (wantReps) {
     for (const row of repRows()) {
       const hit = await findRepByFullName(row.full_name);
+      accountUnset(row.email); // the rep delete takes its account with it
       if (!hit?.id) { verbose(`rep ${row.rep_key} already absent`); continue; }
       if (!DRY_RUN) await api('DELETE', `/api/sales-rep?ids=${hit.id}`, null, { expectStatus: [200, 204] });
       log(`${DRY_RUN ? 'would delete' : 'deleted'} rep ${row.rep_key} (${hit.id})`);

@@ -27,7 +27,7 @@ import {
   log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases, writeEnvAliasOverride, verifyRemoved,
   ensureCategoryPath, ensureVirtualCatalog, ensureFulfillmentCenter,
 } from '../../lib/seed-common.mjs';
-import { accountSet, resolvePassword } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, resolvePassword } from '../../lib/user-provision.mjs';
 import {
   CONTRACT, CONTRACT_GROUP, BASE_PRICELIST_NAME, ASSORTMENT_PRICELIST_NAME, B2C_CONSUMER_ALIAS,
   CONTRACTED_PRODUCT, CONTROL_PRODUCT, ORG_ONLY_PRODUCT, CONTRACT_BUYER, SEED_PREFIX,
@@ -459,6 +459,7 @@ async function teardown() {
     if (contactId) await api('DELETE', `/api/members?ids=${encodeURIComponent(contactId)}`, null, { expectStatus: [200, 204, 404] });
     log(`Removed contract buyer ${CONTRACT_BUYER.email}`);
   } else log(`No contract buyer account to remove`);
+  accountUnset(CONTRACT_BUYER.email);
 
   // The org-only assortment product: clear its tag FIRST (an orphaned tag would keep scoping
   // whatever product id is reused), then delete the product.

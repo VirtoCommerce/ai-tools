@@ -24,7 +24,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY,
   BACK_URL, STORE_ID, writeEnvAliasOverride, resetSecurityPassword, isLockedOut,
 } from '../../lib/seed-common.mjs';
-import { accountSet, resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
+import { accountSet, accountUnset, resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
 import {
   ACCOUNTS, ALL_MCP_FIXTURE_PERMISSIONS, OPERATOR_ROLE, OPERATOR_FALLBACK_ROLE, APPROVER_ROLE, MANAGER_ROLE,
   CURRENTUSER_ENDPOINT, roleBody, accountBody, decidabilityProblems,
@@ -165,6 +165,7 @@ async function teardown() {
       await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(account.email)}`, null, { expectStatus: [200, 204, 404] });
       log(`✗ deleted account ${account.email}`);
     } else verbose(`account ${account.email} already gone`);
+    accountUnset(account.email);
   }
   const ownedRoles = [];
   if (!ONLY_SET || ONLY_SET.has('MCP_MANAGER')) ownedRoles.push(MANAGER_ROLE);

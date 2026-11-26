@@ -36,7 +36,7 @@ import {
   syncEnvAliases, verifyRemoved, idsParam,
 } from '../../lib/seed-common.mjs';
 import {
-  authenticate as userAuth, setFlags as setUserFlags, ensureSecurityAccount,
+  authenticate as userAuth, setFlags as setUserFlags, ensureSecurityAccount, accountUnset,
   findUserByEmail, findContactByEmail, resolvePassword, isPasswordDeclared,
 } from '../../lib/user-provision.mjs';
 import {
@@ -531,6 +531,7 @@ async function teardown() {
     await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(REC.email)}`, null, { expectStatus: [200, 204, 404] }).catch((e) => log(`⚠ user delete: ${e.message.slice(0, 120)}`));
     log(`✗ deleted security account ${REC.email}`);
   }
+  accountUnset(REC.email);
   if (contactId && !DRY_RUN) {
     await api('DELETE', `/api/members?${idsParam([contactId])}`, null, { expectStatus: [200, 204, 404] }).catch((e) => log(`⚠ contact delete: ${e.message.slice(0, 120)}`));
     log(`✗ deleted contact ${REC.email}`);
