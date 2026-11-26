@@ -4,7 +4,7 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 34 · PASS 29 · FAIL 0 · BLOCKED 0** · ledger 0 rows
+**Executed 221 · PASS 76 · FAIL 7 · BLOCKED 15** · ledger 0 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,7 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Company, members & lists | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
-| W6 | UI kit, Bridge soft look, a11y & i18n | Elena Kutasina | CLAIMED | — | — | — | — | — | — | 0 | — |
+| W6 | UI kit, Bridge soft look, a11y & i18n | Elena Kutasina | RUN_DONE | 187 | 187 | 47 | 7 | 15 | 22 | 0 | REG-2026-11-26-1415-W6 |
 | WX | Exclusive window — OTP, MFA, compare and punchout settings + env-wide cases | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 
 ## Triage verdicts

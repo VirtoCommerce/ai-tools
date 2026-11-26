@@ -1,19 +1,63 @@
 {
-  "runId": "REG-2026-11-26-0805-W0R",
+  "runId": "REG-2026-11-26-1415-W6",
   "status": "completed",
-  "startedAt": "2026-11-26T05:01:09.712Z",
+  "startedAt": "2026-11-26T10:48:01.384Z",
   "env": "vcst",
-  "ticket": "VCST-7026",
-  "selection": "042 --ids SMK-002,SMK-003,SMK-034 (sprint-26-23 W0 re-run: SMK-002/003 rewritten, SMK-034 after saving a Skyflow card)",
+  "ticket": "VCST-7032",
+  "selection": "sprint-26-23 W6: 045,046,048c,070,071 (persona set S4)",
   "suites": {
-    "042": {
+    "070": {
       "status": "done",
-      "browser": "playwright-chrome",
       "lane": "browser",
-      "pass": 3,
+      "finishedAt": "2026-11-26T11:12:33.189Z",
+      "pass": 0,
       "fail": 0,
-      "blocked": 0
+      "blocked": 0,
+      "skipped": 51
+    },
+    "046": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-26T10:49:13.371Z",
+      "finishedAt": "2026-11-26T11:12:33.189Z",
+      "pass": 7,
+      "fail": 0,
+      "blocked": 4,
+      "skipped": 26
+    },
+    "045": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-26T10:49:13.371Z",
+      "finishedAt": "2026-11-26T11:12:33.189Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 8,
+      "skipped": 22
+    },
+    "071": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-11-26T10:49:13.371Z",
+      "finishedAt": "2026-11-26T11:12:33.189Z",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 17
+    },
+    "048c": {
+      "status": "done",
+      "lane": "deterministic",
+      "finishedAt": "2026-11-26T11:12:33.189Z",
+      "pass": 39,
+      "warn": 2,
+      "fail": 7,
+      "blocked": 3,
+      "skipped": 0
     }
   },
-  "finishedAt": "2026-11-26T05:16:19.210Z"
+  "finishedAt": "2026-11-26T11:12:41.276Z"
 }
