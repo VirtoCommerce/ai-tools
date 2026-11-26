@@ -164,7 +164,8 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
 
   if (githubServer === null || !pat.github) delete servers.github;
   else if (githubServer !== undefined) servers.github = githubServer;
-  Object.assign(servers, laneServers);
+  // Before the lanes, which are deleted and re-appended on every run: after them, a re-run would move the
+  // lanes in front of a use server and rewrite an unchanged file (and ask for trust again).
   for (const use of uses) {
     const entries = useEntries(use, AXIS_SECRETS[use.axis].secret);
     for (const [kind, target] of [["servers", servers], ["tasks", orderedTasks]]) {
@@ -175,6 +176,7 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
       }
     }
   }
+  Object.assign(servers, laneServers);
 
   const out = { schemaVersion: 1, projectId };
   // Canonical key order: what this writer owns first, then anything else the file carried.
