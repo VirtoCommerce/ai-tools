@@ -32,7 +32,7 @@ For a teammate who works in this repo. Every step is detailed further down; this
 5. **`/project-init`** (vc-init) — any env name (`qa`, `staging`, `client_eu`…; if `.env.<name>` already exists it offers to reuse it), Jira + GitHub, PAT, and where test-account passwords live (`test-accounts.local.json`, recommended, or vc-secrets; asked separately for admins and storefront users). When it pauses, in a **separate terminal** in the repo folder run `node "<VC_SECRETS>" trust` and `node "<VC_SECRETS>" set <name>` for each token it lists (`github-pat`, `jira-token`, …; the wizard prints the exact commands). Nothing secret goes into the chat. Reply `done`. Full reference: [`plugins/vc-init/README.md`](../plugins/vc-init/README.md).
 6. **Knowledge base (`kb`)** — the team's shared record of what the platform was *observed* to do, kept in the public repo `VirtoCommerce/vc-knowledge`; agents ask it (`kb_ask`) before they assert behaviour and write back what they found.
    - **Register the server:** `npm run kb:install` (in the repo folder). A tracked `SessionStart` hook does the same on every session start, but `/project-init` rewrites `.mcp.json` from its template, so run it once now rather than wait for the next session.
-   - **Reading needs no token.** Writing (`kb_capture` / `kb_confirm` / `kb_dispute`) needs push access to `VirtoCommerce/vc-knowledge`: membership in the org team with write on it (ask a maintainer), or a fine-grained token with **Contents: Read and write** on that one repo. The token comes from **vc-secrets** (preferred: the `github-pat` `/project-init` stored is enough — declare the `kb` server and `kb-push` task and `trust` them, §[Required MCP Servers](#required-mcp-servers) → *Where the write token lives*), else from `KB_GITHUB_TOKEN=` (or `GITHUB_TOKEN=`) in `.env.local`. No token is not an error: writes queue on this machine and go out once one is there.
+   - **Reading needs no token.** Writing (`kb_capture` / `kb_confirm` / `kb_dispute`) needs push access to `VirtoCommerce/vc-knowledge`: membership in the org team with write on it (ask a maintainer), or a fine-grained token with **Contents: Read and write** on that one repo. The token comes from **vc-secrets** (preferred: the `github-pat` `/project-init` stored is enough — declare the `kb` server and `kb-push` task and `trust` them, §[Required MCP Servers](#required-mcp-servers) → *Where the write token lives*), else from `GITHUB_TOKEN=` in `.env.local` (`KB_GITHUB_TOKEN=` overrides it for the kb alone). No token is not an error: writes queue on this machine and go out once one is there.
    - **Allow it once:** approve the first `kb_ask` call, or add `"mcp__kb"` to `permissions.allow` in your own `.claude/settings.local.json` (never the shared `.claude/settings.json`).
    - Opt out of the kb on this machine: `KB_ENABLED=0` in the `env` of `.claude/settings.local.json`. All of it, in detail: §[Required MCP Servers](#required-mcp-servers) → `kb`.
 7. **Restart Claude Code** (new `.mcp.json` with the `kb` server, `.claude/settings.local.json` with `VC_RUN`/`VC_SECRETS`; the browser lanes read `test-accounts.local.json` when they start). Later: `/project-init --add-env`, `--add-user`, `--check` (after a plugin upgrade) — run `npm run kb:install` again after each, since they rewrite `.mcp.json`.
@@ -280,15 +280,16 @@ appears there. The queue lives in the per-user state directory (`%LOCALAPPDATA%\
 Windows, `~/.local/state/claude-kb/queue` elsewhere), not in the temp directory a disk clean-up empties;
 an older `%TEMP%\claude-kb-queue` is moved there automatically.
 
-**Where the write token lives — vc-secrets first, then `.env.local`.** The kb takes `KB_GITHUB_TOKEN`,
-then `GITHUB_TOKEN`; for each name the process environment (where vc-secrets puts it) beats `.env.local`,
-and no other `.env.*` file is read. The `github-pat` `/project-init` stored is the token — it needs no
-second one. To keep it out of every file, add to `.claude/vc-secrets.local.json` (you edit it — the
-vc-secrets guard refuses an agent's write):
+**Where the write token lives — vc-secrets first, then `.env.local`.** The kb pushes with `GITHUB_TOKEN`,
+the one GitHub token every tool here uses — the `github-pat` `/project-init` stored; it needs no second
+one. The process environment (where vc-secrets puts it) beats `.env.local`, and no other `.env.*` file is
+read. (`KB_GITHUB_TOKEN` is an optional override, for a machine whose shared token cannot write to
+`vc-knowledge`: when set, from either source, it wins.) To keep the token out of every file, add to
+`.claude/vc-secrets.local.json` (you edit it — the vc-secrets guard refuses an agent's write):
 
 ```jsonc
-"servers": { "kb":      { "command": "node", "args": ["scripts/kb/mcp.mjs"],                "env": { "KB_GITHUB_TOKEN": "secret:github-pat" } } },
-"tasks":   { "kb-push": { "command": "node", "args": ["scripts/kb/kb.mjs", "push", "--auto"], "env": { "KB_GITHUB_TOKEN": "secret:github-pat" } } }
+"servers": { "kb":      { "command": "node", "args": ["scripts/kb/mcp.mjs"],                "env": { "GITHUB_TOKEN": "secret:github-pat" } } },
+"tasks":   { "kb-push": { "command": "node", "args": ["scripts/kb/kb.mjs", "push", "--auto"], "env": { "GITHUB_TOKEN": "secret:github-pat" } } }
 ```
 
 then `node "$VC_SECRETS" trust` in a terminal in the repo, and restart. Nothing else changes: `.mcp.json`
