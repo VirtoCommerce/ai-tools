@@ -419,7 +419,7 @@ export const cxmlStatusCode = (xml) => (/<Status[^>]*\bcode="(\d+)"/.exec(String
 //    would be torn down with (or tear down) unrelated rows.
 //  - seed:pricing prices DISCOVERED products in bulk; seed:store configures STORE_ID from stores.csv
 //    by a whole-store reconcile. Neither may touch config 1's store (New-super), which is not ours.
-// So: two OWNED products, two OWNED store-scoped price lists that price ONLY those products, and one
+// So: OWNED products (the UoM pair, plus five plain ones for VCST-6764), two OWNED store-scoped price lists that price ONLY those products, and one
 // guarded field write on config 1's store, all reversed by `--teardown` (also `--only catalog`).
 //
 // SECOND RULE pairs this section carries:
@@ -448,7 +448,93 @@ export const PRODUCT_SPECS = [
   { alias: 'PUNCHOUT_PRODUCT_PLAIN', code: 'AGENT-TEST-PO-PLAIN-001', name: 'AGENT-TEST-Punchout Plain Product',
     measureUnit: '', stock: 500, prices: { USD: 12.0, EUR: 10.75 },
     purpose: 'no MeasureUnit — the sibling of the UoM product (fallback side of the pair); plain in-stock EUR line' },
+  // VCST-6764 (suite 113, OrderRequest lifecycle): five more plain products, same shape as PLAIN (no
+  // MeasureUnit → EA fallback). Every amount is unique across ALL products AND both currencies, so a
+  // swapped line, a stale snapshot or a product replaced on a line shows in the amount alone.
+  { alias: 'PUNCHOUT_PRODUCT_C', code: 'AGENT-TEST-PO-C-001', name: 'AGENT-TEST-Punchout Product C',
+    measureUnit: '', stock: 500, prices: { USD: 7.0, EUR: 6.25 },
+    purpose: 'plain line of multi-session S1 (×3)' },
+  { alias: 'PUNCHOUT_PRODUCT_D', code: 'AGENT-TEST-PO-D-001', name: 'AGENT-TEST-Punchout Product D',
+    measureUnit: '', stock: 500, prices: { USD: 31.0, EUR: 27.4 },
+    purpose: 'plain line of multi-session S2 (×1)' },
+  { alias: 'PUNCHOUT_PRODUCT_E', code: 'AGENT-TEST-PO-E-001', name: 'AGENT-TEST-Punchout Product E',
+    measureUnit: '', stock: 500, prices: { USD: 9.5, EUR: 8.15 },
+    purpose: 'plain line of multi-session S2 (×2)' },
+  { alias: 'PUNCHOUT_PRODUCT_F', code: 'AGENT-TEST-PO-F-001', name: 'AGENT-TEST-Punchout Product F',
+    measureUnit: '', stock: 500, prices: { USD: 45.0, EUR: 39.9 },
+    purpose: 'single line of multi-session S3 (×1)' },
+  { alias: 'PUNCHOUT_PRODUCT_G', code: 'AGENT-TEST-PO-G-001', name: 'AGENT-TEST-Punchout Product G',
+    measureUnit: '', stock: 500, prices: { USD: 17.25, EUR: 14.6 },
+    purpose: 'spare — in no session; the extra line an update case (UPD-05/UPD-06 style) adds' },
 ];
+
+/** The UoM SECOND RULE pair (guard [9]): exactly these two differ on MeasureUnit; every other product is plain. */
+export const UOM_PAIR = { uom: 'PUNCHOUT_PRODUCT_UOM', plain: 'PUNCHOUT_PRODUCT_PLAIN' };
+
+/**
+ * Cross-product COMBINATIONS (VCST-6764). A combo names which products a multi-session case puts in which
+ * session, with quantities; comboFields() expands it into flat @td fields (sku, qty, unit prices, line and
+ * session totals per currency) and comboOverlayFields() adds the runtime product ids per env, so a case
+ * reads `@td(PUNCHOUT_COMBO_MULTISESSION.s1_l3_id)` — never a literal and never a second alias hop.
+ * `limits` states what the combo cannot decide (SECOND RULE: state the fixture's own limits).
+ */
+export const COMBO_SPECS = [
+  { alias: 'PUNCHOUT_COMBO_MULTISESSION',
+    purpose: 'three sessions of one buyer with disjoint products: S1 = PLAIN×2, UOM×1, C×3; S2 = D×1, E×2; S3 = F×1; G spare (extra line for an update case)',
+    sessions: [
+      { key: 's1', lines: [['PUNCHOUT_PRODUCT_PLAIN', 2], ['PUNCHOUT_PRODUCT_UOM', 1], ['PUNCHOUT_PRODUCT_C', 3]] },
+      { key: 's2', lines: [['PUNCHOUT_PRODUCT_D', 1], ['PUNCHOUT_PRODUCT_E', 2]] },
+      { key: 's3', lines: [['PUNCHOUT_PRODUCT_F', 1]] },
+    ],
+    spare: 'PUNCHOUT_PRODUCT_G',
+    // Declared, not discovered: guard [10] recomputes the line-total ties and fails on any not listed here.
+    lineTotalTies: [['s1', 'PUNCHOUT_PRODUCT_PLAIN', 'PUNCHOUT_PRODUCT_UOM']],
+    limits: 'In S1 the PLAIN×2 and UOM×1 lines have EQUAL line totals (24.00 USD / 21.50 EUR) — tell those two lines apart by sku, quantity or unit price, never by line total alone. Unit prices and session totals are all distinct.' },
+];
+
+const money2 = (n) => (Math.round(n * 100) / 100).toFixed(2);
+
+/** Business fields of a combo (pure; no runtime id). Throws on an unknown product alias. */
+export function comboFields(combo, specs = PRODUCT_SPECS) {
+  const by = new Map(specs.map((s) => [s.alias, s]));
+  const get = (al) => { const s = by.get(al); if (!s) throw new Error(`${combo.alias}: unknown product ${al}`); return s; };
+  const out = { sessions: combo.sessions.map((s) => s.key.toUpperCase()).join(',') };
+  for (const s of combo.sessions) {
+    const tot = { USD: 0, EUR: 0 };
+    s.lines.forEach(([al, qty], i) => {
+      const p = get(al); const k = `${s.key}_l${i + 1}`;
+      Object.assign(out, {
+        [`${k}_product`]: al, [`${k}_sku`]: p.code, [`${k}_qty`]: String(qty),
+        [`${k}_price_usd`]: money2(p.prices.USD), [`${k}_price_eur`]: money2(p.prices.EUR),
+        [`${k}_total_usd`]: money2(p.prices.USD * qty), [`${k}_total_eur`]: money2(p.prices.EUR * qty),
+      });
+      tot.USD += p.prices.USD * qty; tot.EUR += p.prices.EUR * qty;
+    });
+    Object.assign(out, {
+      [`${s.key}_line_count`]: String(s.lines.length), [`${s.key}_skus`]: s.lines.map(([al]) => get(al).code).join(','),
+      [`${s.key}_total_usd`]: money2(tot.USD), [`${s.key}_total_eur`]: money2(tot.EUR),
+    });
+  }
+  if (combo.spare) {
+    const p = get(combo.spare);
+    Object.assign(out, { spare_product: combo.spare, spare_sku: p.code, spare_price_usd: money2(p.prices.USD), spare_price_eur: money2(p.prices.EUR) });
+  }
+  return out;
+}
+
+/** The runtime-id field names of a combo (`<line>_id`, `spare_id`) — empty in the base registry. */
+export function comboIdFields(combo) {
+  const f = combo.sessions.flatMap((s) => s.lines.map((_, i) => `${s.key}_l${i + 1}_id`));
+  return combo.spare ? [...f, 'spare_id'] : f;
+}
+
+/** Overlay ids of a combo from the products write-back `{ alias: { id } }` (pure). */
+export function comboOverlayFields(combo, products) {
+  const out = {};
+  for (const s of combo.sessions) s.lines.forEach(([al], i) => { out[`${s.key}_l${i + 1}_id`] = products?.[al]?.id || ''; });
+  if (combo.spare) out.spare_id = products?.[combo.spare]?.id || '';
+  return out;
+}
 
 /**
  * One OWNED price list per currency, assigned by STORE (not catalog) with an empty condition tree, so
