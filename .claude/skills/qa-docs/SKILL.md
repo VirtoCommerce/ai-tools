@@ -1,7 +1,7 @@
 ---
 name: qa-docs
-description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation (one Jira comment and a Motion film a person exports and attaches), or when a sprint's or version's tickets need release notes, or its key stories a Slides deck and/or a film. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
-argument-hint: "<TICKET> [--video [<file.mp4>]] | release --sprint <SprintXX-XX> [--slides] [--film] | release --version <X.Y.Z> | <sprint> [--notes] [--slides] [--film]"
+description: "[QA Method] Use when a ticket in status Tested or Done needs its documentation (one Jira comment that links its Motion film), or when a sprint's or version's tickets need release notes, or its key stories a Slides deck and/or a film. Called by /qa-test at its Stage 5 docs step; run by hand after /vc-test:qa-ticket. Not for BA analysis or user stories (/ba-analyze) or bug reports (/vc-fix:qa-bug)."
+argument-hint: "<TICKET> [--video [<film-link>]] | release --sprint <SprintXX-XX> [--slides] [--film] | release --version <X.Y.Z> | <sprint> [--notes] [--slides] [--film]"
 ---
 
 # /qa-docs — the documentation of a tested ticket, and of a sprint
@@ -25,7 +25,7 @@ sprint mode only, a Dispatcher, whose brief follows
 | Form | Does |
 |---|---|
 | `/qa-docs <TICKET>` | steps 1–8 below |
-| `/qa-docs <TICKET> --video [<file.mp4>]` | attach the exported film and amend the comment: [`media.md`](media.md) §Hand-off |
+| `/qa-docs <TICKET> --video [<film-link>]` | put the film's link into the posted comment — the link given, else `film.url`: [`media.md`](media.md) §Hand-off |
 | `/qa-docs release --sprint <S>` · `--version <V>` | the plain aggregate, no question and no stand: [`release.md`](release.md) §Aggregate |
 | `/qa-docs <sprint>` [`--notes`] [`--slides`] [`--film`] · `release --sprint <S> --slides` / `--film` | the sprint mode — release notes, slides and/or a film of the sprint's key stories: [`sprint.md`](sprint.md) |
 
@@ -95,11 +95,14 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    never forked. Check the size cap (§Size cap) and the payload rules (§Payload hygiene) before step 6.
 
 5. **Make the film** — one Motion artifact, aiming at ≤90 s (a soft ceiling: [`media.md`](media.md) §Film), from the same frames: [`media.md`](media.md) §Film.
-   Its `{video_line}` is the before-export one.
+   Its link becomes the guide's `Video:` line ([`template.md`](template.md) `{video_line}`) before step 6 renders it.
 
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
    is an external write, and it is the run's one sanctioned documentation comment
    ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 4). A decline posts nothing.
+   The film is private until its owner shares it from its page, and a private link opens nothing for the
+   ticket's other readers — so the question says that and leaves the sharing to the person
+   ([`media.md`](media.md) §Hand-off).
 
    **The body is wiki markup, not the guide's Markdown.** With screenshots the comment goes through the v2
    API, where the whole body is wiki (tracker-ops.md §5c); a Markdown body shows literal `##` and renders no
@@ -131,7 +134,7 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    |---|---|
    | `published` | `true` when the document was written |
    | `files` | the guide path(s) under `reports/ba/` |
-   | `film` | `{ "url": <film artifact URL or null>, "file": "<TICKET>-<slug>.mp4", "exported": false }` — `exported` turns `true` only after `--video` attached it |
+   | `film` | `{ "url": <film artifact URL or null>, "linked": false }` — `linked` turns `true` once the posted comment carries the film link (step 6, or `--video`) |
    | `comment_id` | the posted comment's id, or `null` |
    | `comment_posted` | `false` when the person declined the post |
    | `refusal` | `no-run` · `not-tested` · `not-deployed` · `not-user-visible` · `build-changed` · `null` |
@@ -142,13 +145,12 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
    A `null` refusal with `published: false` happens only with `existing: true` (the person chose to leave the
    ticket's documentation as it is): otherwise either the document exists or the reason does.
 
-Then hand the video to the person ([`media.md`](media.md) §Hand-off) and stop. The skill does not wait
-for the export.
+Then give the person the film link and the sharing reminder ([`media.md`](media.md) §Hand-off) and stop.
 
 ## What this skill never does
 
 - Writes documentation for a ticket that is neither Tested nor Done, or an instruction with no `PASS` row.
 - Posts a documentation comment beside one already on the ticket — it updates that one, or leaves it.
-- Creates a video file, or renders stills of the film — the person exports the MP4 from the film page; `--video` attaches it.
+- Creates a video file, renders stills of the film, or attaches a video — the film travels as a link to its artifact.
 - Posts a second documentation comment for the same run — `--video` amends the one there is.
 - Drives any browser other than a Playwright lane ([`../../rules/vc-browser.md`](../../rules/vc-browser.md)).

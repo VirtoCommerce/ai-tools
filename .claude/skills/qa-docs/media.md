@@ -122,32 +122,37 @@ A sprint film: [`sprint.md`](sprint.md) §Film.
 
 ## Hand-off
 
-The person exports the video; the skill attaches it. Nothing waits in between.
+The film travels as a link to its artifact: nothing is exported, downloaded or uploaded, and nothing waits.
 
-1. At the end of `/qa-docs <TICKET>`: give the film link and the file name, `film.file`
-   (`{TICKET}-{slug}.mp4`), and say what to do — open the film, **Export → MP4**, save it under that name
-   (the browser's Downloads folder is fine), then run `/qa-docs <TICKET> --video`.
-   `documentation.json` has `film.exported: false`.
-2. `/qa-docs <TICKET> --video [<path>]`: find the file — the path given (absolute), else
-   `{RUN_DIR}/<film.file>`, else the newest `<film.file>` or `<film.file> (N)` in the person's Downloads
-   folder created after the film was. Pass it as an absolute path: `~` is not expanded for a node argument
-   in PowerShell.
-   - **No file found** ⇒ say where it was looked for and change nothing — not the comment, not the record.
+1. **The link.** At step 5 of [`SKILL.md`](SKILL.md) the film's URL (`film.url`, kept at §Film step 1)
+   becomes the guide's `Video:` line — `Video: [<TICKET> — <feature> (film)](<film.url>)` — and step 6
+   renders and posts it with the rest of the comment. It is a plain wiki link (`[text|url]`): no attachment,
+   no `--attach-video`.
+2. **Sharing — the person's step.** A film is private until its owner shares it from its page, and a
+   private link opens nothing for the ticket's other readers. The skill cannot share it, so the step-6
+   question and the last line of the run both say so. A link shows the film as published:
+   [`rules.md`](rules.md) §Payload hygiene binds it as it binds the stills.
+3. `/qa-docs <TICKET> --video [<film-link>]` puts the link into the comment already posted — the post came
+   first (declined, or made before the film existed), the film was republished, or the person copied another
+   link from its page (a share link):
+   - **The link:** the argument as given, else `film.url` of `documentation.json`; neither ⇒ say there is no
+     film and change nothing. A video file given instead of a link is not attached: say so and use `film.url`
+     (a file by hand: `tracker:comment --attach-video`, [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5c).
    - **`comment_id` is null** (the post was declined) ⇒ nothing to amend: say so and stop.
-   - **Found** ⇒ attach it and amend the documentation comment `comment_id` in one call — amend, never a
-     new comment, and never the result comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a).
-     `--attach-video` uploads the video, links it, and replaces the body's `Video:` line with that link;
-     Jira plays it from the attachment (inline it would render as a dead plugin object, §5c). The body is
-     the same wiki file; its images are already on the issue and resolve by name, so nothing is re-attached:
+   - **Otherwise** amend the documentation comment `comment_id` — never a new comment, never the result
+     comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a). Set the guide's `Video:`
+     line to the link and render the body **from the guide**, never from an old wiki file (`reports:prune`
+     may have removed the run folder since the post: recreate it):
 
      ```
+     npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt
      npm run tracker:comment -- --ticket <TICKET> --doc --amend <comment_id> --wiki \
-       --body-file {RUN_DIR}/documentation.wiki.txt --attach-video <file.mp4> --same-round "video attached"
+       --body-file {RUN_DIR}/documentation.wiki.txt --same-round "film link"
      ```
 
-     **Render the body from the guide first**, never reuse an old wiki file: `reports:prune` may have removed
-     the run folder since the post (recreate it). Change the guide file's `Video:` line to the after-export
-     wording, then `npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt`, then the call above.
-     Verify the rendered body (images and the video link are both checked) and set `film.exported: true`.
-3. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
+     The images are already on the issue and resolve by name, so nothing is re-attached. The helper checks
+     the images, not the link: read the comment back (`npm run tracker:comment -- --ticket <TICKET> --get <comment_id>`)
+     and confirm the film URL is in the printed body. Then set `film.url` to the link used and
+     `film.linked: true`.
+4. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
    `{video_line}` is left out and the output says why.
