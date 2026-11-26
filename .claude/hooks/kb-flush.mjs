@@ -34,10 +34,11 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
 import {
-  accessBlock, accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
+  accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
+import { pushDenial, pushTaskEnv, viaSecrets } from '../../scripts/kb/core/via-secrets.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -101,7 +102,7 @@ function main() {
   // printed, so a crash costs the notice, never a repeat.
   // Only while the denial holds for the token this machine pushes with (round 2): a switched token is not
   // told it cannot write.
-  const notice = accessBlock(process.env, writeToken(process.env).token) ? claimDeniedNotice(process.env) : null;
+  const notice = pushDenial(process.env) ? claimDeniedNotice(process.env) : null;
   if (notice) process.stdout.write(JSON.stringify({ systemMessage: accessWhy(notice.code, process.env) }));
 
   // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:
@@ -156,7 +157,12 @@ function main() {
   // both are asked once per `OWN_REACH_EVERY_MS`.
   const due = keyed && ownReachDue(dir, session, { state: advanced });
   if (due) markTried(dir, session);
-  const mine = due && Boolean(writeToken(env).token);
+  // VIA vc-secrets: the hook holds no token, but a declared `kb-push` task launches the push with one
+  // (plugins/vc-secrets/README.md §Tasks). The token in the environment, if any, still goes first.
+  // A launcher that refuses (untrusted, secret not set) pushes nothing and keeps the queue, which is
+  // what no token did before; the refusal is in push.log, and the attempt is paced like any other.
+  const via = viaSecrets('tasks', 'kb-push', env);
+  const mine = due && (Boolean(writeToken(env).token) || Boolean(via));
   if (!queueHasWork(dir) && !stale && !mine) return;
   // Only log lines from today, or counters alone: they wait for a change or for tomorrow (VCST-6378).
   if (!pushWouldGo(dir, env, session, staleStates)) return;
@@ -164,7 +170,7 @@ function main() {
   if (pushConfirmRequired(process.env)) return;
   // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,
   // so no process is started. A changed token, or the re-check interval passing, lets the next one go.
-  if (accessBlock(env, writeToken(env).token)) return;
+  if (pushDenial(env)) return;
   // OUT OF REQUESTS until GitHub's retry time (VCST-6378): the push would only be held, so none starts.
   if (rateHold(env)) return;
 
@@ -184,12 +190,15 @@ function main() {
     out = openSync(logFile, 'a');
   } catch { /* an unwritable log must not cost the push */ }
 
-  const child = spawn(process.execPath, [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'], {
+  // The `kb-push` task is declared as `node scripts/kb/kb.mjs push`; `--auto` travels in the environment
+  // (core/via-secrets.mjs `pushTaskEnv`). The launcher adds the token; the child inherits `env`, session key included.
+  const argv = via ? [via.shim, 'task', 'kb-push'] : [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'];
+  const child = spawn(process.execPath, argv, {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],
     // The push publishes under THIS session's key, so it gets the same environment the key came from.
-    env,
+    env: via ? pushTaskEnv(env, { auto: true }) : env,
   });
   child.unref();
   if (typeof out === 'number') closeSync(out);

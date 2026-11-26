@@ -48,7 +48,7 @@ What it writes into the project (all gitignored):
 | `.env.test-env` | `TEST_ENV=<env>`, the project's default env (below) |
 | `.env.local` | what is the same for every env — the tracker / code-host connection (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`) |
 | `test-accounts.local.json` | the test-account store: per env, every test account's login beside its password (`ADMIN`, `USER`, each `--add-user` user) — passwords of a role kept in vc-secrets excepted (below) |
-| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers <!-- doclint:may-not-exist --> |
+| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server, the project's own launchables from `config/vc-secrets-uses/*.json` (`skills/project-init/lib/secret-uses.mjs` — e.g. ai-tools' kb, bound to `github-pat`); with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers <!-- doclint:may-not-exist --> |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
 **`.env.test-env`** decides which env a command uses when it is given none. Every plugin's resolver looks at
