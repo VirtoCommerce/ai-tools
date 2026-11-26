@@ -1363,9 +1363,9 @@ breakpoint=read from the served @container rule of .vc-line-items (42rem x root 
 [NAV] {{FRONT_URL}}/cart
 [WAIT] the 'Cart' page lists two line items and the footer button of the line-items block
 [ACT] read the @container width threshold of .vc-line-items from the served stylesheet (42rem x root font size = T px)
-[VIEWPORT] set the viewport so the measured .vc-line-items inline size is the largest value that is <= T (change the viewport width 1px at a time; record the viewport and the fractional size)
-[KEY] record .vc-line-items inline size, and display + visible text of .vc-line-items__button--mobile and .vc-line-items__button--desktop
-[VIEWPORT] set the viewport so the measured .vc-line-items inline size is the smallest value that is > T (record the viewport and the fractional size)
+[VIEWPORT] set the viewport so the measured .vc-line-items inline size is the largest value that is <= T (change the viewport width 1px at a time; record the viewport and the element's bounding-box width in whole px)
+[KEY] record .vc-line-items bounding-box width (whole px), and whether each matches `>> visible=true` plus the visible text of .vc-line-items__button--mobile and .vc-line-items__button--desktop
+[VIEWPORT] set the viewport so the measured .vc-line-items inline size is the smallest value that is > T (record the viewport and the element's bounding-box width in whole px)
 [KEY] record the same four values
 [VIEWPORT] 1920x1080
 [KEY] record the same four values","[DOM] at inline size <= T the 'Remove all' button (.vc-line-items__button--mobile) is displayed and the 'Remove selected' button (.vc-line-items__button--desktop) computes display:none {SPEC}
@@ -1391,12 +1391,12 @@ breakpoint=read from the served @container rule of .vc-line-items (42rem x root 
 [VIEWPORT] 1920x1080
 [KEY] on screen, record the displayed .vc-button count and that 'Remove selected' is displayed
 [ACT] emulate print media
-[KEY] record display of every .vc-button on the page, and of .vc-line-items__button--desktop and --mobile
+[KEY] record whether every .vc-button on the page matches `>> visible=true`, and the same for .vc-line-items__button--desktop and --mobile
 [ACT] emulate screen media again
 [VIEWPORT] set the viewport so the measured .vc-line-items inline size is <= the 42rem container threshold
 [KEY] on screen, record the displayed .vc-button count and that 'Remove all' is displayed
 [ACT] emulate print media
-[KEY] record display of every .vc-button and of both footer buttons","[DOM] on screen at 1920 'Remove selected' is displayed and at least one other .vc-button is displayed (the precondition that makes the print check meaningful) {OBSERVED}
+[KEY] record whether every .vc-button and both footer buttons match `>> visible=true`","[DOM] on screen at 1920 'Remove selected' is displayed and at least one other .vc-button is displayed (the precondition that makes the print check meaningful) {OBSERVED}
 [REL] under print media every .vc-button on /cart (including 'Remove selected') computes display:none {SPEC}
 [DOM] at the narrow container the 'Remove all' button is displayed on screen and display:none under print media {SPEC}
 [COUNT] the number of .vc-button elements with computed display other than 'none' under print is 0 at both widths, and it is lower than the on-screen count recorded at the same width (which was above 0) {SPEC}

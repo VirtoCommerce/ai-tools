@@ -83,7 +83,7 @@ Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
 [BODY] the payload claim set contains none of the forbidden claims: password, passwordHash, securityStamp, phone, card or address data; the claim http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod = ""Password"" is allowed for this password grant (a passkey sign-in carries ""Passkey"", KB-7A236504) {OBSERVED}
 [DATA] the baseline query returns the signed-in userName; every one of (a)-(d) answers 200 with userName=Anonymous - never the original user and never an elevated identity {OBSERVED}
 [STATUS] GET /api/platform/security/users answers 401 for the valid storefront token and for the tampered token {OBSERVED}
-[BODY] refresh_token is an opaque string, not a decodable JWT {OBSERVED}","[NETWORK] on the storefront the token travels in the Authorization header of /graphql requests, never in a query string {OBSERVED}
+[BODY] refresh_token is an encrypted JWE (header alg RSA-OAEP, enc A256CBC-HS512) whose payload the client cannot decode {OBSERVED} KB-6312F7C5","[NETWORK] on the storefront the token travels in the Authorization header of /graphql requests, never in a query string {OBSERVED}
 [CONSOLE] no token or password is logged","Edited-payload, alg=none, expired or garbage token still resolves to the original or an elevated identity; a secret claim (password hash, security stamp) in the payload; token lifetime far above 1800 s; refresh token decodable as a JWT; token present in a URL","none - read-only; the minted token expires by itself","Authored 2026-11-05 (stable-16 W6 repair), grounded live on vcptcore_regression (Platform 3.1076.8, theme 2.59.0) with the lane-1 account: token decode, four forged variants, platform-API audience. KB-7DA9B0B7 (storefront-scoped token refused by platform REST with 401) is DISPUTED - not every REST route refuses it - so the case asserts only /api/platform/security/users.
 Where the browser keeps the token (storage vs memory) is NOT asserted - no storage inspection on the MCP lane; see SEC-PCI-005 for the storage method.
 Catches: signature or expiry validation bypass - mutants: skip signature check, accept alg=none, ignore exp.
@@ -122,7 +122,7 @@ Business_Rule left empty: no BL-SEC-* family exists (oracle gap).","Draft"
 Catches: lockout not enforced on the storefront token endpoint (VCST-4999 family); org members receiving the permanent lockout code (VCST-5374).
 Edge_Case_Refs corrected from ECL-3.1 (No Results) to ECL-4.3 (Account Takeover).
 2026-11-26 (Sprint 26-23 W1 triage): attempts below the threshold return login_failed, the threshold-th may already lock (5th observed); lockoutEnd is asserted via the admin user, not the token response; the /sign-in alert reads 'Your account has been temporarily locked. Please try again later.' (KB-D77326CE); tags {DOC} -> {OBSERVED}.
-Generic-text lockout message is a product-owner question (account enumeration), not asserted here.","Draft"
+Generic-text lockout message is a product-owner question (account enumeration), not asserted here. | Promoted: REG-2026-11-26-1000-RB (2026-11-26)",Automated
 "SEC-INPUT-001","XSS Prevention - Search (merged into SEC-XSS-003)","Input Validation > XSS","High",,,"[PRE:SIGNIN_AS:USER_DEFAULT]",,"[WAIT] N/A - NOT EXECUTED: merged into SEC-XSS-003. The header Search box only navigates to /search?q=<text>, so typing the payload and loading the URL are one reflection surface (verified live: both render identically); SEC-XSS-003 drives both entries.","[STATE] N/A - see SEC-XSS-003
 [DOM] N/A - covered by SEC-XSS-003","N/A - see SEC-XSS-003","N/A - see SEC-XSS-003
 N/A - merged, never executed on its own","none","Deprecated: 2026-11-05 (stable-16 W6 repair) - merged into SEC-XSS-003. The header Search box only navigates to /search?q=<text>, so typing the payload and loading the URL are one reflection surface (verified live: both render identically); SEC-XSS-003 drives both entries.","Deprecated"
@@ -452,10 +452,11 @@ Catches: script validation covering only some free-text fields or being switched
 [NAV] {{FRONT_URL}}/account/change-password
 [WAIT] Change password form visible
 [ACT] Fill 'Current password': @td(TECHFLOW_BUYER.password); 'New password' and 'Confirm new password': new_password
+[WAIT] 'Change' button enabled
 [ACT] Click 'Change'
 [WAIT] the success notification appears
 [GQL] query { me { userName } } with the second session's access_token","[DOM] Change password form fields visible: Current password, New password, Confirm new password; no sign-out notice on the form before submit {OBSERVED} KB-4BDF14A7
 [DOM] After a successful change a success notification reads 'Your password has been successfully changed. Changing your password will sign you out of all other devices and browsers.' {OBSERVED} (REG-2026-11-26-0900-W1F; VCST-4531 AC, vc-frontend PR #2275)
 [STATE] (only with EnablePersistentStorageTokenValidation=true) the second session signed in before the change no longer resolves the user: me.userName is Anonymous or the call answers 401 {SPEC} BL-AUTH-003","[NETWORK] No 4xx/5xx on page load
 [CONSOLE] No TypeError or JS errors","Success notification absent or different after a successful change; the other session still resolves the user after the change (with persistent token validation on); page errors with 500; console TypeError","Restore the persona's password: change it back through the same form or reset via the admin (POST /api/platform/security/users/{id}/resetpassword)
-[PRE:SIGNOUT]","VCST-4531 | 2026-11-26 (Sprint 26-23 W1 triage): no pre-submit form notice exists; the text is the post-submit success notification (KB-4BDF14A7, VCST-4531, PR #2275); EnablePersistentStorageTokenValidation kept as a precondition only for the other-sessions assertion","Draft"
+[PRE:SIGNOUT]","VCST-4531 | 2026-11-26 (Sprint 26-23 W1 triage): no pre-submit form notice exists; the text is the post-submit success notification (KB-4BDF14A7, VCST-4531, PR #2275); EnablePersistentStorageTokenValidation kept as a precondition only for the other-sessions assertion | Promoted: REG-2026-11-26-1000-RB (2026-11-26)",Automated
