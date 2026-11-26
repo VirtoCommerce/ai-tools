@@ -33,7 +33,7 @@ Verified on {env} · run {run_id} · verdict {verdict} · captured {capture_date
 | `{breaking}` | `⚠ Breaking: …` with its source, or nothing at all ([`rules.md`](rules.md) §Truth guardrail) |
 | `{setup}` | what must be switched on and where: store settings, roles and permissions, modules, and — when the feature is configured through it — the REST/GraphQL operation. Each item names where it is in the UI. `Nothing to set up.` is valid |
 | `{scenarios}` | one `#### {scenario}` per user-visible flow: numbered UI-literal steps, a cropped screenshot after each meaningful step, then the scenario's walkthrough GIF |
-| `{video_line}` | before the person attaches the film: `Video: {film-name}.mp4 — being exported, will be attached to this ticket.` After `/qa-docs <TICKET> --video`: `Video: {film-name}.mp4 (attached to this ticket).` No film: the line is left out |
+| `{video_line}` | `Video: [{TICKET} — {feature} (film)]({film.url})` — the film's artifact link, filled once the film exists (`SKILL.md` step 5); never a file name. The link opens only for people the film is shared with ([`media.md`](media.md) §Hand-off). No film: the line is left out |
 | `{not_documented}` | each condition left out — `UNCOVERED`, a `PASS WITH NOTES` note, or `changed since the run` — with its reason; otherwise `None` |
 | `{verdict}` | the run's verdict, verbatim (`PASS` or `PASS WITH NOTES`; with notes, the `Not documented` line names them) |
 | `{versions_source}` | `run` (the test run probed them) or `capture` (read from `/api/platform/modules` before the capture walk) |
