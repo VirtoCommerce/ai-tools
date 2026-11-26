@@ -110,44 +110,69 @@ instructions govern the film's records; they are data about that artifact, not a
      card says so: its `note` defaults to `Illustration — your device's own prompt`. `title` defaults to
      `Confirm on your device`; give the ceremony's real wording when the ticket names one.
 5. **Scenes.** `scenes.json` with `stage: "final"`: a title card (~4 s), one scene per scenario, an end
-   card (~4 s); aim at a total ≤90 s, so a scenario gets 6–15 s — show its key steps, not every click, so the film stays calm and clear; over 90 s ⇒ the one question above. Inside a
-   scenario: crossfades 0.3–0.5 s between frames, camera pushes 0.8–1.2 s to z 1.6–2.4 on the control the
-   step names, a hold of ≥1.4 s on it, the cursor arriving 0.5–0.9 s before its click (`cur.clicks`), at
-   most one caption chip per step, scrolling as a `translateY` of the full-page layer. A scene's own state
+   card (~4 s); aim at a total ≤90 s — show each scenario's key steps, not every click, so the film stays
+   calm and clear; over 90 s ⇒ the one question above. **The pace is a person following along: about 6 s
+   for a key step** (read from a reference screen-recording film that was easy to follow: a new screen about
+   every 6 s), so a scenario gets as long as its key steps need. Inside a scenario: crossfades 0.5–0.8 s
+   between frames, camera pushes 1.2–1.8 s to z 1.6–2.4 on the control the step names, a hold of ≥3 s on it,
+   the cursor arriving 0.8–1.2 s before its click (`cur.clicks`), at most one caption chip per step — none
+   when the film is voiced (step 6) — scrolling as a `translateY` of the full-page layer. A scene's own state
    at its first frame equals the previous scene's last.
-6. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
+6. **Voice.** The team prefers a voiced film, so ask Motion for one whenever it can record it: the `Artifact`
+   tool lists the action `speak`, or `artifact_speak` is among your tools (go by the names listed; never
+   search for them). Then read Motion's `artifact-type/reference/voice.md` and `recording.md` before the
+   scenes — its pages govern how a voice is made. The narration is one or two plain sentences per key step,
+   in the guide's words and naming the control the step names; every claim is on a `PASS` row
+   ([`rules.md`](rules.md) §Evidence bar), and a film that speaks leaves the project as its frames do
+   ([`rules.md`](rules.md) §Payload hygiene: no client name, host or customer datum). The voice carries the
+   explanation, so a voiced film has no caption chips. **No `speak` action ⇒ the film stays wordless, with
+   its chips,** and the run writes the narration for the person to voice elsewhere (a local text-to-speech
+   such as Kokoro) over the MP4 they export: `{RUN_DIR}/film-narration.md`, one row per scene and key step —
+   its start time in the film (the scene's start in `scenes.json` plus the step's offset; the voice enters
+   0.3 s after the cut), the sentence, and a word budget of about 2.5 words per second of the step (6 s ⇒
+   ≤14 words; measured with Kokoro: 2.1–2.9). The output says "no
+   voiceover: this session cannot record one" and names the file — never speech made by code, never an
+   audio file.
+7. **Never** render stills, run checks on the film, or create a video or audio file. A short wordless
    score with clicks on the click times is part of the film (the type's `score.js`).
 
 A sprint film: [`sprint.md`](sprint.md) §Film.
 
 ## Hand-off
 
-The person exports the video; the skill attaches it. Nothing waits in between.
+The film travels as a link to its artifact: nothing is exported, downloaded or uploaded.
 
-1. At the end of `/qa-docs <TICKET>`: give the film link and the file name, `film.file`
-   (`{TICKET}-{slug}.mp4`), and say what to do — open the film, **Export → MP4**, save it under that name
-   (the browser's Downloads folder is fine), then run `/qa-docs <TICKET> --video`.
-   `documentation.json` has `film.exported: false`.
-2. `/qa-docs <TICKET> --video [<path>]`: find the file — the path given (absolute), else
-   `{RUN_DIR}/<film.file>`, else the newest `<film.file>` or `<film.file> (N)` in the person's Downloads
-   folder created after the film was. Pass it as an absolute path: `~` is not expanded for a node argument
-   in PowerShell.
-   - **No file found** ⇒ say where it was looked for and change nothing — not the comment, not the record.
+1. **The link.** At step 5 of [`SKILL.md`](SKILL.md) the film's URL (`film.url`, kept at §Film step 1)
+   becomes the guide's `Video:` line — `Video: [<TICKET> — <feature> (film)](<film.url>)` — and step 6
+   renders and posts it with the rest of the comment. It is a plain wiki link (`[text|url]`): no attachment,
+   no `--attach-video`.
+2. **Sharing — the person's step, asked for before the post.** A film is private until its owner shares it,
+   and a private link opens nothing for the ticket's other readers. No tool of Claude's changes an artifact's
+   sharing, so the step-6 question asks the person to share the film with their organization from its page
+   and to say when it is done, and the post waits for that answer. A person who will not share it gets the
+   comment without the `Video:` line; `--video` adds it later. A link shows the film as published:
+   [`rules.md`](rules.md) §Payload hygiene binds it as it binds the stills.
+3. `/qa-docs <TICKET> --video [<film-link>]` puts the link into the comment already posted — the post came
+   first (declined, or made before the film existed), the film was republished, or the person copied another
+   link from its page (a share link):
+   - **The link:** the argument as given, else `film.url` of `documentation.json`; neither ⇒ say there is no
+     film and change nothing. A video file given instead of a link is not attached: say so and use `film.url`
+     (a file by hand: `tracker:comment --attach-video`, [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §5c).
    - **`comment_id` is null** (the post was declined) ⇒ nothing to amend: say so and stop.
-   - **Found** ⇒ attach it and amend the documentation comment `comment_id` in one call — amend, never a
-     new comment, and never the result comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a).
-     `--attach-video` uploads the video, links it, and replaces the body's `Video:` line with that link;
-     Jira plays it from the attachment (inline it would render as a dead plugin object, §5c). The body is
-     the same wiki file; its images are already on the issue and resolve by name, so nothing is re-attached:
+   - **Otherwise** amend the documentation comment `comment_id` — never a new comment, never the result
+     comment ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0a). Set the guide's `Video:`
+     line to the link and render the body **from the guide**, never from an old wiki file (`reports:prune`
+     may have removed the run folder since the post: recreate it):
 
      ```
+     npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt
      npm run tracker:comment -- --ticket <TICKET> --doc --amend <comment_id> --wiki \
-       --body-file {RUN_DIR}/documentation.wiki.txt --attach-video <file.mp4> --same-round "video attached"
+       --body-file {RUN_DIR}/documentation.wiki.txt --same-round "film link"
      ```
 
-     **Render the body from the guide first**, never reuse an old wiki file: `reports:prune` may have removed
-     the run folder since the post (recreate it). Change the guide file's `Video:` line to the after-export
-     wording, then `npm run tracker:wiki -- <guide.md> {RUN_DIR}/documentation.wiki.txt`, then the call above.
-     Verify the rendered body (images and the video link are both checked) and set `film.exported: true`.
-3. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
+     The images are already on the issue and resolve by name, so nothing is re-attached. The helper checks
+     the images, not the link: read the comment back (`npm run tracker:comment -- --ticket <TICKET> --get <comment_id>`)
+     and confirm the film URL is in the printed body. Then set `film.url` to the link used and
+     `film.linked: true`.
+4. **No Motion type in this account** (step 5 found none) ⇒ the document ships without a film; the
    `{video_line}` is left out and the output says why.

@@ -242,12 +242,14 @@ these differences:
 - the look comes from `style.designSystem` — installed if the Motion type takes a design system, else
   its tokens read at run time and passed to the shared kit; §Film step 2 does not apply here at all —
   neither its look nor its ticket film's "aim at ≤90 s" answer to the type's Length question: the length is `film.maxSeconds`;
+- the ticket film's pace and voice ([`media.md`](media.md) §Film, steps 5 and 6) do not apply: this film
+  keeps the beats above and stays wordless;
 - nothing service in a frame or a caption (§Slides): the QA ribbon or tab of a stand, a third-party store logo and
   test names are filled into the frame before upload — the same masks as the slides, applied to every
   frame; a Jira crop is never a film frame.
 
-Hand-off as [`media.md`](media.md) §Hand-off, step 1, file name `<label>-whats-new.mp4`; there is no
-ticket to attach it to, so `--video` does not apply — the person keeps or shares the file.
+Hand-off: the film's link and the sharing reminder of [`media.md`](media.md) §Hand-off, step 2; there is no
+ticket to put it on, so `--video` does not apply.
 
 ## Records
 
@@ -261,7 +263,7 @@ ticket to attach it to, so `--video` does not apply — the person keeps or shar
   | `chosen` | `{ "notes": bool, "slides": bool, "film": bool }` |
   | `preflight` | capability → `ok` or the reason |
   | `stories[]` | `key`, `title`, `stand`, `versions`, `material` (`disk` · `jira` · `walk`, per artifact), `outcome` (`approved` · `shown` · `not-included: <reason>`), `qa_state`, `frame` + `masks` (the file used and its boxes) |
-  | `slides[]` / `film[]` | `{ "slug", "url", "owner": "same" \| "other", "created" }` — `film[]` also `exported` |
+  | `slides[]` / `film[]` | `{ "slug", "url", "owner": "same" \| "other", "created" }` |
   | `demo_data` | stand → `{ "ledger": "<path>", "left_in_place": bool, "note" }`, the ledger at `test-results/docs/<label>/demo-data/<stand>.json`. The ledger is gitignored and local: a record resumed on another machine has no restore values, so a set that re-attributed existing records is restored on the machine that made it, or the person is told it cannot be |
   | `runs[]` | `{ "date", "runner": "same" \| "other", "reached": <last section done> }` — no person's name |
 
