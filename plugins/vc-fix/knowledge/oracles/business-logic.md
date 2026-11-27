@@ -2034,6 +2034,7 @@ the environment verification (TLC-2026-07-02-2043).
 - **Source:** `en.WhiteLabeling.json` errors `store-and-organization-set` / `store-or-organization-must-be-set` / `duplicate-store-or-organization`.
 - **Source:** VCST-4657 (Done) — WL save validation: exactly one of StoreId/OrganizationId, no binding change on update, duplicates rejected (400)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-7056 — the xAPI mutation changeOrganizationLogo created a second record for an organization whose record was disabled, without running WhiteLabelingSettingValidator (live probe on vcst, 2026-11-27); the rule holds for the Admin blade and REST, not for this writer
 
 ### BL-WL-006: Distinct allowed upload types — logo vs favicon `[P2-ux]`
 - **Rule:** The **Logo** widget accepts **PNG / GIF / SVG**; the **Favicon** widget accepts **PNG / JPG / WEBP**. Other extensions are rejected with a "Filetype error" dialog. The sets are distinct — JPG/WEBP are favicon-only, GIF/SVG are logo-only.
@@ -2796,7 +2797,7 @@ ticket or a docs page disputes (`status`).
 | GraphQL xAPI Contract | BL-GQL-001–005 | 5 | 2 | 2 | 1 | 3 | 5 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
-| White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
+| White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 1 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 11 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
@@ -2807,4 +2808,4 @@ ticket or a docs page disputes (`status`).
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
-| **Total** | | **250** | **77** | **134** | **39** | **142** | **87** |
+| **Total** | | **250** | **77** | **134** | **39** | **142** | **88** |
