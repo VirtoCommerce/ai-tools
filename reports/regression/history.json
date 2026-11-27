@@ -7594,5 +7594,37 @@
     "pass_rate": 100,
     "duration_minutes": 5.45,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-26-1702-WXM",
+    "date": "2026-11-26",
+    "suiteId": "070",
+    "suiteName": "Whitelabeling Storefront",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 3,
+    "passed": 0,
+    "failed": 2,
+    "blocked": 1,
+    "skipped": 0,
+    "pass_rate": 0,
+    "duration_minutes": 53.51,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-11-26-1702-WXM",
+    "date": "2026-11-26",
+    "suiteId": "071",
+    "suiteName": "Whitelabeling Branding",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 0,
+    "duration_minutes": 23.67,
+    "mode": "interactive"
   }
 ]

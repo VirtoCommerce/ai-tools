@@ -1,44 +1,32 @@
 {
-  "runId": "REG-2026-11-26-1000-RB",
+  "runId": "REG-2026-11-26-1702-WXM",
   "status": "completed",
-  "startedAt": "2026-11-26T05:42:09.938Z",
+  "startedAt": "2026-11-26T16:03:06.123Z",
+  "selection": "sprint-26-23 WX — FWL-001/003/004/009 (Manual→Draft, live check)",
   "env": "vcst",
-  "ticket": "VCST-7027",
-  "selection": "033,044,028 --ids AUTH-043,SEC-AUTH-001,SEC-AUTH-003,SEC-AUTH-005,CART-001,CART-006,CART-007,CART-133,CART-134 (re-run of W1/W2 cases blocked by missing runner API access)",
+  "release": "sprint-26-23",
+  "wave": "WX",
   "suites": {
-    "028": {
+    "070": {
       "status": "done",
       "lane": "browser",
+      "cases": 3,
+      "description": "Whitelabeling Storefront",
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-26T05:45:37Z",
-      "pass": 5,
-      "fail": 0,
-      "blocked": 0,
-      "skipped": 0,
-      "finishedAt": "2026-11-26T06:49:58.274Z"
+      "pass": 0,
+      "fail": 2,
+      "blocked": 1
     },
-    "044": {
+    "071": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-firefox",
-      "startedAt": "2026-11-26T05:45:37Z",
-      "pass": 2,
-      "fail": 0,
-      "blocked": 1,
-      "skipped": 0,
-      "finishedAt": "2026-11-26T06:49:58.279Z"
-    },
-    "033": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-11-26T06:34:16Z",
-      "pass": 1,
-      "fail": 0,
-      "blocked": 0,
-      "skipped": 0,
-      "finishedAt": "2026-11-26T06:49:58.278Z"
+      "cases": 1,
+      "description": "Whitelabeling Branding",
+      "browser": "playwright-chrome",
+      "pass": 0,
+      "fail": 1,
+      "blocked": 0
     }
   },
-  "finishedAt": "2026-11-26T06:50:34.116Z"
+  "finishedAt": "2026-11-26T17:23:23.379Z"
 }
