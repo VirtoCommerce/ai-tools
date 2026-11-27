@@ -18,6 +18,8 @@
     "creds:verify": "node scripts/maintenance/creds-verify.mjs",
     "creds:forget": "node scripts/maintenance/creds-forget.mjs",
     "gif": "node scripts/lib/make-gif.mjs",
+    "contact-sheet": "node scripts/lib/contact-sheet.mjs",
+    "crop": "node scripts/lib/crop.mjs",
     "seed": "node scripts/seed-data/seed-bootstrap.mjs",
     "seed:minimal": "node scripts/seed-data/seed-bootstrap.mjs --skip-optional",
     "seed:catalog": "npm run seed:catalog-structure && npm run seed:products && npm run seed:inventory",
