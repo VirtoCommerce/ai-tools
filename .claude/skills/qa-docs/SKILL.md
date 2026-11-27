@@ -88,22 +88,23 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
 
 3. **Capture** on a Playwright lane: build check first, then a demo data set made for the walk (never the
    run's fixtures; deleted by id after the last frame), then one full-viewport frame per step of every
-   `PASS` scenario, the walk recorded as `{RUN_DIR}/capture-plan.json` and checked on a contact sheet before
-   anything is built — [`media.md`](media.md) §Capture. Build the scenario GIFs — §GIF.
+   `PASS` scenario — [`media.md`](media.md) §Capture. Build the scenario GIFs — §GIF.
 
 4. **Write the document** from [`template.md`](template.md) under [`rules.md`](rules.md), and save it as
    `reports/ba/<Domain>/<ticket>-<slug>-guide.md`. An existing guide for the ticket is amended in place,
    never forked. Check the size cap (§Size cap) and the payload rules (§Payload hygiene) before step 6.
 
-5. **Make the film** — one Motion artifact, its length set by [`media.md`](media.md) §Film, from the same frames, at the pace and with the voice rule of [`media.md`](media.md) §Film.
+5. **Make the film** — one Motion artifact, aiming at ≤90 s (a soft ceiling: [`media.md`](media.md) §Film), from the same frames, at the pace and with the voice rule of [`media.md`](media.md) §Film.
    Its link becomes the guide's `Video:` line ([`template.md`](template.md) `{video_line}`) before step 6 renders it.
 
 6. **Post — ask once.** Show the composed comment and the film link, and ask before posting: the comment
    is an external write, and it is the run's one sanctioned documentation comment
    ([`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 4). A decline posts nothing.
-   With a film, the same question carries its sharing step and the post waits for the answer; a person who
-   will not share it gets the comment without the `Video:` line (`film.linked` stays `false`) —
-   the wording and the reason are in [`media.md`](media.md) §Hand-off, step 2.
+   The film is private until its owner shares it, and a private link opens nothing for the ticket's other
+   readers. No tool of Claude's changes an artifact's sharing, so the question asks the person to share the
+   film with their organization from its page and to say when it is done; the comment is posted after that
+   answer. A person who will not share it gets the comment without the `Video:` line (`film.linked` stays
+   `false`) — [`media.md`](media.md) §Hand-off.
 
    **The body is wiki markup, not the guide's Markdown.** With screenshots the comment goes through the v2
    API, where the whole body is wiki (tracker-ops.md §5c); a Markdown body shows literal `##` and renders no

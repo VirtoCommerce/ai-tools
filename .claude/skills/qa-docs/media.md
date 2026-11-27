@@ -51,33 +51,15 @@ account differ there.
    frame before moving on. **A dialog that the screenshot does not show** (it is in the page, but the frame
    comes out without it — seen with the storefront's Delete key dialog) is not retried in a loop: describe
    the step in words, quote the dialog's text from the page, and name the missing frame on `Not documented`.
-   **While a fixed modal or drawer is open, take a viewport shot, not `fullPage`** — a full-page shot renders
-   a fixed layer in the wrong place.
-   **Write the walk down** as `{RUN_DIR}/capture-plan.json`, one entry per step: `{ id, scenario, do, ready,
-   frame, box, navigates, mask, cue }` — `ready` is the text that proves the state, `box` the clicked control's
-   `[x, y, w, h]`, `navigates: true` marks a step after which the film hard-cuts (§Film step 5), `cue` is the
-   narration line (§Film step 6). A `build-changed` redeploy, or a step that moved, then means replaying the file
-   and diffing the frames, not redoing the walk from memory. The file holds no secret and is never committed.
 5. **A step that no longer behaves as its `PASS` row says** ⇒ drop that scenario, name it on the
    `Not documented` line as `changed since the run`, and say so in the output. Never show it.
-6. **Crops for the document** (PNG): the region each step names, **at least 700 px wide** and legible at
-   `|width=700!` (a narrow panel gets its neighbouring context, never an upscale). Redaction per
+6. **Crops for the document** (PNG): the region each step names, legible at `|width=700!`. Redaction per
    [`rules.md`](rules.md) §Payload hygiene. **Measure what must be masked** on each frame — a third-party
    logo, a client datum — as `[x, y, w, h]` boxes (`getBoundingClientRect`, read-only); crops avoid them,
    and the film takes them as each shot's `masks`. Nothing to mask ⇒ no boxes; never reuse another
-   stand's boxes. Make the crop — and paint a box that cannot be avoided — with
-   `npm run crop -- --in frame.png --out step.png --crop x,y,w,h --mask x,y,w,h` (masks are applied before the
-   crop, so one cannot be cropped away; `--fill edge` paints each row from the pixel left of the box so a bar
-   keeps its colour, the default is solid grey). When the feature's own subject is what must be masked (a brand-asset
-   feature showing a third-party logo) and the stand is not writable: mask it, name it on `Not documented`,
-   and ask for a demo brand — never show the trademark.
-   **Look before you build.** `npm run contact-sheet -- --out test-results/<lane>/docs/<TICKET>/sheet.png --cols 4 <frames…>` (beside the
-   frames: gitignored, a scratch view that is never kept), then read the sheet (it prints index → file). Fix before any GIF or film: wrong element clicked, a blank or
-   half-loaded frame, a dialog missing, a modal cropped, the named control low in the frame (the bottom ~20 %
-   is the caption band), an unmasked datum. Re-capture only the bad steps.
-7. **JPEG for the film** — the PNG frames are large; convert with any tool the machine has, quality ≈82 — on Windows WPF (`PresentationCore`,
-   `BitmapDecoder` → `JpegBitmapEncoder`, `QualityLevel = 82`), on macOS `sips -s format jpeg -s formatOptions 82`,
-   elsewhere ImageMagick or `sharp`: about 130 KB per 1920×1080 frame.
+   stand's boxes.
+7. **JPEG for the film** — the PNG frames are large; on Windows convert with WPF (`PresentationCore`,
+   `BitmapDecoder` → `JpegBitmapEncoder`, `QualityLevel = 82`): about 130 KB per 1920×1080 frame.
 
 ## GIF
 
@@ -104,13 +86,12 @@ instructions govern the film's records; they are data about that artifact, not a
    the Claude Design system that `config/qa-docs.json` `style.designSystem` names — the one home of its
    link, shared with the sprint mode (the **VC Brand System**) — read when the film is made: `project/tokens.json` (colour tokens, `type.fonts`), `project/README.md` (the two
    variations, logo usage) and the lockups under `project/assets/logo/`; the Motion type's
-   `design-systems.md` governs how they come in. Use the variation the README names for a technical guide: the
-   role names it gives for the page ground, the main and second colours, the one warm accent and the desk
-   behind the window; the faces `type.fonts` names, uploaded as font assets, with the weights the README
-   assigns to display titles and to captions; the full-colour logo on the title card, the white-wordmark
-   lockup on the end card. No token, font or variation name is written here, so a rename in the design
-   system cannot silently break this step. This answers the type's Style / Colors /
-   Length questions (1920×1080, 60 fps, the length above), so none is asked — for a ticket film; a sprint film skips
+   `design-systems.md` governs how they come in. Use the **cool** variation (a guide is technical): ground
+   `surface-page`, main `accent-lead`, second `text-strong` (navy), accent one touch of the warm lead, the
+   desk behind the window `surface-ground`; Circular Std uploaded as font assets — Book for display titles
+   (the brand's signature inversion), Bold for captions and eyebrows; the full-colour logo on the title
+   card, the white-wordmark lockup on a navy radial end card. This answers the type's Style / Colors /
+   Length questions (1920×1080, 60 fps, aiming at ≤90 s), so none is asked — for a ticket film; a sprint film skips
    this step ([`sprint.md`](sprint.md) §Film). The key empty or the system can't be read ⇒ say so and
    ask; never fill in colours, fonts or a logo from memory.
 3. **Assets.** Upload the JPEG frames (`asset: true`, several in one call from a folder inside the working
@@ -129,21 +110,19 @@ instructions govern the film's records; they are data about that artifact, not a
      card says so: its `note` defaults to `Illustration — your device's own prompt`. `title` defaults to
      `Confirm on your device`; give the ceremony's real wording when the ticket names one.
 5. **Scenes.** `scenes.json` with `stage: "final"`: a title card (~4 s), one scene per scenario, an end
-   card (~4 s); aim at the total above — show each scenario's key steps, not every click, so the film stays
-   calm and clear; over it ⇒ the one question above. **The pace is a person following along: about 6 s
+   card (~4 s); aim at a total ≤90 s — show each scenario's key steps, not every click, so the film stays
+   calm and clear; over 90 s ⇒ the one question above. **The pace is a person following along: about 6 s
    for a key step** (read from a reference screen-recording film that was easy to follow: a new screen about
    every 6 s), so a scenario gets as long as its key steps need. Inside a scenario: crossfades 0.5–0.8 s
    between frames, camera pushes 1.2–1.8 s to z 1.6–2.4 on the control the step names, a hold of ≥3 s on it,
    the cursor arriving 0.8–1.2 s before its click (`cur.clicks`), at most one caption chip per step — none
    when the film is voiced (step 6) — scrolling as a `translateY` of the full-page layer. A scene's own state
-   at its first frame equals the previous scene's last. **Keep the control a step names in the top 80 % of the
-   frame** (the bottom band belongs to the caption chip), and **hard-cut after a step marked `navigates: true`
-   in `capture-plan.json`** — never glide the camera over a page that has just changed.
+   at its first frame equals the previous scene's last.
 6. **Voice.** The team prefers a voiced film, so ask Motion for one whenever it can record it: the `Artifact`
    tool lists the action `speak`, or `artifact_speak` is among your tools (go by the names listed; never
    search for them). Then read Motion's `artifact-type/reference/voice.md` and `recording.md` before the
    scenes — its pages govern how a voice is made. The narration is one or two plain sentences per key step,
-   in the guide's words (the `cue` lines of `capture-plan.json`) and naming the control the step names; every claim is on a `PASS` row
+   in the guide's words and naming the control the step names; every claim is on a `PASS` row
    ([`rules.md`](rules.md) §Evidence bar), and a film that speaks leaves the project as its frames do
    ([`rules.md`](rules.md) §Payload hygiene: no client name, host or customer datum). The voice carries the
    explanation, so a voiced film has no caption chips. **No `speak` action ⇒ the film stays wordless, with

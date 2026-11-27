@@ -211,8 +211,8 @@ neutral look §Ask settled), never from these files.
 3. **One slide per story** in the layout `slides.layout` names: its `regions` in order; `onScreen: false`
    regions go to the slide's speaker notes, which hold only what the speaker says (the ticket film's link, if any).
 
-**One frame per story**, its mask boxes (from the walker) filled before upload with `npm run crop -- --in <frame> --out <frame> --mask x,y,w,h --fill edge` (each
-row from the pixel left of the box, so a bar keeps its colour); the stand's own marks are masks too (a
+**One frame per story**, its mask boxes (from the walker) filled before upload, row by row from the pixel
+left of the box so a bar keeps its colour (`pngjs` is in the repo); the stand's own marks are masks too (a
 QA ribbon or tab, a third-party store logo, `AGENT-TEST-…` names, a user's name). Upload as assets and
 reference the returned url.
 
@@ -241,7 +241,7 @@ these differences:
   hold, the seconds win and scenes shorten toward 6 s, then the person is asked to cut a story;
 - the look comes from `style.designSystem` — installed if the Motion type takes a design system, else
   its tokens read at run time and passed to the shared kit; §Film step 2 does not apply here at all —
-  neither its look nor its ticket film's length aim answer to the type's Length question: the length is `film.maxSeconds`;
+  neither its look nor its ticket film's "aim at ≤90 s" answer to the type's Length question: the length is `film.maxSeconds`;
 - the ticket film's pace and voice ([`media.md`](media.md) §Film, steps 5 and 6) do not apply: this film
   keeps the beats above and stays wordless;
 - nothing service in a frame or a caption (§Slides): the QA ribbon or tab of a stand, a third-party store logo and
