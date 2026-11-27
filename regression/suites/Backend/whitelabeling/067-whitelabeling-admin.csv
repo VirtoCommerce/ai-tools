@@ -224,11 +224,15 @@ Store setting WhiteLabeling.WhiteLabelingEnabled is true on store {{STORE_ID}}; 
 [ACT] click 'Save'
 [WAIT] the save notification appears
 [HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName } - [CAPTURE] answer as XAPI
-[NAV] open {{FRONT_URL}} in a fresh context
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note <html data-preset> as GUEST_PRESET and the computed --color-primary-500 on :root as GUEST_PRIMARY (what the page shows with the store record off and no organization)
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from GUEST_PRESET (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset could not be told from what the page shows without it)
 [ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
-[WAIT] the signed-in home page renders","[REL] XAPI.logoUrl = REC_LOGO and XAPI.themePresetName = REC_PRESET although the store record is disabled (independent per-record gating)
-[REL] the header logo src path ends with the path of REC_LOGO and the computed --color-primary-500 equals the preset color_primary_500 of REC_PRESET","[API] the xAPI response has errors[] empty
-[CONSOLE] no uncaught JS errors",organization branding disappears when only the store record is off (the two layers are confused); errors[] non-empty,"in the store's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; confirm GET /api/white-labeling/store/{{store_id}} reports isEnabled = PRIOR_ENABLED; sign out","C384979, Record-level IsEnabled gating (Layer 2) — GetWhiteLabelingSettingsQueryHandler, live TLC-2026-07-02-2043 · Behavior:wl.resolve.store-record-off-org-survives · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-003; KB-A23A4A41 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+[WAIT] the signed-in home page renders
+[ASSERT] note <html data-preset> as MEMBER_PRESET and the computed --color-primary-500 on :root as MEMBER_PRIMARY","[REL] XAPI.logoUrl = REC_LOGO and XAPI.themePresetName = REC_PRESET although the store record is disabled (independent per-record gating)
+[REL] the header logo src path ends with the path of REC_LOGO and MEMBER_PRESET equals REC_PRESET lower-cased with spaces replaced by ""-"" and differs from GUEST_PRESET, and MEMBER_PRIMARY differs from GUEST_PRIMARY: the organization's palette applies although the store record is off, compared by relation on the page, never against a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","[API] the xAPI response has errors[] empty
+[CONSOLE] no uncaught JS errors",organization branding disappears when only the store record is off (the two layers are confused); errors[] non-empty,"in the store's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; confirm GET /api/white-labeling/store/{{store_id}} reports isEnabled = PRIOR_ENABLED; sign out","C384979, Record-level IsEnabled gating (Layer 2) — GetWhiteLabelingSettingsQueryHandler, live TLC-2026-07-02-2043 · Behavior:wl.resolve.store-record-off-org-survives · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-003; KB-A23A4A41 · Synced: qa-suite-sync wl (2026-11-27) · Round 3 2026-11-27: preset oracle by relation",Draft
 "WL-016","Verify MainMenuLinkListName field behaves as nullable varchar(256) (indirect — no DB access in this framework)","Admin UI","High","BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_MENU_ONLY.name)]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]

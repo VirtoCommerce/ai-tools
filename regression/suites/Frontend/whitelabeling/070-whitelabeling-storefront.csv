@@ -62,6 +62,8 @@ READ-ONLY — no store mutation and no record write. Organization @td(WL_EMPTY_R
 Step 3 sets the STORE SETTING WhiteLabeling.WhiteLabelingEnabled (Stores > store > Settings widget > group White Labeling), NOT the White labeling blade's Enabled toggle (that is FWL-072). The setting is stored explicitly true on {{STORE_ID}}; organization @td(WL_ELECTRONICS.name) replaces ""Company1"" and has an enabled record with its own logo and preset","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
 [HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO and themePresetName as REC_PRESET
 [HTTP] GET {{BACK_URL}}/api/stores/{{store_id}} - [CAPTURE] settings[?name=WhiteLabeling.WhiteLabelingEnabled].value as PRIOR_SWITCH
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset could not be told from the store's)
 [NAV] open {{BACK_URL}} (Admin SPA)
 [ACT] click 'Stores' in the main menu
 [WAIT] the Stores grid opens
@@ -77,17 +79,18 @@ Step 3 sets the STORE SETTING WhiteLabeling.WhiteLabelingEnabled (Stores > store
 [WAIT] the sign-in form is visible
 [ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
 [WAIT] the signed-in home page renders with the account menu
-[ASSERT] the home page is rendered
+[ASSERT] the home page is rendered; note <html data-preset> as OFF_PRESET and the computed --color-primary-500 on :root as OFF_PRIMARY
 --- reversal ---
 [ACT] in the admin context set 'WhiteLabeling.WhiteLabelingEnabled' to true
 [ACT] click 'Save'
 [WAIT] the save notification appears
 [NAV] reload {{FRONT_URL}} in the member context
-[WAIT] the home page renders","[REL] with the setting false the header logo src path does NOT end with the path of REC_LOGO (the default theme logo shows)
-[REL] with the setting false the computed --color-primary-500 differs from color_primary_500 of REC_PRESET and the header menu is the default catalog menu
-[NETWORK] with the setting false no request is made for the organization logo or its preset file
-[REL] after the setting is true again the header logo src path ends with the path of REC_LOGO and the primary colour equals color_primary_500 of REC_PRESET","[CONSOLE] no uncaught JS errors
-[API] GET /api/stores/{{store_id}} reports the setting false then true",organization branding still applied while the setting is false; branding does not return after true; the blade Enabled toggle changed as a side effect,"Set WhiteLabeling.WhiteLabelingEnabled back to PRIOR_SWITCH (stored explicitly true) in Stores > Settings, click Save and confirm GET /api/stores/{{store_id}}; sign out",C389429 · Behavior:wl.switch.store-master.off-suppresses-all · Behavior:wl.switch.store-master.disable · Behavior:wl.switch.store-master.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 ModuleConstants; Docs: PlatformUserGuide white-labeling settings; KB-6C0AA08A; BL-WL-003 · Synced: qa-suite-sync wl (2026-11-27),Draft
+[WAIT] the home page renders
+[ASSERT] note <html data-preset> as ON_PRESET and the computed --color-primary-500 on :root as ON_PRIMARY","[REL] with the setting false the header logo src path does NOT end with the path of REC_LOGO (the default theme logo shows)
+[REL] with the setting false OFF_PRESET differs from REC_PRESET lower-cased with spaces replaced by ""-"" and OFF_PRIMARY differs from ON_PRIMARY, and the header menu is the default catalog menu (relation on the page, never against a preset file: theme 2.63.0 bundles the presets and requests none, KB-29A75D95)
+[NETWORK] with the setting false no request is made for the organization logo
+[REL] after the setting is true again the header logo src path ends with the path of REC_LOGO, ON_PRESET equals REC_PRESET lower-cased with spaces replaced by ""-"" and ON_PRIMARY differs from OFF_PRIMARY","[CONSOLE] no uncaught JS errors
+[API] GET /api/stores/{{store_id}} reports the setting false then true",organization branding still applied while the setting is false; branding does not return after true; the blade Enabled toggle changed as a side effect,"Set WhiteLabeling.WhiteLabelingEnabled back to PRIOR_SWITCH (stored explicitly true) in Stores > Settings, click Save and confirm GET /api/stores/{{store_id}}; sign out",C389429 · Behavior:wl.switch.store-master.off-suppresses-all · Behavior:wl.switch.store-master.disable · Behavior:wl.switch.store-master.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 ModuleConstants; Docs: PlatformUserGuide white-labeling settings; KB-6C0AA08A; BL-WL-003 · Synced: qa-suite-sync wl (2026-11-27) · Round 3 2026-11-27: preset oracle by relation,Draft
 "FWL-013","Footer links in whiteLabelingSettings — the two section headers and their children, mapped by title to link-list priority (array order is not asserted)","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","Runner-native, read-only. Admin token. Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has footer list @td(WL_ELECTRONICS.footer): section headers Legal and Help, each with two child links. The footer is hierarchical: top level = section header, children = the links (vc-frontend footer-links.vue). The xAPI returns arrays in descending priority and the storefront sorts (KB-3239DE5F)","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); p_legal=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Legal, priority); p_help=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Help, priority); p_privacy=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Privacy Policy, priority)","[AUTH role=ADMIN_DEFAULT]
 [GQL-OP wl]
 query {
@@ -835,12 +838,14 @@ FWL-071,Store master switch OFF then back ON — organization branding disappear
 Store setting WhiteLabeling.WhiteLabelingEnabled is stored explicitly true on {{STORE_ID}}; organization @td(WL_ELECTRONICS.name) has an enabled record with its own logo and preset. The setting is the STORE SETTING (Stores > store > Settings widget > group White Labeling > General), NOT the White labeling blade's Enabled toggle (domain map D1).","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
 [HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] record logoUrl as REC_LOGO, themePresetName as REC_PRESET
 [HTTP] GET {{BACK_URL}}/api/stores/{{store_id}} - [CAPTURE] the value of settings[?name=WhiteLabeling.WhiteLabelingEnabled] as PRIOR_SWITCH
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset could not be told from the store's)
 [NAV] open {{FRONT_URL}} in a fresh browser context
 [ACT] click 'Sign in'
 [WAIT] the sign-in form is visible
 [ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
 [WAIT] the signed-in home page renders with the account menu
-[ASSERT] the header logo src path ends with the path of REC_LOGO (baseline: org branding applies)
+[ASSERT] the header logo src path ends with the path of REC_LOGO (baseline: org branding applies); note <html data-preset> as BASE_PRESET and the computed --color-primary-500 on :root as BASE_PRIMARY
 --- SCREEN: switch the store setting OFF ---
 [NAV] open {{BACK_URL}} in a second browser context signed in as the admin account
 [GRID] click 'Stores', then the row '{{STORE_ID}}'
@@ -851,17 +856,19 @@ Store setting WhiteLabeling.WhiteLabelingEnabled is stored explicitly true on {{
 [WAIT] the save notification appears
 [NAV] reload {{FRONT_URL}} in the member context
 [WAIT] the home page renders
+[ASSERT] note <html data-preset> as OFF_PRESET and the computed --color-primary-500 on :root as OFF_PRIMARY
 --- SCREEN: switch the store setting back ON ---
 [ACT] in the admin context set 'WhiteLabeling.WhiteLabelingEnabled' to true
 [ACT] click 'Save'
 [WAIT] the save notification appears
 [NAV] reload {{FRONT_URL}} in the member context
-[WAIT] the home page renders","[REL] with the setting OFF the header logo src path does NOT end with the path of REC_LOGO and does not end with the path of the store record logo — the theme's own logo shows {OBSERVED} (vcst_qa 2026-11-26, KB-6C0AA08A)
-[REL] with the setting OFF the computed --color-primary-500 on :root differs from the preset color_primary_500 of REC_PRESET {BL} (BL-WL-003)
-[NETWORK] with the setting OFF no request is made for REC_LOGO or for /assets/presets/ of REC_PRESET {OBSERVED} (vcst_qa 2026-11-26, KB-6C0AA08A)
-[REL] after the setting is back ON the header logo src path ends with the path of REC_LOGO again and the primary colour equals the preset color_primary_500 of REC_PRESET — the switch is reversible without re-saving the record {BL} (BL-WL-003)","[API] GET /api/stores/{{store_id}} shows the setting false in the middle and true at the end
+[WAIT] the home page renders
+[ASSERT] note <html data-preset> as ON_PRESET and the computed --color-primary-500 on :root as ON_PRIMARY","[REL] with the setting OFF the header logo src path does NOT end with the path of REC_LOGO and does not end with the path of the store record logo — the theme's own logo shows {OBSERVED} (vcst_qa 2026-11-26, KB-6C0AA08A)
+[REL] with the setting OFF BASE_PRESET equals REC_PRESET lower-cased with spaces replaced by ""-"", OFF_PRESET differs from BASE_PRESET and OFF_PRIMARY differs from BASE_PRIMARY: the palette is compared by relation on the page, never against a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95) {BL} (BL-WL-003)
+[NETWORK] with the setting OFF no request is made for REC_LOGO {OBSERVED} (vcst_qa 2026-11-26, KB-6C0AA08A)
+[REL] after the setting is back ON the header logo src path ends with the path of REC_LOGO again and ON_PRESET equals BASE_PRESET and ON_PRIMARY equals BASE_PRIMARY — the switch is reversible without re-saving the record {BL} (BL-WL-003)","[API] GET /api/stores/{{store_id}} shows the setting false in the middle and true at the end
 [CONSOLE] no TypeError or JS error
-[NETWORK] no 4xx/5xx on /graphql",organization branding still applied with the setting false; branding does not come back after the setting is true again; the record's own Enabled flag changed as a side effect; the setting is left false,"Set WhiteLabeling.WhiteLabelingEnabled back to PRIOR_SWITCH (stored explicitly true) in the Stores > Settings widget, click Save, and confirm GET /api/stores/{{store_id}} reports it; sign out of the member context","VCST-899 · Archetype:CONFIG · Technique:ST · Purpose:FUNC · Behavior:wl.switch.store-master Behavior:wl.switch.store-master.off-suppresses-all Behavior:wl.switch.store-master.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · KB-6C0AA08A · Synced: qa-suite-sync wl (2026-11-27)",Draft
+[NETWORK] no 4xx/5xx on /graphql",organization branding still applied with the setting false; branding does not come back after the setting is true again; the record's own Enabled flag changed as a side effect; the setting is left false,"Set WhiteLabeling.WhiteLabelingEnabled back to PRIOR_SWITCH (stored explicitly true) in the Stores > Settings widget, click Save, and confirm GET /api/stores/{{store_id}} reports it; sign out of the member context","VCST-899 · Archetype:CONFIG · Technique:ST · Purpose:FUNC · Behavior:wl.switch.store-master Behavior:wl.switch.store-master.off-suppresses-all Behavior:wl.switch.store-master.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · KB-6C0AA08A · Synced: qa-suite-sync wl (2026-11-27) · Round 3 2026-11-27: preset oracle by relation",Draft
 FWL-072,"Store RECORD Enabled OFF (master setting stays ON) — a guest sees the defaults, the organization member keeps the organization branding",Whitelabeling > Two enable layers,High,BL-WL-003,,"[EXCLUSIVE:store white labeling]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:WL_USER_ELECTRONICS]

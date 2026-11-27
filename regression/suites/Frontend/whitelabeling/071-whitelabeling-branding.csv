@@ -29,6 +29,10 @@ NEEDS A STAND WRITE (NEEDS_WINDOW): the record of organization @td(WL_DEFAULT.na
 [HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
 [HTTP] GET {{FRONT_URL}}/assets/presets/{{bad_preset}}.json - [CAPTURE] status as BAD_STATUS
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note <html data-preset> as GUEST_PRESET (absent => BLOCKED:CONDITION_NOT_MET: design classic writes no data-preset, KB-5D6746FB) and the computed --color-primary-500 on :root as GUEST_PRIMARY
+[ASSERT] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-"" (a guest sees the store's preset) and STORE_PRESET differs from the theme's fallback preset, the `current` entry named in References (otherwise BLOCKED:CONDITION_NOT_MET: the store's preset could not be told from the fallback)
 [HTTP] PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id, same organizationId, isEnabled true) and themePresetName set to {{bad_preset}}
 [WAIT] the PUT returns 204
 [NAV] open {{FRONT_URL}} in a fresh browser context
@@ -37,12 +41,11 @@ NEEDS A STAND WRITE (NEEDS_WINDOW): the record of organization @td(WL_DEFAULT.na
 [ACT] sign in as @td(WL_USER_DEFAULT.email) (credentials from the PRE:SIGNIN_AS cluster)
 [WAIT] the signed-in home page renders with the account menu
 [ASSERT] the home page is rendered
-[ACT] read <html data-preset>
-[ACT] read the computed --color-primary-500 on :root","[SHAPE] BAD_STATUS is 404 (the test value is not served, so the fallback path is really taken)
-[REL] <html data-preset> equals the lower-cased, hyphenated `current` preset name of the deployed theme's settings_data.json and differs from STORE_PRESET normalised the same way
-[REL] the computed --color-primary-500 equals color_primary_500 of that bundled default preset file
+[ASSERT] note <html data-preset> as MEMBER_PRESET and the computed --color-primary-500 on :root as MEMBER_PRIMARY","[SHAPE] BAD_STATUS is 404 (the test value is not served, so the fallback path is really taken)
+[REL] MEMBER_PRESET is the theme's own fallback preset (the `current` entry of its settings_data.json, named in References as a source note), observed as: it differs from {{bad_preset}} lower-cased with spaces replaced by ""-"" (the unresolvable name is not echoed, the fallback path is taken) and differs from GUEST_PRESET (the store's preset is not the fallback)
+[SHAPE] MEMBER_PRIMARY is a non-empty colour (the fallback palette applies); it is NOT used to tell the fallback from the store's preset, because two bundled presets can share primary-500 (the store's Mercury and the fallback do in vc-frontend@2.63.0), so MEMBER_PRESET is the only discriminator and no relation between MEMBER_PRIMARY and GUEST_PRIMARY is asserted
 [SHAPE] the page renders with styles (no ""Missing preset"" error page)","[CONSOLE] a warning ""Failed to load preset"" is allowed, an uncaught error is not
-[NETWORK] no 5xx","the storefront throws ""Missing preset""; the palette equals the store preset (wrong fallback); data-preset equals the bad name",PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so themePresetName is restored; GET it and confirm themePresetName = BEFORE.themePresetName,"C391195 VCST-1634 · Behavior:wl.render.theme-preset.unresolvable-falls-to-bundled-default · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useThemeContext.ts (addPresetToThemeContext, getThemeConfig().current) + module (no preset validation); Docs: PlatformUserGuide white-labeling managing-themes; KB-7EF291B3 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+[NETWORK] no 5xx","the storefront throws ""Missing preset""; data-preset equals the store's preset (wrong fallback); data-preset equals the bad name",PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so themePresetName is restored; GET it and confirm themePresetName = BEFORE.themePresetName,"C391195 VCST-1634 · Behavior:wl.render.theme-preset.unresolvable-falls-to-bundled-default · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useThemeContext.ts (addPresetToThemeContext, getThemeConfig().current) + module (no preset validation); Docs: PlatformUserGuide white-labeling managing-themes; KB-7EF291B3 · Synced: qa-suite-sync wl (2026-11-27); fallback preset name = the `current` entry of vc-frontend@2.63.0 client-app/config/settings_data.json (""default""), read at source (useThemeContext.ts addPresetToThemeContext), a source note and not a runtime step; KB-1C18DC2F · Round 3 2026-11-27: preset oracle by relation",Draft
 "FWL-006",Organization record with logo and favicon — shown after sign-in (read-only over the seeded organization),"Organization Branding","Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Read-only: organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) replaces ""Company1"" and already has an enabled record with a logo and a favicon; the case does not re-upload. The favicon file types of the back office are PNG, JPG and WEBP (the old ICO is not accepted). The favicon links are compared with the advertised xAPI hrefs; whether those files exist is an open product question (KB-D4EEDC37)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
@@ -67,6 +70,7 @@ Read-only: organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS
 Organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) replaces ""Company1"": enabled record with logo, preset, menu and footer; store {{STORE_ID}} has an enabled record. With the organization record disabled the resolver drops the ORGANIZATION contribution and merges the store record alone: the member sees the store's values field by field; platform defaults only for a field the store record leaves empty or when no enabled store record exists (the old expectation ""default logo and favicon"" was wrong whenever the store has a record)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, admin_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
 [HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] isEnabled as PRIOR_ENABLED, logoUrl as ORG_LOGO, themePresetName as ORG_PRESET
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO, themePresetName as STORE_PRESET
+[ASSERT] ORG_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset could not be told from the store's)
 [GRID] click 'Contacts' in the main menu and find the row '@td(WL_ELECTRONICS.name)'
 [ACT] open the row's three-dots menu
 [ACT] click 'Manage'
@@ -79,17 +83,19 @@ Organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_I
 [WAIT] the save notification appears
 [HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] answer as XAPI
 [HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as AFTER
-[NAV] open {{FRONT_URL}} in a fresh browser context
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note <html data-preset> as GUEST_PRESET and the computed --color-primary-500 on :root as GUEST_PRIMARY (the store's palette)
 [ACT] click 'Sign in'
 [WAIT] the sign-in form is visible
 [ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
 [WAIT] the signed-in home page renders with the account menu
-[ASSERT] the header and the main menu are rendered","[REL] AFTER.isEnabled is false while AFTER.logoUrl equals ORG_LOGO — the organization assets are stored but not applied
+[ASSERT] the header and the main menu are rendered; note <html data-preset> as MEMBER_PRESET and the computed --color-primary-500 on :root as MEMBER_PRIMARY","[REL] AFTER.isEnabled is false while AFTER.logoUrl equals ORG_LOGO — the organization assets are stored but not applied
 [REL] XAPI.logoUrl = STORE_LOGO and XAPI.themePresetName = STORE_PRESET (the store values apply)
 [REL] the header logo src path ends with the path of STORE_LOGO and not with the path of ORG_LOGO
-[REL] the computed --color-primary-500 equals color_primary_500 of the preset STORE_PRESET","[CONSOLE] no uncaught JS errors
+[REL] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-""; MEMBER_PRESET equals GUEST_PRESET and differs from ORG_PRESET lower-cased with spaces replaced by ""-"", and MEMBER_PRIMARY equals GUEST_PRIMARY: the member shows the store's palette, compared by relation on the page, never against a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","[CONSOLE] no uncaught JS errors
 [API] xAPI errors[] empty
-[NETWORK] the store logo loads with HTTP 200",the organization logo or preset still applies with Enabled OFF; the member sees theme defaults although the store has a record; the toggle changes any stored asset,"in the organization's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; confirm GET /api/white-labeling/organization/{{org_id}} reports isEnabled = PRIOR_ENABLED and the same logoUrl; sign out",C389427 · Behavior:wl.resolve.org-record-disabled-falls-back · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler L172-217 (per-record IsEnabled filter) + BL-WL-002/003; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27),Draft
+[NETWORK] the store logo loads with HTTP 200",the organization logo or preset still applies with Enabled OFF; the member sees theme defaults although the store has a record; the toggle changes any stored asset,"in the organization's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; confirm GET /api/white-labeling/organization/{{org_id}} reports isEnabled = PRIOR_ENABLED and the same logoUrl; sign out",C389427 · Behavior:wl.resolve.org-record-disabled-falls-back · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler L172-217 (per-record IsEnabled filter) + BL-WL-002/003; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27) · Round 3 2026-11-27: preset oracle by relation,Draft
 "FWL-008",Organization record Enabled ON — the organization's logo and favicon links apply after sign-in (reverse of FWL-007),Whitelabeling > Two enable layers,"High","BL-WL-002",,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]
