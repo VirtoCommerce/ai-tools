@@ -1,7 +1,31 @@
 {
   "wave": "W2",
-  "owner": null,
-  "status": "NOT_STARTED",
-  "runIds": [],
-  "updatedAt": "2026-11-26"
+  "owner": "Elena Kutasina",
+  "status": "RUN_DONE",
+  "runIds": [
+    "REG-2026-11-26-0357-W2",
+    "REG-2026-11-26-1000-RB",
+    "REG-2026-11-26-1540-W2S"
+  ],
+  "updatedAt": "2026-11-26",
+  "personas": "persona set S2 (npm run persona:use -- S2): clones agent-test-wave-s2-* of the shared accounts",
+  "totals": {
+    "planned": 242,
+    "executed": 242,
+    "pass": 137,
+    "fail": 17,
+    "blocked": 38,
+    "skipped": 50,
+    "ambiguous": 0
+  },
+  "untriaged": 0,
+  "notRun": [
+    {
+      "suites": [
+        "124"
+      ],
+      "cases": 20,
+      "reason": "out of scope by owner decision 2026-11-26: subscriptions are not part of this regression (storefront not on vcst, suite not in the manifest on main)"
+    }
+  ]
 }

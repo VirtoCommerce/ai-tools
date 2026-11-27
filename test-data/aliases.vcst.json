@@ -3988,5 +3988,62 @@
     "control_product_id": "08c33cfc9f664426a52fac8882da2df0",
     "control_product_sku": "566903892",
     "control_product_name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier"
+  },
+  "ORD_DATE_FILTER_BUYER": {
+    "user_id": "85794d4b-7845-44b8-938c-e9544b26102e",
+    "contact_id": "7075a8e8-198b-4d4c-bae7-3fca1110eaa9",
+    "status": "pending",
+    "nextRunFrom": "2026-11-27T14:04:29.331Z",
+    "multiDay": "2026-11-26",
+    "multiCount": 6,
+    "multiOrderNumbers": "AGENT-TEST-ODF-M1,AGENT-TEST-ODF-M2,AGENT-TEST-ODF-M3,AGENT-TEST-ODF-M4,AGENT-TEST-ODF-M5,AGENT-TEST-ODF-M6",
+    "singleDay": "",
+    "singleCount": 0,
+    "singleOrderNumbers": "",
+    "totalCount": 6,
+    "month": "2026-11",
+    "monthFrom": "2026-11-01",
+    "monthTo": "2026-11-30",
+    "dayBasis": "UTC calendar date of createdDate; every group shares one day in every zone UTC-12..UTC+14 and groups are >= 24 h apart",
+    "days": {
+      "MULTI": {
+        "date": "2026-11-26",
+        "count": 6,
+        "numbers": "AGENT-TEST-ODF-M1,AGENT-TEST-ODF-M2,AGENT-TEST-ODF-M3,AGENT-TEST-ODF-M4,AGENT-TEST-ODF-M5,AGENT-TEST-ODF-M6",
+        "orders": {
+          "M1": {
+            "id": "e45fdd7a-9564-49af-a13f-721d92a7e3e9",
+            "number": "AGENT-TEST-ODF-M1",
+            "createdDate": "2026-11-26T14:03:21.732086Z"
+          },
+          "M2": {
+            "id": "fd672b62-41c0-4fbb-b15f-e0dfbc55de2e",
+            "number": "AGENT-TEST-ODF-M2",
+            "createdDate": "2026-11-26T14:03:24.2372124Z"
+          },
+          "M3": {
+            "id": "0f615c03-2fbf-41da-8584-c582781efd4d",
+            "number": "AGENT-TEST-ODF-M3",
+            "createdDate": "2026-11-26T14:03:25.3270336Z"
+          },
+          "M4": {
+            "id": "b1acb87e-7684-4409-aa43-b154b0c98236",
+            "number": "AGENT-TEST-ODF-M4",
+            "createdDate": "2026-11-26T14:03:26.972039Z"
+          },
+          "M5": {
+            "id": "0b250e18-8a43-475f-9420-c7730daf1daf",
+            "number": "AGENT-TEST-ODF-M5",
+            "createdDate": "2026-11-26T14:03:28.1487581Z"
+          },
+          "M6": {
+            "id": "ba4ade50-7033-4ce3-b6f2-7645c2e2cadc",
+            "number": "AGENT-TEST-ODF-M6",
+            "createdDate": "2026-11-26T14:03:29.3312018Z"
+          }
+        }
+      }
+    },
+    "seededAt": "2026-11-26T14:03:19.816Z"
   }
 }

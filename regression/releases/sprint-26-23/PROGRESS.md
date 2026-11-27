@@ -4,13 +4,13 @@
 
 Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: sprint-26-22 · Env: vcst · 3.1101.0 · 2.63.0-alpha.2681 · vc-deploy-dev#7158 (2026-11-25): Platform 3.1101.0, 57 modules to latest releases, theme = green dev alpha (vc-frontend dev @ 5d7c54b0) — not a release
 
-**Executed 148 · PASS 81 · FAIL 5 · BLOCKED 33** · ledger 46 rows
+**Executed 390 · PASS 218 · FAIL 22 · BLOCKED 71** · ledger 101 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 34 | 34 | 29 | 0 | 0 | 0 | 0 | REG-2026-11-26-0225-W0 REG-2026-11-26-0805-W0R |
 | W1 | Security & sign-in — session, RBAC, xAPI user and role mutations | Elena Kutasina | TRIAGED | 114 | 114 | 52 | 5 | 33 | 0 | 46 | REG-2026-11-26-0300-W1 REG-2026-11-26-1100-W1R REG-2026-11-26-1330-W1D |
-| W2 | Subscriptions, cart, checkout & orders | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
+| W2 | Subscriptions, cart, checkout & orders | Elena Kutasina | RUN_DONE | 242 | 242 | 137 | 17 | 38 | 0 | 55 | REG-2026-11-26-0357-W2 REG-2026-11-26-1000-RB REG-2026-11-26-1540-W2S |
 | W3 | Catalog, search & BOPIS | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W4 | Sales Rep hub | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Company, members & lists | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -22,9 +22,29 @@ Ticket: VCST-6853 · Sprint: Sprint26-23 2026-11-16 – 2026-11-30 · Baseline: 
 | Verdict | Rows |
 |---|---|
 | REAL_BUG | 1 |
-| TEST_DEFECT | 9 |
-| DATA | 5 |
+| BY_DESIGN | 2 |
+| TEST_DEFECT | 13 |
+| DATA | 23 |
 | ENV_CONFIG | 22 |
-| NOT_TESTABLE | 9 |
+| NOT_TESTABLE | 26 |
+| DUPLICATE | 8 |
+| FLAKY | 1 |
+| PENDING_DECISION | 5 |
+
+## Not run yet
+
+| Wave | Suites | Cases | Why |
+|---|---|---|---|
+| W2 | 124 | 20 | out of scope by owner decision 2026-11-26: subscriptions are not part of this regression (storefront not on vcst, suite not in the manifest… |
+
+## Decisions pending
+
+| Wave | Case | Question | Who decides |
+|---|---|---|---|
+| W2 | CHK-004 | ZIP 'ABCDE' accepted for a US address | triage · Elena Kutasina |
+| W2 | CHK-027 | Phone '123' accepted | triage · Elena Kutasina |
+| W2 | CHK-028 | Invalid address fields accepted | triage · Elena Kutasina |
+| W2 | CHK-106 | Duplicate-address guard (AC-13 / OQ-8) | triage · Elena Kutasina |
+| W2 | ORD-DASH-010 | Orders widget error has no retry control | triage · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

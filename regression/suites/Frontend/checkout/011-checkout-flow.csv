@@ -954,10 +954,10 @@ User logged in as {{USER_EMAIL}} on personal account with at least 1 saved addre
 [NETWORK] no 4xx/5xx on address save or load","page returns 404 or blank; address form missing; save action fails silently; console errors from deprecated composables breaking the page","Delete test address added in this case","Promoted from VCST-4710-SF-017 / TLC-2026-04-23-1230 / BA report 2026-04-23; AC-12","Reviewed"
 "CHK-104","Address Popup — Company Info Page Address Widget Still Functional (COMPAT-002 / Backward Compat AC-12)","Checkout > Shipping > Backward Compat","High","BL-B2B-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-User logged in as org admin ({{ORG_USER_EMAIL}}); company/info page accessible","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/company/info
+User logged in as org admin ({{ORG_USER_EMAIL}}); company/info page accessible","url={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_pass={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/company/info
 [WAIT] company info page loads
 [ASSERT] verify org addresses section visible on the page
-[ASSERT] verify at least one org address listed","[DOM] company info page (/account/company/info) renders without error
+[ASSERT] verify at least one org address listed","[DOM] company info page (/company/info) renders without error
 [DOM] org addresses section visible
 [DOM] addresses displayed with correct fields (street, city, country)
 [STATE] page functional after PR #2219 composable migration","[CONSOLE] no JS errors; no errors from useOrganizationAddresses deprecated composable breaking the page
