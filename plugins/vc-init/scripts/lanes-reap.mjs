@@ -2,7 +2,7 @@
 /**
  * lanes-reap.mjs — list, and with --apply stop, the MCP lane stacks that outlived their Claude session.
  *
- *   node plugins/vc-init/scripts/lanes-reap.mjs [--apply] [--older-than <hours>] [--min-age <minutes>] [--lanes-only] [--all-kinds] [--json]
+ *   node plugins/vc-init/scripts/lanes-reap.mjs [--apply] [--older-than <hours>] [--min-age <minutes>] [--lanes-only] [--all-kinds] [--quiet] [--json]
  *   npm run lanes:reap -- [same flags]            (in the ai-tools repo)
  *
  * A "stack" is one MCP server as a client starts it — `cmd /c npx …` → npx → (cmd →) the server, plus any browser
@@ -16,7 +16,7 @@
  *     session still using a stopped server reconnects it in /mcp; the lane has its own idle exit as well
  *     (bridge/lane-watchdog.mjs).
  * Never touched: a stack younger than --min-age minutes (default 30), and this command's own process tree.
- * Dry run unless --apply. Exit 0 either way; the table is the result.
+ * --quiet (for a SessionStart hook): print nothing when no stack is reapable, else one line. Dry run unless --apply. Exit 0 either way; the table is the result.
  */
 import { pathToFileURL } from "node:url";
 import { ancestorsOf, descendantsLeafFirst, listProcesses } from "../bridge/proc-table.mjs";
@@ -82,12 +82,13 @@ export function stopStack(rows, root, kill = (pid) => process.kill(pid)) {
 }
 
 function parseArgs(argv) {
-  const o = { apply: false, olderThanH: 24, minAgeMin: 30, lanesOnly: false, allKinds: false, json: false, help: false };
+  const o = { apply: false, olderThanH: 24, minAgeMin: 30, lanesOnly: false, allKinds: false, quiet: false, json: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--apply") o.apply = true;
     else if (a === "--lanes-only") o.lanesOnly = true;
     else if (a === "--all-kinds") o.allKinds = true;
+    else if (a === "--quiet") o.quiet = true;
     else if (a === "--json") o.json = true;
     else if (a === "-h" || a === "--help") o.help = true;
     else if (a === "--older-than") o.olderThanH = Number(argv[++i]);
@@ -102,7 +103,7 @@ function parseArgs(argv) {
 async function main() {
   let o;
   try { o = parseArgs(process.argv.slice(2)); } catch (e) { console.error(`lanes-reap: ${e.message}`); return 64; }
-  if (o.help) { console.log("usage: lanes-reap [--apply] [--older-than <hours, default 24, 0 = off>] [--min-age <minutes, default 30>] [--lanes-only] [--all-kinds] [--json]"); return 0; }
+  if (o.help) { console.log("usage: lanes-reap [--apply] [--older-than <hours, default 24, 0 = off>] [--min-age <minutes, default 30>] [--lanes-only] [--all-kinds] [--quiet] [--json]"); return 0; }
   const rows = await listProcesses();
   if (!rows.length) { console.error("lanes-reap: could not list the processes — nothing decided"); return 1; }
   const kinds = o.lanesOnly ? KINDS.filter((k) => k.kind === "lane") : KINDS;
@@ -115,6 +116,10 @@ async function main() {
     result.push({ kind: s.kind, root: s.root, processes: below, age: fmtAge(s.ageMs), reason: s.reason, ...(r ? { killed: r.killed, failed: r.failed } : {}) });
   }
   if (o.json) { console.log(JSON.stringify({ apply: o.apply, stacks: stacks.length, reaped: result }, null, 2)); return 0; }
+  if (o.quiet && !o.apply) {
+    if (doomed.length) console.log(`lanes:reap — ${doomed.length} stale MCP stack(s) from sessions that ended or lanes older than ${o.olderThanH} h; 'npm run lanes:reap' lists them, 'npm run lanes:reap -- --apply' stops them.`);
+    return 0;
+  }
   const live = stacks.length - doomed.length;
   console.log(`${stacks.length} MCP stack(s): ${live} kept (owner alive, young enough), ${doomed.length} ${o.apply ? "stopped" : "would be stopped"}`);
   const byKind = new Map();
