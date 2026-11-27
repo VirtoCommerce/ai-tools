@@ -4,6 +4,10 @@
 [PRE:SIGNIN_AS:ADMIN]
 Store {{STORE_ID}} has an enabled record with a theme preset; the theme preset list is the platform-wide WhiteLabeling.ThemePresetNames dictionary (the pencil beside the select edits THAT dictionary, not this store: do not use it)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, front_url={{FRONT_URL}}, preset=@td(WL_FASHION.theme)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the home page renders
+[ASSERT] note the computed --color-primary-500 on :root as BEFORE_PRIMARY and <html data-preset> as BEFORE_PRESET
+[ASSERT] BEFORE.themePresetName lower-cased with spaces replaced by ""-"" differs from {{preset}} normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the save would change nothing and the guest page could not show it)
 [GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
 [ACT] click the widget 'White labeling'
 [WAIT] the 'White labeling' blade shows the record
@@ -12,14 +16,15 @@ Store {{STORE_ID}} has an enabled record with a theme preset; the theme preset l
 [WAIT] the save notification appears
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as AFTER
 [NAV] open {{FRONT_URL}} in a fresh guest context
-[WAIT] the home page renders","[FORM] the 'Theme preset name' select shows {{preset}} after the save
+[WAIT] the home page renders
+[ASSERT] note the computed --color-primary-500 on :root as AFTER_PRIMARY and <html data-preset> as AFTER_PRESET","[FORM] the 'Theme preset name' select shows {{preset}} after the save
 [REL] AFTER.themePresetName = {{preset}} and every other AFTER field equals BEFORE
-[REL] the guest page computed --color-primary-500 on :root equals color_primary_500 of /assets/presets/<preset lower-cased, spaces replaced by ""-"">.json","[NETWORK] the save is PUT /api/white-labeling returning 204; no other 4xx/5xx
-[CONSOLE] no TypeError or JS error",Save has no effect; AFTER.themePresetName differs from the choice; another field of the record changed; the guest still shows the previous palette,"Choose BEFORE.themePresetName in 'Theme preset name', click 'Save'; GET the record and confirm themePresetName = BEFORE.themePresetName",C384973 · Behavior:wl.record.edit.angularjs · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Scripts/module.js; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A · Synced: qa-suite-sync wl (2026-11-27),Draft
+[REL] the guest page <html data-preset> after the save (AFTER_PRESET) equals {{preset}} lower-cased with spaces replaced by ""-"", and its computed --color-primary-500 on :root (AFTER_PRIMARY) differs from BEFORE_PRIMARY: the palette moved with the preset, read from the page, never from a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","[NETWORK] the save is PUT /api/white-labeling returning 204; no other 4xx/5xx
+[CONSOLE] no TypeError or JS error",Save has no effect; AFTER.themePresetName differs from the choice; another field of the record changed; the guest still shows the previous palette,"Choose BEFORE.themePresetName in 'Theme preset name', click 'Save'; GET the record and confirm themePresetName = BEFORE.themePresetName","C384973 · Behavior:wl.record.edit.angularjs · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Scripts/module.js; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: stale preset-file runtime step removed (guest before/after data-preset + colour, differ guard)",Draft
 "WL-003","Upload custom logo - allowed extensions","Logo","Critical","BL-WL-006",,"[EXCLUSIVE:store white labeling]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]
-Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)), an SVG (@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source)) and a small GIF (fixture request FR-5, not yet in test-data/white-labeling/assets)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, png_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source), svg_file=@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)), an SVG (@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source)) and the GIF test asset (@td(white-labeling/test-assets, asset_id=WL-ASSET-GIF, file): a 32x32 GIF that the Logo widget accepts)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, png_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source), svg_file=@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source), gif_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-GIF, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
 [GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
 [ACT] click the widget 'White labeling'
@@ -35,11 +40,11 @@ Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/
 [ACT] click 'Save' on the 'White labeling' blade
 [WAIT] the save notification appears
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as AFTER_PNG
-[ACT] repeat the upload with the GIF file, capturing AFTER_GIF
+[ACT] repeat the upload with {{gif_file}}, capturing AFTER_GIF
 [ACT] repeat the upload with {{svg_file}}, capturing AFTER_SVG","[DOM] the logo preview changes after each of the three uploads and no 'Filetype error' dialog opens
 [SHAPE] AFTER_PNG, AFTER_GIF and AFTER_SVG each end with the extension of the file picked (.png, .gif, .svg) and differ from each other
 [REL] after each Save the record id equals BEFORE.id (the same record was updated)","[NETWORK] each upload request returns HTTP 200 and each save is PUT /api/white-labeling returning 204
-[STOREFRONT] the guest header shows the last uploaded logo after the final save",a valid extension is refused; the preview does not update; 4xx/5xx on an upload; AFTER_* keeps the previous file,Fill the logo back to BEFORE.logoUrl by PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id); GET it and confirm logoUrl = BEFORE.logoUrl,"C384971, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.logo-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Scripts + Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+[STOREFRONT] the guest header shows the last uploaded logo after the final save",a valid extension is refused; the preview does not update; 4xx/5xx on an upload; AFTER_* keeps the previous file,Fill the logo back to BEFORE.logoUrl by PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id); GET it and confirm logoUrl = BEFORE.logoUrl,"C384971, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.logo-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Scripts + Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: GIF taken from the test assets (WL-ASSET-GIF) instead of a file the runner has",Draft
 "WL-004","Upload logo - rejected for invalid extension","Logo","Medium","BL-WL-006",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]
 Store {{STORE_ID}} has an enabled record; read-only in effect: a refused pick uploads and saves nothing. Disallowed file for the Logo widget: a WEBP (valid only for the favicon widget)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, bad_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
@@ -60,7 +65,7 @@ Store {{STORE_ID}} has an enabled record; read-only in effect: a refused pick up
 "WL-005","Upload favicon","Favicon","High","BL-WL-006",,"[EXCLUSIVE:store white labeling]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]
-Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source)), a WEBP (@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)) and a small JPG (fixture request FR-5, not yet in test-data/white-labeling/assets)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, png_file=@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source), webp_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source)), a WEBP (@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)) and the JPEG test asset (@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file): a 32x32 JPEG that the Favicon widget accepts)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, png_file=@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source), webp_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source), jpg_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
 [GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
 [ACT] click the widget 'White labeling'
@@ -76,11 +81,11 @@ Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/
 [ACT] click 'Save' on the 'White labeling' blade
 [WAIT] the save notification appears
 [HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] faviconUrl as AFTER_PNG
-[ACT] repeat the upload with the JPG file, capturing AFTER_JPG
+[ACT] repeat the upload with {{jpg_file}}, capturing AFTER_JPG
 [ACT] repeat the upload with {{webp_file}}, capturing AFTER_WEBP","[DOM] the favicon preview changes after each of the three uploads and no 'Filetype error' dialog opens
 [SHAPE] AFTER_PNG, AFTER_JPG and AFTER_WEBP each end with the extension of the file picked and differ from each other
 [REL] after each Save the record id equals BEFORE.id","[NETWORK] each upload request returns HTTP 200 and each save is PUT /api/white-labeling returning 204
-[API] whiteLabelingSettings(storeId) advertises favicons[] derived from the last faviconUrl (the files exist only after the ImageTools job, see FWL-001)",a valid favicon format is refused; the preview does not update; 4xx/5xx on an upload; AFTER_* keeps the previous file,PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so faviconUrl is restored; GET it and confirm faviconUrl = BEFORE.faviconUrl,"C384972, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.favicon-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+[API] whiteLabelingSettings(storeId) advertises favicons[] derived from the last faviconUrl (the files exist only after the ImageTools job, see FWL-001)",a valid favicon format is refused; the preview does not update; 4xx/5xx on an upload; AFTER_* keeps the previous file,PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so faviconUrl is restored; GET it and confirm faviconUrl = BEFORE.faviconUrl,"C384972, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.favicon-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: JPEG taken from the test assets (WL-ASSET-JPEG) instead of a file the runner has",Draft
 "WL-007","Clear the Logo on an organization record — per-image Clear nulls the logo and secondary logo, the store logo takes over, the rest of the record stays",Branding > Reversal,"Medium","BL-WL-001, BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]
@@ -171,13 +176,18 @@ Store {{STORE_ID}} has the setting WhiteLabeling.WhiteLabelingEnabled stored exp
 [ACT] set 'WhiteLabeling.WhiteLabelingEnabled' to false
 [ACT] click 'Save'
 [WAIT] the save notification appears
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from GUEST_PRESET (otherwise BLOCKED:CONDITION_NOT_MET: a leaked organization preset could not be told from the default one)
+[ACT] close the guest context
 [NAV] open {{FRONT_URL}} in a fresh context
 [ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
 [WAIT] the signed-in home page renders","[REL] the header logo src path does NOT end with the path of REC_LOGO (the default theme logo shows)
-[REL] the computed --color-primary-500 on :root differs from color_primary_500 of the preset REC_PRESET
-[NETWORK] no request is made for REC_LOGO or for the preset file of REC_PRESET
+[REL] <html data-preset> after the sign-in does not equal REC_PRESET lower-cased with spaces replaced by ""-"", and the computed --color-primary-500 on :root equals GUEST_PRIMARY (the member sees what a guest sees; read from the pages, never from a preset file: theme 2.63.0 bundles the presets)
+[NETWORK] no request is made for REC_LOGO
 [REL] GET /api/stores/{{store_id}} reports the setting false","[CONSOLE] no uncaught JS errors
-[NETWORK] no 4xx/5xx",white labeling still applied while the store setting is OFF; the organization logo shown despite WhiteLabeling.WhiteLabelingEnabled = false,"set 'WhiteLabeling.WhiteLabelingEnabled' back to PRIOR_SWITCH (stored explicitly true) in Stores > Settings, click 'Save' and confirm GET /api/stores/{{store_id}}; sign out","C384975, Store master switch WhiteLabeling.WhiteLabelingEnabled — useWhiteLabeling.ts (2026-07-02) · Behavior:wl.switch.store-master · Behavior:wl.switch.store-master.disable · Behavior:wl.switch.store-master.off-suppresses-all · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 ModuleConstants; Docs: PlatformUserGuide white-labeling settings; KB-6C0AA08A; BL-WL-003 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+[NETWORK] no 4xx/5xx",white labeling still applied while the store setting is OFF; the organization logo shown despite WhiteLabeling.WhiteLabelingEnabled = false,"set 'WhiteLabeling.WhiteLabelingEnabled' back to PRIOR_SWITCH (stored explicitly true) in Stores > Settings, click 'Save' and confirm GET /api/stores/{{store_id}}; sign out","C384975, Store master switch WhiteLabeling.WhiteLabelingEnabled — useWhiteLabeling.ts (2026-07-02) · Behavior:wl.switch.store-master · Behavior:wl.switch.store-master.disable · Behavior:wl.switch.store-master.off-suppresses-all · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 ModuleConstants; Docs: PlatformUserGuide white-labeling settings; KB-6C0AA08A; BL-WL-003 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: preset-file colour comparison replaced by guest colour + data-preset (differ guard)",Draft
 "WL-013","Store RECORD Enabled switch (blade) — OFF removes the store record from xAPI (null when nothing else is enabled), ON brings it back; independent of the store setting","Store Settings","Medium","BL-WL-003",,"[EXCLUSIVE:store white labeling]
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN]

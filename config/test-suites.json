@@ -2625,7 +2625,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 56,
+      "testCount": 57,
       "estimatedMinutes": 36,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2639,7 +2639,7 @@
       "clickDriven": true,
       "lanes": {
         "machine": 2,
-        "browser": 36,
+        "browser": 37,
         "manual": 15,
         "deprecated": 3
       }
