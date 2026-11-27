@@ -131,7 +131,7 @@ row is the file's own opening line, so a wrong row is fixed in that file, not he
 | [`sitemap.md`](./domain/sitemap.md) | Full storefront URL map. Customer's sitemap differs by storefront customizations. |
 | [`store-settings.md`](./domain/store-settings.md) | QA testing knowledge for the Virto Commerce Store Settings module. |
 | [`ucp.md`](./domain/ucp.md) | What the Universal Commerce Protocol (UCP) adapter IS — agentic commerce over MCP — from an AI agent's first tool call through to the buyer landing… |
-| [`white-labeling.md`](./domain/white-labeling.md) | Platform knowledge for testing the Virto Commerce White Labeling module. |
+| [`white-labeling.md`](./domain/white-labeling.md) | What the White Labeling feature IS - actors, the value chain from a back-office record to a rendered logo / favicon / theme / menu / footer, the… |
 
 ### `execution/` — 32 files
 
