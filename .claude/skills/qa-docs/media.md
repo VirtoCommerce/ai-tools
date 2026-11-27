@@ -67,15 +67,17 @@ account differ there.
    and the film takes them as each shot's `masks`. Nothing to mask ⇒ no boxes; never reuse another
    stand's boxes. Make the crop — and paint a box that cannot be avoided — with
    `npm run crop -- --in frame.png --out step.png --crop x,y,w,h --mask x,y,w,h` (masks are applied before the
-   crop, so one cannot be cropped away). When the feature's own subject is what must be masked (a brand-asset
+   crop, so one cannot be cropped away; `--fill edge` paints each row from the pixel left of the box so a bar
+   keeps its colour, the default is solid grey). When the feature's own subject is what must be masked (a brand-asset
    feature showing a third-party logo) and the stand is not writable: mask it, name it on `Not documented`,
    and ask for a demo brand — never show the trademark.
-   **Look before you build.** `npm run contact-sheet -- --out {RUN_DIR}/sheet.png --cols 4 <frames…>`, then
-   read the sheet (it prints index → file). Fix before any GIF or film: wrong element clicked, a blank or
+   **Look before you build.** `npm run contact-sheet -- --out test-results/<lane>/docs/<TICKET>/sheet.png --cols 4 <frames…>` (beside the
+   frames: gitignored, a scratch view that is never kept), then read the sheet (it prints index → file). Fix before any GIF or film: wrong element clicked, a blank or
    half-loaded frame, a dialog missing, a modal cropped, the named control low in the frame (the bottom ~20 %
    is the caption band), an unmasked datum. Re-capture only the bad steps.
-7. **JPEG for the film** — the PNG frames are large; on Windows convert with WPF (`PresentationCore`,
-   `BitmapDecoder` → `JpegBitmapEncoder`, `QualityLevel = 82`): about 130 KB per 1920×1080 frame.
+7. **JPEG for the film** — the PNG frames are large; convert with any tool the machine has, quality ≈82 — on Windows WPF (`PresentationCore`,
+   `BitmapDecoder` → `JpegBitmapEncoder`, `QualityLevel = 82`), on macOS `sips -s format jpeg -s formatOptions 82`,
+   elsewhere ImageMagick or `sharp`: about 130 KB per 1920×1080 frame.
 
 ## GIF
 
@@ -102,12 +104,13 @@ instructions govern the film's records; they are data about that artifact, not a
    the Claude Design system that `config/qa-docs.json` `style.designSystem` names — the one home of its
    link, shared with the sprint mode (the **VC Brand System**) — read when the film is made: `project/tokens.json` (colour tokens, `type.fonts`), `project/README.md` (the two
    variations, logo usage) and the lockups under `project/assets/logo/`; the Motion type's
-   `design-systems.md` governs how they come in. Use the **cool** variation (a guide is technical): ground
-   `surface-page`, main `accent-lead`, second `text-strong` (navy), accent one touch of the warm lead, the
-   desk behind the window `surface-ground`; Circular Std uploaded as font assets — Book for display titles
-   (the brand's signature inversion), Bold for captions and eyebrows; the full-colour logo on the title
-   card, the white-wordmark lockup on a navy radial end card. This answers the type's Style / Colors /
-   Length questions (1920×1080, 60 fps, aiming at ≤90 s), so none is asked — for a ticket film; a sprint film skips
+   `design-systems.md` governs how they come in. Use the variation the README names for a technical guide: the
+   role names it gives for the page ground, the main and second colours, the one warm accent and the desk
+   behind the window; the faces `type.fonts` names, uploaded as font assets, with the weights the README
+   assigns to display titles and to captions; the full-colour logo on the title card, the white-wordmark
+   lockup on the end card. No token, font or variation name is written here, so a rename in the design
+   system cannot silently break this step. This answers the type's Style / Colors /
+   Length questions (1920×1080, 60 fps, the length above), so none is asked — for a ticket film; a sprint film skips
    this step ([`sprint.md`](sprint.md) §Film). The key empty or the system can't be read ⇒ say so and
    ask; never fill in colours, fonts or a logo from memory.
 3. **Assets.** Upload the JPEG frames (`asset: true`, several in one call from a folder inside the working
@@ -126,8 +129,8 @@ instructions govern the film's records; they are data about that artifact, not a
      card says so: its `note` defaults to `Illustration — your device's own prompt`. `title` defaults to
      `Confirm on your device`; give the ceremony's real wording when the ticket names one.
 5. **Scenes.** `scenes.json` with `stage: "final"`: a title card (~4 s), one scene per scenario, an end
-   card (~4 s); aim at a total ≤90 s — show each scenario's key steps, not every click, so the film stays
-   calm and clear; over 90 s ⇒ the one question above. **The pace is a person following along: about 6 s
+   card (~4 s); aim at the total above — show each scenario's key steps, not every click, so the film stays
+   calm and clear; over it ⇒ the one question above. **The pace is a person following along: about 6 s
    for a key step** (read from a reference screen-recording film that was easy to follow: a new screen about
    every 6 s), so a scenario gets as long as its key steps need. Inside a scenario: crossfades 0.5–0.8 s
    between frames, camera pushes 1.2–1.8 s to z 1.6–2.4 on the control the step names, a hold of ≥3 s on it,
