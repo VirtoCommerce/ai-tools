@@ -1,0 +1,3441 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "wl",
+  "domain_map_rev": 1,
+  "generated": "2026-11-27",
+  "metadata": {
+    "scope": "White labeling: the AngularJS admin and Admin Shell blades, the REST contract, xAPI resolution and the storefront rendering and Company logo. Excludes vc-shell auth-page branding, Site Builder palette interplay, ImageTools thumbnail internals, custom-domain activation mechanics (domain map 'excludes').",
+    "built_from": "white-labeling.md rev 1 (sections 1, 2, 3 D1-D16, 5 G1-G14), bl:extract --domain wl (BL-WL-001..006), suites 067 / 070 / 071 (Title, References, Automation_Status), test-data/white-labeling/ (data shapes), kb entries named in the map",
+    "observation_note": "Nothing was observed live in this build. Every OBSERVED row is the domain map's live pass of 2026-11-27 or another session's kb entry, dated by its own observation. KB-595C7FF0, KB-753BEB16 and KB-FC2150C5 (captured by the map pass) were not in the base index when this build read it, so they are cited through the domain map.",
+    "kb_read": "2026-11-27: KB-A23A4A41, KB-6C0AA08A, KB-28A6F067, KB-D4EEDC37, KB-2EAD7A0F, KB-3239DE5F, KB-F98BB191, KB-1C18DC2F, KB-3BFAF6CC, KB-6102AC5A, KB-5BC4EC37, KB-52D2F554, KB-7EF291B3, KB-E7DF9B84, KB-999E69A4",
+    "data_requirements_pending": "TM-005 rejects requires/produces ids until a wl data model exists, so each node's data needs are held here, not on the node. Move them onto the nodes when /qa-test-data-model build wl lands.",
+    "requirements_needed": [
+      {
+        "node": "wl.record.create",
+        "requires": [
+          "data.wl.org.no-record",
+          "data.wl.store-record.absent"
+        ],
+        "produces": [
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.record.create.permission-scopes",
+        "requires": [
+          "data.wl.user.org-employee"
+        ]
+      },
+      {
+        "node": "wl.image.upload",
+        "requires": [
+          "data.wl.asset.logo-png"
+        ],
+        "produces": [
+          "data.wl.asset.uploaded-url"
+        ]
+      },
+      {
+        "node": "wl.favicon.advertise",
+        "requires": [
+          "data.wl.asset.favicon-thumbnails-present"
+        ]
+      },
+      {
+        "node": "wl.favicon.advertise.files-present",
+        "requires": [
+          "data.wl.asset.favicon-thumbnails-present"
+        ]
+      },
+      {
+        "node": "wl.favicon.advertise.window-before-generation",
+        "requires": [
+          "data.wl.setting.thumbnail-job-on",
+          "data.wl.asset.favicon-thumbnails-absent"
+        ]
+      },
+      {
+        "node": "wl.switch.store-master",
+        "requires": [
+          "data.wl.store-switch.on"
+        ]
+      },
+      {
+        "node": "wl.switch.store-master.disable",
+        "requires": [
+          "data.wl.store-switch.on"
+        ],
+        "produces": [
+          "data.wl.store-switch.off"
+        ]
+      },
+      {
+        "node": "wl.switch.store-master.enable",
+        "requires": [
+          "data.wl.store-switch.off"
+        ]
+      },
+      {
+        "node": "wl.switch.store-master.off-suppresses-all",
+        "requires": [
+          "data.wl.store-switch.off",
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.switch.record-enabled.enable",
+        "requires": [
+          "data.wl.org-record.disabled"
+        ],
+        "produces": [
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.switch.record-enabled.disable",
+        "requires": [
+          "data.wl.org-record.enabled-full"
+        ],
+        "produces": [
+          "data.wl.org-record.disabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.merge-per-field",
+        "requires": [
+          "data.wl.org-record.enabled-full",
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.org-partial-inherits-store",
+        "requires": [
+          "data.wl.org-record.enabled-partial",
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.org-record-absent-falls-back",
+        "requires": [
+          "data.wl.org.no-record",
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.org-record-disabled-falls-back",
+        "requires": [
+          "data.wl.org-record.disabled",
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.store-record-off-org-survives",
+        "requires": [
+          "data.wl.store-record.disabled",
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.resolve.neither-enabled-null",
+        "requires": [
+          "data.wl.store-record.absent",
+          "data.wl.org.no-record"
+        ]
+      },
+      {
+        "node": "wl.resolve.unknown-organization-id",
+        "requires": [
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.signed-in-org-context",
+        "requires": [
+          "data.wl.org-record.enabled-full",
+          "data.wl.user.org-maintainer"
+        ]
+      },
+      {
+        "node": "wl.resolve.guest-store-branding",
+        "requires": [
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.resolve.link-lists",
+        "requires": [
+          "data.wl.link-list.footer-two-level"
+        ]
+      },
+      {
+        "node": "wl.resolve.link-lists.priority-order",
+        "requires": [
+          "data.wl.link-list.main-menu-hierarchical"
+        ]
+      },
+      {
+        "node": "wl.render.header-logo.invalid-url-placeholder",
+        "requires": [
+          "data.wl.org-record.invalid-logo-url"
+        ]
+      },
+      {
+        "node": "wl.render.footer",
+        "requires": [
+          "data.wl.link-list.footer-two-level"
+        ]
+      },
+      {
+        "node": "wl.render.footer.top-level-as-header",
+        "requires": [
+          "data.wl.link-list.footer-flat"
+        ]
+      },
+      {
+        "node": "wl.render.main-menu",
+        "requires": [
+          "data.wl.link-list.main-menu-hierarchical"
+        ]
+      },
+      {
+        "node": "wl.render.favicon.advertised-hrefs-missing",
+        "requires": [
+          "data.wl.setting.thumbnail-job-off",
+          "data.wl.asset.favicon-thumbnails-absent"
+        ]
+      },
+      {
+        "node": "wl.render.theme-preset.unresolvable-falls-to-bundled-default",
+        "requires": [
+          "data.wl.org-record.unresolvable-preset"
+        ]
+      },
+      {
+        "node": "wl.render.org-switch",
+        "requires": [
+          "data.wl.user.multi-org",
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.render.org-switch.dynamics-flash-stale",
+        "requires": [
+          "data.wl.user.multi-org"
+        ]
+      },
+      {
+        "node": "wl.company-logo",
+        "requires": [
+          "data.wl.user.org-maintainer"
+        ],
+        "produces": [
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.company-logo.creates-enabled-record",
+        "requires": [
+          "data.wl.org.no-record"
+        ]
+      },
+      {
+        "node": "wl.company-logo.disallowed-type",
+        "requires": [
+          "data.wl.user.org-maintainer"
+        ]
+      },
+      {
+        "node": "wl.company-logo.record-lookup-duplicate",
+        "requires": [
+          "data.wl.org-record.disabled",
+          "data.wl.user.org-maintainer"
+        ]
+      },
+      {
+        "node": "wl.company-logo.permission",
+        "requires": [
+          "data.wl.user.org-maintainer",
+          "data.wl.user.org-employee"
+        ]
+      },
+      {
+        "node": "wl.reverse.per-image-clear.falls-back-to-store",
+        "requires": [
+          "data.wl.org-record.enabled-full",
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.reverse.company-logo-delete",
+        "requires": [
+          "data.wl.user.org-maintainer",
+          "data.wl.org-record.enabled-full"
+        ]
+      },
+      {
+        "node": "wl.reverse.company-logo-delete.store-or-default-logo-follows",
+        "requires": [
+          "data.wl.store-record.enabled"
+        ]
+      },
+      {
+        "node": "wl.reverse.org-delete-orphans-record",
+        "requires": [
+          "data.wl.org.deleted-with-record"
+        ]
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "wl.white-labeling",
+      "type": "feature",
+      "name": "White labeling",
+      "status": "CONFIRMED",
+      "description": "Per-store and per-organization branding (logos, favicon, theme preset, main menu, footer) authored in the back office and applied on the storefront for the visitor's context.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/white-labeling/overview",
+          "note": "published purpose statement (quoted in the domain map section 1)",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2",
+          "note": "both admin UIs, storefront as guest and as one org buyer",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.authoring",
+      "type": "capability",
+      "name": "Authoring a branding record",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 links 1-2; section 2a/2b/2d",
+          "note": "capability grouping of the domain map",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.switches",
+      "type": "capability",
+      "name": "The two enable layers",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 4; D1",
+          "note": "capability grouping of the domain map",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.resolution",
+      "type": "capability",
+      "name": "Resolving branding for a visitor",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 5; section 2d",
+          "note": "capability grouping of the domain map",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.rendering",
+      "type": "capability",
+      "name": "Rendering on the storefront",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 6; section 2c",
+          "note": "capability grouping of the domain map",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.self-service",
+      "type": "capability",
+      "name": "Organization buyer self-service logo",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Company info",
+          "note": "capability grouping of the domain map",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.removal",
+      "type": "capability",
+      "name": "Taking branding away",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 7",
+          "note": "capability grouping of the domain map",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.state.org-record.absent",
+      "type": "state",
+      "name": "Organization record: absent (never created)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-28A6F067",
+          "note": "GET /api/white-labeling/organization/{id} returned nothing; blade opens Enabled OFF",
+          "date": "2026-11-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a row 'Default of a record that does not exist'",
+          "note": "both admin UIs open an absent record OFF",
+          "date": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "id": "wl.state.org-record.present-enabled",
+      "type": "state",
+      "name": "Organization record: present and enabled (joins the per-field merge)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "per-record IsEnabled=true filter in the handler"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "enabled org record resolves its own logo, preset, menu",
+          "date": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "wl.state.org-record.present-disabled",
+      "type": "state",
+      "name": "Organization record: present and disabled (contributes nothing)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "a disabled record is filtered out of the merge"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-28A6F067",
+          "note": "first blade Save created the record with isEnabled=false",
+          "date": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "wl.state.store-switch.on",
+      "type": "state",
+      "name": "Store master switch WhiteLabeling.WhiteLabelingEnabled: on (the default)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "Boolean store setting, default true"
+        }
+      ]
+    },
+    {
+      "id": "wl.state.store-switch.off",
+      "type": "state",
+      "name": "Store master switch WhiteLabeling.WhiteLabelingEnabled: off",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "storefront applies nothing when false"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6C0AA08A",
+          "note": "default logo, palette and catalog menu after the setting was set false",
+          "date": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "wl.record.create",
+      "type": "behavior",
+      "name": "A branding record is created for one store or one organization",
+      "chain_link": "1",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 1",
+          "note": "four writers: AngularJS blade, Admin Shell blade, REST POST, xAPI changeOrganizationLogo",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2d",
+          "note": "swagger lists the operations; POST /api/white-labeling is among them",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-005",
+          "note": "binding rule"
+        }
+      ],
+      "actors": [
+        "Platform administrator",
+        "Organization maintainer"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "technique": "FLOW",
+      "notes": "Variants are separate code paths: store record vs organization record; back-office write (validator) vs storefront mutation (no validator, D12). integrates with: store-settings (the master switch is a store setting, not a record field)."
+    },
+    {
+      "id": "wl.record.create.blade-first-save-off",
+      "type": "branch",
+      "name": "First blade Save on an absent record persists it OFF",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-28A6F067",
+          "note": "uploading assets and Save created the record with isEnabled=false; the toggle had to be switched on and saved again",
+          "date": "2026-11-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a/2b default row",
+          "note": "Test Store - Full and Lone Star open Enabled OFF in both UIs",
+          "date": "2026-11-27"
+        }
+      ],
+      "state_before": "wl.state.org-record.absent",
+      "state_after": "wl.state.org-record.present-disabled",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "D5: the storefront mutation creates the same record ON. Applies to AngularJS and Admin Shell alike."
+    },
+    {
+      "id": "wl.record.create.blade-first-save-on",
+      "type": "branch",
+      "name": "First blade Save with the toggle switched ON persists it enabled",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-28A6F067",
+          "note": "'creates the record with that toggle value' - the ON-first-save outcome is implied, not itself observed",
+          "date": "2026-11-26"
+        }
+      ],
+      "state_before": "wl.state.org-record.absent",
+      "state_after": "wl.state.org-record.present-enabled",
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.record.create.absent-and-disabled-open-alike",
+      "type": "branch",
+      "name": "A missing record and a disabled one look identical in both blades",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a row 'Default of a record that does not exist'",
+          "note": "Lone Star: no record or a disabled one cannot be told apart (G3)",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "The question G3 settles with GET /api/white-labeling/organization/{id}. It decides which data state a seeded organization really is in."
+    },
+    {
+      "id": "wl.record.create.permission-scopes",
+      "type": "branch",
+      "name": "Writing needs WhiteLabeling create/update and reading needs read",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2d",
+          "note": "swagger security scopes WhiteLabeling:read / create / update",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "SPEC",
+          "ref": "FWL-015",
+          "note": "administrator role has access to logo management (Manual)"
+        }
+      ],
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "notes": "G13: which roles hold the scopes is unread; WhiteLabeling:delete is registered and no endpoint uses it. integrates with: platform security."
+    },
+    {
+      "id": "wl.record.validate",
+      "type": "behavior",
+      "name": "Back-office writers refuse a record that breaks the one-binding rule",
+      "chain_link": "1",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-005",
+          "note": "store XOR organization, no duplicates"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2d REST validation",
+          "note": "validator on POST and PUT; blade shows the same failures",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "technique": "DT",
+      "notes": "REST negatives return 400 with failures; the Admin blade renders the same messages. D12: the storefront mutation never runs this validator."
+    },
+    {
+      "id": "wl.record.validate.both-bound",
+      "type": "branch",
+      "name": "Both a store and an organization set is rejected",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-005",
+          "note": "store-and-organization-set failure"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "interfaces": [
+        "rest"
+      ]
+    },
+    {
+      "id": "wl.record.validate.neither-bound",
+      "type": "branch",
+      "name": "Neither a store nor an organization set is rejected",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-005",
+          "note": "store-or-organization-must-be-set failure"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "interfaces": [
+        "rest"
+      ]
+    },
+    {
+      "id": "wl.record.validate.duplicate-binding",
+      "type": "branch",
+      "name": "A second record for an already-bound store or organization is rejected",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-005",
+          "note": "duplicate-store-or-organization failure"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2d REST validation",
+          "note": "a new record cannot duplicate an existing binding",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "interfaces": [
+        "rest"
+      ]
+    },
+    {
+      "id": "wl.record.validate.binding-immutable-on-update",
+      "type": "branch",
+      "name": "The store or organization of an existing record cannot be changed",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-005",
+          "note": "VCST-4657: no binding change on update, 400"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "interfaces": [
+        "rest"
+      ]
+    },
+    {
+      "id": "wl.record.validate.content-unvalidated",
+      "type": "branch",
+      "name": "Nothing checks logo or favicon URL, preset name or link-list names",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2d REST validation",
+          "note": "validator covers the binding only",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-7EF291B3",
+          "note": "POST stored themePresetName 'Paprika' verbatim, absent from the ThemePresetNames dictionary; xAPI returned it unchanged",
+          "date": "2026-11-23"
+        }
+      ],
+      "interfaces": [
+        "rest"
+      ],
+      "notes": "D11: guide, storefront bundle and module dictionary list three different preset sets. The bad value surfaces later, in the render branches (placeholder image, preset fallback, empty link list)."
+    },
+    {
+      "id": "wl.record.update",
+      "type": "behavior",
+      "name": "An existing record is changed through the same writers",
+      "chain_link": "1",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2d",
+          "note": "PUT /api/white-labeling answers 204",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "technique": "EP"
+    },
+    {
+      "id": "wl.record.update.put-replaces-record",
+      "type": "branch",
+      "name": "A REST PUT replaces the whole record, so an omitted field is cleared",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:wl@rev1 section 6 seed notes",
+          "note": "the seeder GET-merge-PUTs because 'PUT replaces the record'; not re-run this pass"
+        }
+      ],
+      "interfaces": [
+        "rest"
+      ],
+      "notes": "Matters for BL-WL-002: a partial PUT would blank fields the org was meant to inherit from the store."
+    },
+    {
+      "id": "wl.record.edit.angularjs",
+      "type": "behavior",
+      "name": "AngularJS admin: edit branding on a store or organization blade",
+      "chain_link": "1",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a",
+          "note": "store: Stores > store > White labeling widget; organization: Contacts > row menu > Manage > widget",
+          "date": "2026-11-27"
+        }
+      ],
+      "actors": [
+        "Platform administrator"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "technique": "FLOW",
+      "notes": "Layer: AngularJS. Blade is Save-only; Logo and Favicon open sub-blades with Save, Reset, Clear; secondary logo is one level down; the preset pencil edits the platform-global dictionary. Entry is NOT Customer > Organizations or Members."
+    },
+    {
+      "id": "wl.record.edit.angularjs.preset-pencil-edits-global-dictionary",
+      "type": "branch",
+      "name": "The preset pencil changes a platform-wide dictionary, not this store",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a",
+          "note": "pencil present beside the preset select",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2d Settings",
+          "note": "WhiteLabeling.ThemePresetNames is platform-global",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-7EF291B3",
+          "note": "the dictionary only feeds the Admin picker",
+          "date": "2026-11-23"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "integrates with: store-settings / platform settings - the dictionary is a setting, so an edit reaches every store. Effect not exercised."
+    },
+    {
+      "id": "wl.record.edit.shell",
+      "type": "behavior",
+      "name": "Admin Shell: edit branding on one blade",
+      "chain_link": "1",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2b",
+          "note": "store blade under More widgets; one blade, Save and Reset, inline Logo, Secondary logo, Favicon, each with a URL box",
+          "date": "2026-11-27"
+        }
+      ],
+      "actors": [
+        "Platform administrator"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "technique": "FLOW",
+      "notes": "Layer: Admin Shell. No Clear action, no dictionary pencil, no sub-blades; a cleared text field saves null. Same record as AngularJS (D4). (A KB-595C7FF0 capture is cited by the domain map; it is not in the base index at 2026-11-27, so it is not relied on here.)"
+    },
+    {
+      "id": "wl.record.edit.shell.organization-blade-not-located",
+      "type": "branch",
+      "name": "The Shell's organization entry for the same widget was not found live",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2b Organization entry",
+          "note": "source registers the widget for CustomerOrganizationDetails; clicking an organization row opens its members (G1)",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.record.edit.shell.url-box-vs-type-filter",
+      "type": "branch",
+      "name": "A URL typed in the Shell's text box may skip the upload type filter",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2b",
+          "note": "a free-text URL box sits under each image upload zone",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:wl@rev1 section 2b Accepted types",
+          "note": "the accept attribute filters the picker only; whether a typed URL is checked is not established"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "Together with content-unvalidated this makes the Shell the one path where a wrong-type or dead URL is most reachable."
+    },
+    {
+      "id": "wl.image.upload",
+      "type": "behavior",
+      "name": "An image is uploaded and its URL is stored on the record",
+      "chain_link": "2",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 2",
+          "note": "back office writes /customization (favicon /customization/favicons); storefront Company logo uses scope organization-logos",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-006",
+          "note": "distinct allow-lists"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "oracle_refs": [
+        "BL-WL-006"
+      ],
+      "technique": "EP",
+      "notes": "The upload itself was not performed live (read-only passes). integrates with: imagetools (favicon thumbnails, see wl.favicon.advertise)."
+    },
+    {
+      "id": "wl.image.upload.logo-allowed",
+      "type": "branch",
+      "name": "Logo and secondary logo accept PNG, GIF and SVG",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-006",
+          "note": "logo allow-list"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "hint text names PNG, GIF, SVG; deployed script filters png|gif|svg",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a",
+          "note": "hint text on both drop zones",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-006"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.image.upload.logo-rejected-type",
+      "type": "branch",
+      "name": "A logo of any other type (JPG, WEBP) is refused",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-006",
+          "note": "filetype error for a disallowed extension"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "JPG rejected for a logo; nothing was uploaded",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-006"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.image.upload.favicon-allowed",
+      "type": "branch",
+      "name": "Favicon accepts PNG, JPG, JPEG and WEBP",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-006",
+          "note": "favicon allow-list"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "hint text names PNG, JPG, WEBP; deployed script also accepts jpeg",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-006"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.image.upload.favicon-rejected-type",
+      "type": "branch",
+      "name": "A favicon of any other type (GIF, SVG, ICO) is refused",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-006",
+          "note": "GIF and SVG are logo-only"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2b Accepted types",
+          "note": "Shell accept attribute",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-006"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "The two layers use the same lists (AngularJS regex, Shell accept). ICO is in neither."
+    },
+    {
+      "id": "wl.image.upload.no-admin-size-limit",
+      "type": "branch",
+      "name": "The back-office pickers apply no file-size limit",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "deployed scripts read: no file size check",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "The storefront Company logo has one (see wl.company-logo.size-boundary); the README example scope names another. A size case written against the admin has nothing to hit."
+    },
+    {
+      "id": "wl.favicon.advertise",
+      "type": "behavior",
+      "name": "Favicon sizes are advertised from the master favicon URL",
+      "chain_link": "3",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "kb:KB-3BFAF6CC",
+          "note": "five hard-coded sizes 16, 32, 96, 128, 196 added as favicons[] whenever the merged faviconUrl is non-empty; module registers no thumbnail task",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 3",
+          "note": "handler _faviconsSizes, AddFaviconsAsync",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "job"
+      ],
+      "technique": "ST",
+      "notes": "THE ASYNC HOP: the files <name>_<size>.<ext> exist only if an ImageTools thumbnail task on /customization/favicons generated them (job or event, not the request). integrates with: imagetools. D3: FWL-001 expects different sizes (16/32/180/192/512) than the handler emits."
+    },
+    {
+      "id": "wl.favicon.advertise.no-favicon-url",
+      "type": "branch",
+      "name": "No favicon URL means no favicons[] and the default favicon",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 3",
+          "note": "favicons[] is computed only when faviconUrl is non-empty",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Favicon",
+          "note": "an empty list leaves the index.html favicon",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.favicon.advertise.files-present",
+      "type": "branch",
+      "name": "When the thumbnails exist the advertised hrefs return 200",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-2EAD7A0F",
+          "note": "the seeded organization's favicon and five thumbnails returned 200 with ImageTools.Thumbnails.EnableImageProcessJob=false; the tab itself was not read",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "G8 open: the job setting value and the task on the folder were not read this pass, so which mechanism produced these files is unknown."
+    },
+    {
+      "id": "wl.favicon.advertise.window-before-generation",
+      "type": "branch",
+      "name": "Between Save and the thumbnail task the advertised hrefs do not exist yet",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 3",
+          "note": "the async window is named in the chain; its 404 outcome is not established",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D4EEDC37",
+          "note": "with the job off the hrefs stayed 404 - the permanent form of this window",
+          "date": "2026-11-26"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "job"
+      ]
+    },
+    {
+      "id": "wl.switch.store-master",
+      "type": "behavior",
+      "name": "The store master switch decides whether any branding is fetched",
+      "chain_link": "4",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "WhiteLabeling.WhiteLabelingEnabled, store-level public setting, default true"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6C0AA08A",
+          "note": "set false via full-body PUT /api/stores: default logo, palette and catalog menu, no customization request",
+          "date": "2026-11-26"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-WL-003"
+      ],
+      "technique": "DT",
+      "notes": "D1: this is NOT the blade's Enabled toggle. A case that says 'store Enabled = OFF' is ambiguous (FWL-009). It lives under Stores > store > Settings > White Labeling > General (not live-walked). integrates with: store-settings."
+    },
+    {
+      "id": "wl.switch.store-master.disable",
+      "type": "branch",
+      "name": "Setting the store master switch to false",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "master switch OFF"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6C0AA08A",
+          "note": "done through PUT /api/stores",
+          "date": "2026-11-26"
+        }
+      ],
+      "state_before": "wl.state.store-switch.on",
+      "state_after": "wl.state.store-switch.off",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.switch.store-master.enable",
+      "type": "branch",
+      "name": "Setting the store master switch back to true",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "set true: branding returns"
+        }
+      ],
+      "state_before": "wl.state.store-switch.off",
+      "state_after": "wl.state.store-switch.on",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.switch.store-master.off-suppresses-all",
+      "type": "branch",
+      "name": "Switch OFF: no branding applies, an enabled organization record included",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "OFF suppresses org branding too; theme defaults"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6C0AA08A",
+          "note": "an enabled org record no longer reached the page",
+          "date": "2026-11-26"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 4",
+          "note": "useWhiteLabeling returns early (vc-frontend checkout)",
+          "date": "2026-11-27"
+        }
+      ],
+      "state_before": "wl.state.store-switch.off",
+      "state_after": "wl.state.store-switch.off",
+      "oracle_refs": [
+        "BL-WL-003"
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "The OFF branch of the feature switch: the expected outcome is the pre-feature storefront every non-white-label customer relies on. Guests lose the store record's branding too, because the fetch returns before any query."
+    },
+    {
+      "id": "wl.switch.store-master.on-record-gate-applies",
+      "type": "branch",
+      "name": "Switch ON: the per-record toggle then decides each record's contribution",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "record IsEnabled applied only when the master switch is ON"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "store record toggled off, setting left true: org branding still resolved",
+          "date": "2026-11-26"
+        }
+      ],
+      "state_before": "wl.state.store-switch.on",
+      "state_after": "wl.state.store-switch.on",
+      "oracle_refs": [
+        "BL-WL-003"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "wl.switch.record-enabled",
+      "type": "behavior",
+      "name": "A record's own Enabled toggle controls that record's contribution only",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "per-record IsEnabled, not a master switch"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "store record isEnabled=false: org theme, menu and logo still resolved",
+          "date": "2026-11-26"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-WL-003"
+      ],
+      "technique": "ST",
+      "notes": "D1: the blade toggle. D5: an absent record opens OFF in both admin UIs and is created ON by the storefront mutation."
+    },
+    {
+      "id": "wl.switch.record-enabled.enable",
+      "type": "branch",
+      "name": "Switching a disabled record on and saving",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-28A6F067",
+          "note": "the toggle had to be switched on and saved again",
+          "date": "2026-11-26"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "record joins the merge once enabled"
+        }
+      ],
+      "state_before": "wl.state.org-record.present-disabled",
+      "state_after": "wl.state.org-record.present-enabled",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "wl.switch.record-enabled.disable",
+      "type": "branch",
+      "name": "Switching an enabled record off and saving",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "a disabled record is filtered out"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 7",
+          "note": "the isEnabled toggle is the only per-record removal",
+          "date": "2026-11-27"
+        }
+      ],
+      "state_before": "wl.state.org-record.present-enabled",
+      "state_after": "wl.state.org-record.present-disabled",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "wl.resolve",
+      "type": "behavior",
+      "name": "Branding is resolved for this visitor from the enabled records",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-001",
+          "note": "null when neither an enabled org nor an enabled store record exists"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-002",
+          "note": "per-field merge"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c Request",
+          "note": "GetPageContext carried domain and userId '' as a guest and returned whiteLabelingSettings",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-WL-001",
+        "BL-WL-002"
+      ],
+      "technique": "DT",
+      "notes": "Read-through on each page-context call; whether it is cached is open (G14). Same type returned by Query.whiteLabelingSettings and pageContext.whiteLabelingSettings. integrates with: content (link lists resolved by name)."
+    },
+    {
+      "id": "wl.resolve.merge-per-field",
+      "type": "branch",
+      "name": "Organization and store values merge per field, the organization's winning when non-empty",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-002",
+          "note": "logo, secondary logo, favicon, preset, footer list, main-menu list"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "Purple Pink org over Mercury store; menus and footer from the org lists",
+          "date": "2026-11-26"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-002"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "The branded fields are each set at org / store / both: a decision table, never a whole-object override. Variants: guard against a case whose store and org values are equal (nothing then proves the merge)."
+    },
+    {
+      "id": "wl.resolve.org-partial-inherits-store",
+      "type": "branch",
+      "name": "An organization that sets only some fields inherits the rest from the store",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-002",
+          "note": "VCST-4644: store branding as fallback for organizations without their own"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "an org without white labeling fell back to the store's logo and preset",
+          "date": "2026-11-19"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-002"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.resolve.org-record-absent-falls-back",
+      "type": "branch",
+      "name": "An organization with no record gets the store's branding field by field",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "multi-org buyer switching to an org without a record: store logo and preset, nothing left from the previous org",
+          "date": "2026-11-19"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2a default row",
+          "note": "organization Lone Star opens with no data",
+          "date": "2026-11-27"
+        }
+      ],
+      "state_before": "wl.state.org-record.absent",
+      "state_after": "wl.state.org-record.absent",
+      "oracle_refs": [
+        "BL-WL-002"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.resolve.org-record-disabled-falls-back",
+      "type": "branch",
+      "name": "A disabled organization record falls back to the store's branding",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "IsEnabled=true filter"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 6",
+          "note": "'Org Enabled OFF -> falls back to store-level branding' CONFIRMED at source",
+          "date": "2026-11-27"
+        }
+      ],
+      "state_before": "wl.state.org-record.present-disabled",
+      "state_after": "wl.state.org-record.present-disabled",
+      "oracle_refs": [
+        "BL-WL-003"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.resolve.store-record-off-org-survives",
+      "type": "branch",
+      "name": "A disabled or absent store record does not suppress an enabled organization",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-003",
+          "note": "layer 2 per-record gate, live-verified 2026-07-02 per the oracle"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "store record isEnabled=false, setting true: org theme, menu, logo and favicon hrefs still resolved",
+          "date": "2026-11-26"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-003"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "WL-014. The two layers are independent (D1)."
+    },
+    {
+      "id": "wl.resolve.neither-enabled-null",
+      "type": "branch",
+      "name": "No enabled organization or store record resolves to null and the theme defaults",
+      "branch_kind": "state",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-001",
+          "note": "null, then platform/theme defaults, no crash or partial branding"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-001"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.resolve.unknown-organization-id",
+      "type": "branch",
+      "name": "An organizationId that matches no organization returns the store's branding, silently",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "kb:KB-F98BB191",
+          "note": "organizationId 'WL-ORG-A' (a fixture key): HTTP 200, no errors[], store logo, Mercury, store lists; the GUID returned the org's own",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D6",
+          "note": "org record null, store record returned",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "D6. Nothing signals the mistake: a case that passes the fixture key reads store branding and fails, or vacuously passes. Prior art claimed null fields; null only when no enabled record exists at all."
+    },
+    {
+      "id": "wl.resolve.signed-in-org-context",
+      "type": "branch",
+      "name": "A signed-in member sees the merged branding of the active organization",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "org buyer: org theme, org main menu, org footer, org logo; guest: store logo",
+          "date": "2026-11-26"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-001",
+          "note": "VCST-899: org employees see their branding after sign-in"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-001"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "integrates with: auth - signed-in session. Another organization's users get the store/default branding, not this org's."
+    },
+    {
+      "id": "wl.resolve.guest-store-branding",
+      "type": "branch",
+      "name": "A guest sees the store record's branding",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 1 Actors / D8",
+          "note": "guest on B2B-store: store logo, catalog-menu entries and footer columns",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D8",
+          "note": "docs: store-level white labeling applies to every visitor of that store",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-001",
+          "note": "branding resolves from the signed-in organization context after authentication"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-001"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "integrates with: auth - anonymous session. The suites side with the oracle's wording (FWL-066 expects default branding for anonymous), live and the Customizing guide side with the store record.",
+      "drift": {
+        "expected": "BL-WL-001 (title and Docs line): branding is org-context and post-auth, so an anonymous visitor sees platform defaults",
+        "observed": "guest on B2B-store sees the store record's logo, main menu and footer (domain-map:wl@rev1 D8, live 2026-11-27; the same call carries no organizationId)",
+        "route": "/qa-review-oracles - amend BL-WL-001 to say store-level branding applies to every visitor; FWL-066 follows via /qa-review-tests"
+      }
+    },
+    {
+      "id": "wl.resolve.domain-resolves-store-only",
+      "type": "branch",
+      "name": "The domain argument resolves a store and never an organization",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D9",
+          "note": "module 3.1008.0 handler: domain finds a STORE; no organization is resolved from it; no domain field on the record",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "wl.resolve.custom-domain-org-branding",
+      "type": "branch",
+      "name": "A custom domain assigned to an organization brands the first visit before sign-in",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/white-labeling/customizing-brand-elements",
+          "note": "guide, as quoted in the domain map D9",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D9",
+          "note": "MISSING in this module's source; the mechanism may live in another module (G4)",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "integrates with: customer / xapi modules (no map) - custom-domain binding. Docs and module disagree today; whether the disagreement is real depends on where the mechanism sits."
+    },
+    {
+      "id": "wl.resolve.store-not-resolvable",
+      "type": "branch",
+      "name": "A call with neither storeId nor domain",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 5 G7",
+          "note": "all five arguments are optional in the live schema; the old claim '200 + errors[]' is unproven, source points the other way",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "wl.resolve.save-reaches-storefront",
+      "type": "branch",
+      "name": "A saved change reaches the storefront without a stale window",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "FWL-067",
+          "note": "branding updates in Admin reflect on the storefront without cache issues (Manual)"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "G14: whether GetPageContext / xAPI results are cached, and for how long, is unanswered."
+    },
+    {
+      "id": "wl.resolve.link-lists",
+      "type": "behavior",
+      "name": "Menu and footer link lists are resolved by name",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-004",
+          "note": "missing name gives an empty array, HTTP 200"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-WL-004"
+      ],
+      "technique": "EP",
+      "notes": "integrates with: content - link lists are Content-module data resolved through GetMenu; their contents are not managed here."
+    },
+    {
+      "id": "wl.resolve.link-lists.empty-or-unknown-name",
+      "type": "branch",
+      "name": "An empty, null or non-existent list name gives an empty array and no error",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-004",
+          "note": "[] with no errors[]"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 5",
+          "note": "an empty or unknown name resolves to []",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-004"
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "wl.resolve.link-lists.footer-org-name-fallback",
+      "type": "branch",
+      "name": "An empty footer name on an organization record falls back to footer-<organization name>",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-004",
+          "note": "backward-compat footer fallback"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D10",
+          "note": "module half only; footer-links is the storefront's own second fallback",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-004"
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "wl.resolve.link-lists.main-menu-no-module-fallback",
+      "type": "branch",
+      "name": "The main menu has no module-level fallback list",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-004",
+          "note": "no main-menu-<org> fallback exists in code"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-004"
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "wl.resolve.link-lists.priority-order",
+      "type": "branch",
+      "name": "The returned arrays are in descending priority order and children likewise",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3239DE5F",
+          "note": "mainMenuLinks Support(4), Company(3), Brands(2), Home(1); childItems Tablets(3), Phones(2), Laptops(1); two identical calls",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "G6 open. The docs call priority the field that orders the menu, so a consumer sorts; whether the storefront sorts is not established. Assert the title-to-priority mapping, never array positions."
+    },
+    {
+      "id": "wl.render.header-logo",
+      "type": "behavior",
+      "name": "The header shows the resolved logo, else the theme's",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Header logo",
+          "note": "vc-header, bottom-header, mobile-header and secure-layout: logoUrl else theme logo_image",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c",
+          "note": "guest header logo = store logo",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "technique": "EP",
+      "notes": "integrates with: imagetools (thumbnails of the image). Variants: desktop, mobile bar, bottom header, sign-in layout."
+    },
+    {
+      "id": "wl.render.header-logo.theme-default-when-empty",
+      "type": "branch",
+      "name": "With no resolved logo the theme's own logo shows",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-001",
+          "note": "platform/theme defaults when no WL configuration exists"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Header logo",
+          "note": "else theme logo_image",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-001"
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.header-logo.invalid-url-placeholder",
+      "type": "branch",
+      "name": "A logo URL that does not load renders the image-less placeholder",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2d REST validation",
+          "note": "'a bad URL renders the image-less placeholder' - stated, not shown",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "SPEC",
+          "ref": "FWL-058",
+          "note": "no broken images when the logo or favicon URL is invalid (Manual)"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "The consequence of wl.record.validate.content-unvalidated."
+    },
+    {
+      "id": "wl.render.header-logo.mobile-drawer-source",
+      "type": "branch",
+      "name": "The mobile main-menu drawer takes its logo from a different source than the header bar",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-999E69A4",
+          "note": "guest: header bar shows the store logo, drawer shows the theme's white logo; org buyer: both show the org logo",
+          "date": "2026-11-19"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Whether the store record leaves the dark-background field empty was not read."
+    },
+    {
+      "id": "wl.render.footer",
+      "type": "behavior",
+      "name": "The footer shows the secondary logo and the link-list columns",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Footer",
+          "note": "secondary logo else theme logo_inverted_image; columns from footerLinks, else the store footer-links list",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c",
+          "note": "B2B-store guest footer columns with child links",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "technique": "DT"
+    },
+    {
+      "id": "wl.render.footer.top-level-as-header",
+      "type": "branch",
+      "name": "A top-level footer entry is a non-clickable header and only its children are links",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-E7DF9B84",
+          "note": "a flat footer list renders empty header columns - a content-structure issue",
+          "date": "2026-09-25"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.footer.storefront-footer-links-fallback",
+      "type": "branch",
+      "name": "An empty white-labeling footer list falls back to the store's footer-links list",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Footer",
+          "note": "storefront half of the D10 fallback chain (vc-frontend checkout)",
+          "date": "2026-11-27"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-004"
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.main-menu",
+      "type": "behavior",
+      "name": "A resolved main-menu list replaces the catalog menu",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Main menu",
+          "note": "non-empty mainMenuLinks replaces; else CatalogMenuLinkListName list; else category menu",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c",
+          "note": "guest sees the catalog-menu entries",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "technique": "DT"
+    },
+    {
+      "id": "wl.render.main-menu.empty-falls-to-catalog-menu",
+      "type": "branch",
+      "name": "With no main-menu list the catalog menu shows",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Main menu",
+          "note": "useNavigations.ts fallback chain",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-WL-004",
+          "note": "no module-level fallback, so the storefront's own chain applies"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-004"
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.favicon",
+      "type": "behavior",
+      "name": "The tab icon comes from the advertised favicons[] hrefs only",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Favicon",
+          "note": "App.vue uses favicons[]; faviconUrl is not requested; the PWA manifest is not updated",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c Request",
+          "note": "the page-context query selects favicons and not faviconUrl",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "technique": "ST",
+      "notes": "Variant of the chain: favicon is the only image with a derived, async-produced form."
+    },
+    {
+      "id": "wl.render.favicon.advertised-hrefs-missing",
+      "type": "branch",
+      "name": "Advertised favicon sizes that do not exist leave the tab on the default icon",
+      "branch_kind": "negative",
+      "technique": "ST",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D4EEDC37",
+          "note": "job off: five hrefs all 404, faviconUrl never requested, no custom favicon",
+          "date": "2026-11-26"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-2EAD7A0F",
+          "note": "seeded assets: the same hrefs return 200, so the 404 is specific to an upload with no generated thumbnails",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 3 D2",
+          "note": "query selection confirmed live",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql",
+        "job"
+      ],
+      "notes": "integrates with: imagetools. Whether faviconUrl should be a fallback is a product decision, not a test defect. FWL-001/003/004 (and 005's favicon step) depend on it.",
+      "drift": {
+        "expected": "an organization favicon saved in the White labeling widget shows in the browser tab (FWL-017 and FWL-004 intent; the guide's 'master favicon' wording)",
+        "observed": "with the thumbnail job off the storefront requests only the five advertised hrefs, all 404, never faviconUrl, so no custom favicon (KB-D4EEDC37); with thumbnails present they return 200 (KB-2EAD7A0F)",
+        "route": "UNFILED - favicon fallback product decision"
+      }
+    },
+    {
+      "id": "wl.render.favicon.default-when-empty",
+      "type": "branch",
+      "name": "An empty favicons[] leaves the default favicon",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Favicon",
+          "note": "an empty list leaves the index.html favicon",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.theme-preset",
+      "type": "behavior",
+      "name": "The theme preset recolours the storefront",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Theme preset",
+          "note": "name lower-cased, spaces to '-', looked up in the bundled presets then /assets/presets",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "kb:KB-1C18DC2F",
+          "note": "addPresetToThemeContext, read in vc-frontend a6ee5ce",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "technique": "EP",
+      "notes": "D11: three preset sets disagree (guide, storefront bundle, module dictionary), so a 'valid' name is not defined anywhere. D13: the guides say 'colors', the record holds only the preset name. Preset FILES come from the theme build, not this module."
+    },
+    {
+      "id": "wl.render.theme-preset.name-normalised",
+      "type": "branch",
+      "name": "A preset name resolves case- and space-insensitively",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D11",
+          "note": "Purple Pink and purple-pink are one preset; the old 'case-sensitive' claim is DRIFT in prior art",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-7EF291B3",
+          "note": "names reach xAPI unchanged, so the normalising is the storefront's",
+          "date": "2026-11-23"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.theme-preset.unresolvable-falls-to-bundled-default",
+      "type": "branch",
+      "name": "An unresolvable preset falls to the bundled default, not the store's preset",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "kb:KB-1C18DC2F",
+          "note": "retry with settings_data.json 'current'; the store's own preset is never a second fallback",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D15",
+          "note": "source of the vc-frontend checkout; the deployed hash may differ",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "D15: it looks like the store palette only when the store preset equals the default. The earlier BMW-Group observation fits both readings, so a case needs a store preset that differs from the default."
+    },
+    {
+      "id": "wl.render.theme-preset.neither-resolves-throws",
+      "type": "branch",
+      "name": "If even the bundled default does not resolve the storefront throws 'Missing preset'",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Theme preset",
+          "note": "thrown at source; what the visitor then sees was not observed",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.render.brand-markup",
+      "type": "behavior",
+      "name": "Structured-data brand logo follows the white-labeling logo",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c JSON-LD",
+          "note": "useBrandProfile.ts: white-labeling logo unless it is the buyer's own organization logo; not observed",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "technique": "EP"
+    },
+    {
+      "id": "wl.render.org-switch",
+      "type": "behavior",
+      "name": "Switching organization re-resolves and re-renders the branding",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A23A4A41",
+          "note": "Double Quotes org: org logo and #d84786; switch to Lone Star: store logo and #f99e24, nothing left from the previous org",
+          "date": "2026-11-19"
+        },
+        {
+          "class": "SPEC",
+          "ref": "FWL-028",
+          "note": "switch organization updates branding (Manual)"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "technique": "ST",
+      "notes": "integrates with: b2b-organizations - the organization switcher."
+    },
+    {
+      "id": "wl.render.org-switch.dynamics-flash-stale",
+      "type": "branch",
+      "name": "The switch shows no flash of the previous organization's branding, menu or footer",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "FWL-032",
+          "note": "no flash of wrong branding during the switch (Manual)"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 5 G9",
+          "note": "org-switch dynamics, stale links and FOUC are open",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.company-logo",
+      "type": "behavior",
+      "name": "An organization buyer sets the organization's own logo on Company info",
+      "chain_link": "2",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c Company info",
+          "note": "block present for the signed-in buyer, with its allowed-types text (read only)",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 2",
+          "note": "FileUpload scope organization-logos; changeOrganizationLogo stores /api/files/<id>",
+          "date": "2026-11-27"
+        }
+      ],
+      "actors": [
+        "Organization maintainer"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "technique": "FLOW",
+      "notes": "Layer: storefront. The only xAPI write and the only buyer-side path. Zero suites cover it."
+    },
+    {
+      "id": "wl.company-logo.upload-save",
+      "type": "branch",
+      "name": "Upload then Save writes the organization's logoUrl",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 2",
+          "note": "ChangeOrganizationLogoCommandHandler: logoUrl must start /api/files/",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "The upload and mutation were not exercised (read-only passes). Header then shows the org logo through wl.resolve.merge-per-field."
+    },
+    {
+      "id": "wl.company-logo.creates-enabled-record",
+      "type": "branch",
+      "name": "With no enabled record the mutation creates the organization's record ON",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D5",
+          "note": "handler creates the record with IsEnabled = true; the back office would have created it OFF",
+          "date": "2026-11-27"
+        }
+      ],
+      "state_before": "wl.state.org-record.absent",
+      "state_after": "wl.state.org-record.present-enabled",
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "The domain map's own capture of this path (KB-FC2150C5) is not in the base index at 2026-11-27, so it is cited through the map."
+    },
+    {
+      "id": "wl.company-logo.type-and-size-allowed",
+      "type": "branch",
+      "name": "The picker allows JPG and PNG up to the stated size, one file",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-5BC4EC37",
+          "note": "the block text and fileUploadOptions name JPG and PNG, a per-file size limit and one file",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2c Company info",
+          "note": "same text read as an organization buyer",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "D7: this vocabulary differs from the admin Logo widget (PNG, GIF, SVG) for the same logoUrl field."
+    },
+    {
+      "id": "wl.company-logo.size-boundary",
+      "type": "branch",
+      "name": "A file at and just over the size limit",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-5BC4EC37",
+          "note": "limit stated in the block text and in fileUploadOptions; no oversized pick made",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "The size stated in the block text and the byte limit fileUploadOptions returns differ; which one binds is open."
+    },
+    {
+      "id": "wl.company-logo.disallowed-type",
+      "type": "branch",
+      "name": "Picking a disallowed type is refused with no upload and no uncaught error",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-5BC4EC37",
+          "note": "an inline refusal, no upload, and a swallowed TypeError reading url; marked known defect VCST-6288",
+          "date": "2026-10-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-5BC4EC37",
+          "note": "a PR build of the theme (vc-frontend#2612) showed the refusal with no exception",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "drift": {
+        "expected": "a refused pick shows the inline refusal and nothing else (no uncaught exception)",
+        "observed": "the refusal plus a hidden TypeError (reading url) recorded only in App Insights (KB-5BC4EC37, theme 2.61.0, 2026-10-29)",
+        "route": "VCST-6288 (fix build vc-frontend#2612)"
+      }
+    },
+    {
+      "id": "wl.company-logo.record-lookup-duplicate",
+      "type": "branch",
+      "name": "On an organization whose record is disabled the mutation may create a second record, skipping the validator",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D12",
+          "note": "the lookup uses IsEnabled = true and a miss creates a fresh record; WhiteLabelingSettingValidator is never called (source-only)",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:wl@rev1 section 1 sibling-guard hypothesis",
+          "note": "the outcome - two records for one organization - was not observed; DB constraint unread (G5)"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-005"
+      ],
+      "interfaces": [
+        "graphql",
+        "rest"
+      ],
+      "notes": "The guard the sibling path lacks: REST/blade writers run the binding validator, this one does not. Needs the mutation on a disposable organization, then GET /api/white-labeling/organization/{id}. If confirmed it is a defect against BL-WL-005 and this node becomes DRIFT."
+    },
+    {
+      "id": "wl.company-logo.permission",
+      "type": "branch",
+      "name": "Only some organization roles may change the organization logo",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 1 Actors",
+          "note": "block present for the signed-in test buyer; which role holds the permission is open (G2)",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "G2: what OrganizationLogoAuthorizationHandler checks is unread. integrates with: b2b-organizations - roles."
+    },
+    {
+      "id": "wl.reverse.record-removal",
+      "type": "behavior",
+      "name": "A record cannot be deleted; its contribution is removed only by disabling it",
+      "chain_link": "7",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2d",
+          "note": "swagger lists no DELETE and no xAPI delete",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-52D2F554",
+          "note": "DELETE /api/white-labeling?ids and /{id} both returned 405",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "rest",
+        "graphql"
+      ],
+      "technique": "ST",
+      "notes": "First-class finding: there is no edge from a present record back to absent, so the organization-record state graph has no path out of 'created'."
+    },
+    {
+      "id": "wl.reverse.record-removal.no-delete-path",
+      "type": "branch",
+      "name": "No delete endpoint exists at any layer",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2d",
+          "note": "no operation deletes",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-52D2F554",
+          "note": "405 on both delete forms for two organization records",
+          "date": "2026-11-23"
+        }
+      ],
+      "interfaces": [
+        "rest"
+      ],
+      "notes": "A test teardown cannot remove a record over REST. WhiteLabeling:delete is registered and unused (G13)."
+    },
+    {
+      "id": "wl.reverse.per-image-clear",
+      "type": "behavior",
+      "name": "One image is cleared without disabling the record",
+      "chain_link": "7",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2a",
+          "note": "Logo and Favicon sub-blades have Save, Reset, Clear",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "Clear sets the URL to null; whether Save is then needed is not stated",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "technique": "ST",
+      "notes": "Layer difference (D4): AngularJS has Clear; the Shell does not. WL-006/007 name a settings-level reset that does not exist."
+    },
+    {
+      "id": "wl.reverse.per-image-clear.angularjs-clear-then-save",
+      "type": "branch",
+      "name": "AngularJS Clear nulls the URL and takes effect on Save",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "Clear sets logoUrl, secondaryLogoUrl or faviconUrl to null",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.reverse.per-image-clear.angularjs-reset",
+      "type": "branch",
+      "name": "AngularJS Reset reverts unsaved edits only",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6102AC5A",
+          "note": "Reset reverts unsaved edits; Clear empties the image",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "wl.reverse.per-image-clear.shell-null-on-save",
+      "type": "branch",
+      "name": "Admin Shell has no Clear; a cleared text field is saved as null",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 2b Toolbar",
+          "note": "Save and Reset only",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2b Toolbar",
+          "note": "details.vue saves a cleared field as null",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "notes": "G12 open: whether an uploaded image can be removed from the zone other than through the text box."
+    },
+    {
+      "id": "wl.reverse.per-image-clear.falls-back-to-store",
+      "type": "branch",
+      "name": "A cleared organization image falls back to the store's value",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-WL-002",
+          "note": "org value used only when non-empty, else the store's"
+        }
+      ],
+      "oracle_refs": [
+        "BL-WL-002"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ]
+    },
+    {
+      "id": "wl.reverse.company-logo-delete",
+      "type": "behavior",
+      "name": "A buyer deletes the organization logo on Company info",
+      "chain_link": "7",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 7",
+          "note": "storefront delete sends logoUrl ''; the handler sets LogoUrl = null; DeleteLogoUrlFile is a no-op",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 2c Company info",
+          "note": "Delete is enabled only when isOrganizationLogoUploaded",
+          "date": "2026-11-27"
+        }
+      ],
+      "actors": [
+        "Organization maintainer"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "technique": "ST"
+    },
+    {
+      "id": "wl.reverse.company-logo-delete.file-not-deleted",
+      "type": "branch",
+      "name": "The uploaded file stays on the platform after the logo is removed",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 1 link 7",
+          "note": "DeleteLogoUrlFile is a no-op",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "No reverse edge for the stored file."
+    },
+    {
+      "id": "wl.reverse.company-logo-delete.store-or-default-logo-follows",
+      "type": "branch",
+      "name": "After delete the store logo shows, and the theme's only when the store has none",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:wl@rev1 section 3 D16",
+          "note": "handler sets the organization logoUrl to null, so the merge takes the store's; the storefront guide says it restores the default logo",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Docs and source differ unless the store has no logo. Live not exercised."
+    },
+    {
+      "id": "wl.reverse.org-delete-orphans-record",
+      "type": "behavior",
+      "name": "Deleting an organization leaves its branding record behind",
+      "chain_link": "7",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-52D2F554",
+          "note": "after DELETE /api/members the record still returned 200; two orphan org records from the WX wave, one enabled one not; the module has no member-deleted handler",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:wl@rev1 section 1 link 7",
+          "note": "the map lists the orphan as UNVERIFIED by this pass; two orphan records are known from the WX report",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "rest"
+      ],
+      "technique": "EG",
+      "notes": "integrates with: b2b-organizations - organization delete. The orphan's GUID can still be passed as organizationId; what that resolves to is wl.resolve.unknown-organization-id."
+    }
+  ],
+  "edges": [
+    {
+      "from": "wl.white-labeling",
+      "to": "wl.authoring",
+      "type": "contains"
+    },
+    {
+      "from": "wl.white-labeling",
+      "to": "wl.switches",
+      "type": "contains"
+    },
+    {
+      "from": "wl.white-labeling",
+      "to": "wl.resolution",
+      "type": "contains"
+    },
+    {
+      "from": "wl.white-labeling",
+      "to": "wl.rendering",
+      "type": "contains"
+    },
+    {
+      "from": "wl.white-labeling",
+      "to": "wl.self-service",
+      "type": "contains"
+    },
+    {
+      "from": "wl.white-labeling",
+      "to": "wl.removal",
+      "type": "contains"
+    },
+    {
+      "from": "wl.authoring",
+      "to": "wl.record.create",
+      "type": "contains"
+    },
+    {
+      "from": "wl.record.create",
+      "to": "wl.record.create.blade-first-save-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.create",
+      "to": "wl.record.create.blade-first-save-on",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.create",
+      "to": "wl.record.create.absent-and-disabled-open-alike",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.create",
+      "to": "wl.record.create.permission-scopes",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.authoring",
+      "to": "wl.record.validate",
+      "type": "contains"
+    },
+    {
+      "from": "wl.record.validate",
+      "to": "wl.record.validate.both-bound",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.validate",
+      "to": "wl.record.validate.neither-bound",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.validate",
+      "to": "wl.record.validate.duplicate-binding",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.validate",
+      "to": "wl.record.validate.binding-immutable-on-update",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.validate",
+      "to": "wl.record.validate.content-unvalidated",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.authoring",
+      "to": "wl.record.update",
+      "type": "contains"
+    },
+    {
+      "from": "wl.record.update",
+      "to": "wl.record.update.put-replaces-record",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.authoring",
+      "to": "wl.record.edit.angularjs",
+      "type": "contains"
+    },
+    {
+      "from": "wl.record.edit.angularjs",
+      "to": "wl.record.edit.angularjs.preset-pencil-edits-global-dictionary",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.authoring",
+      "to": "wl.record.edit.shell",
+      "type": "contains"
+    },
+    {
+      "from": "wl.record.edit.shell",
+      "to": "wl.record.edit.shell.organization-blade-not-located",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.record.edit.shell",
+      "to": "wl.record.edit.shell.url-box-vs-type-filter",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.authoring",
+      "to": "wl.image.upload",
+      "type": "contains"
+    },
+    {
+      "from": "wl.image.upload",
+      "to": "wl.image.upload.logo-allowed",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.image.upload",
+      "to": "wl.image.upload.logo-rejected-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.image.upload",
+      "to": "wl.image.upload.favicon-allowed",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.image.upload",
+      "to": "wl.image.upload.favicon-rejected-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.image.upload",
+      "to": "wl.image.upload.no-admin-size-limit",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolution",
+      "to": "wl.favicon.advertise",
+      "type": "contains"
+    },
+    {
+      "from": "wl.favicon.advertise",
+      "to": "wl.favicon.advertise.no-favicon-url",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.favicon.advertise",
+      "to": "wl.favicon.advertise.files-present",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.favicon.advertise",
+      "to": "wl.favicon.advertise.window-before-generation",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.switches",
+      "to": "wl.switch.store-master",
+      "type": "contains"
+    },
+    {
+      "from": "wl.switch.store-master",
+      "to": "wl.switch.store-master.disable",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.switch.store-master",
+      "to": "wl.switch.store-master.enable",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.switch.store-master",
+      "to": "wl.switch.store-master.off-suppresses-all",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.switch.store-master",
+      "to": "wl.switch.store-master.on-record-gate-applies",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.switches",
+      "to": "wl.switch.record-enabled",
+      "type": "contains"
+    },
+    {
+      "from": "wl.switch.record-enabled",
+      "to": "wl.switch.record-enabled.enable",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.switch.record-enabled",
+      "to": "wl.switch.record-enabled.disable",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolution",
+      "to": "wl.resolve",
+      "type": "contains"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.merge-per-field",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.org-partial-inherits-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.org-record-absent-falls-back",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.org-record-disabled-falls-back",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.store-record-off-org-survives",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.neither-enabled-null",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.unknown-organization-id",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.signed-in-org-context",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.guest-store-branding",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.domain-resolves-store-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.custom-domain-org-branding",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.store-not-resolvable",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve",
+      "to": "wl.resolve.save-reaches-storefront",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolution",
+      "to": "wl.resolve.link-lists",
+      "type": "contains"
+    },
+    {
+      "from": "wl.resolve.link-lists",
+      "to": "wl.resolve.link-lists.empty-or-unknown-name",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve.link-lists",
+      "to": "wl.resolve.link-lists.footer-org-name-fallback",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve.link-lists",
+      "to": "wl.resolve.link-lists.main-menu-no-module-fallback",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.resolve.link-lists",
+      "to": "wl.resolve.link-lists.priority-order",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.header-logo",
+      "type": "contains"
+    },
+    {
+      "from": "wl.render.header-logo",
+      "to": "wl.render.header-logo.theme-default-when-empty",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.header-logo",
+      "to": "wl.render.header-logo.invalid-url-placeholder",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.header-logo",
+      "to": "wl.render.header-logo.mobile-drawer-source",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.footer",
+      "type": "contains"
+    },
+    {
+      "from": "wl.render.footer",
+      "to": "wl.render.footer.top-level-as-header",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.footer",
+      "to": "wl.render.footer.storefront-footer-links-fallback",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.main-menu",
+      "type": "contains"
+    },
+    {
+      "from": "wl.render.main-menu",
+      "to": "wl.render.main-menu.empty-falls-to-catalog-menu",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.favicon",
+      "type": "contains"
+    },
+    {
+      "from": "wl.render.favicon",
+      "to": "wl.render.favicon.advertised-hrefs-missing",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.favicon",
+      "to": "wl.render.favicon.default-when-empty",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.theme-preset",
+      "type": "contains"
+    },
+    {
+      "from": "wl.render.theme-preset",
+      "to": "wl.render.theme-preset.name-normalised",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.theme-preset",
+      "to": "wl.render.theme-preset.unresolvable-falls-to-bundled-default",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.theme-preset",
+      "to": "wl.render.theme-preset.neither-resolves-throws",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.brand-markup",
+      "type": "contains"
+    },
+    {
+      "from": "wl.rendering",
+      "to": "wl.render.org-switch",
+      "type": "contains"
+    },
+    {
+      "from": "wl.render.org-switch",
+      "to": "wl.render.org-switch.dynamics-flash-stale",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.self-service",
+      "to": "wl.company-logo",
+      "type": "contains"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.upload-save",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.creates-enabled-record",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.type-and-size-allowed",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.size-boundary",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.disallowed-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.record-lookup-duplicate",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.permission",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.removal",
+      "to": "wl.reverse.record-removal",
+      "type": "contains"
+    },
+    {
+      "from": "wl.reverse.record-removal",
+      "to": "wl.reverse.record-removal.no-delete-path",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.removal",
+      "to": "wl.reverse.per-image-clear",
+      "type": "contains"
+    },
+    {
+      "from": "wl.reverse.per-image-clear",
+      "to": "wl.reverse.per-image-clear.angularjs-clear-then-save",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.reverse.per-image-clear",
+      "to": "wl.reverse.per-image-clear.angularjs-reset",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.reverse.per-image-clear",
+      "to": "wl.reverse.per-image-clear.shell-null-on-save",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.reverse.per-image-clear",
+      "to": "wl.reverse.per-image-clear.falls-back-to-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.removal",
+      "to": "wl.reverse.company-logo-delete",
+      "type": "contains"
+    },
+    {
+      "from": "wl.reverse.company-logo-delete",
+      "to": "wl.reverse.company-logo-delete.file-not-deleted",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.reverse.company-logo-delete",
+      "to": "wl.reverse.company-logo-delete.store-or-default-logo-follows",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.removal",
+      "to": "wl.reverse.org-delete-orphans-record",
+      "type": "contains"
+    },
+    {
+      "from": "wl.state.org-record.absent",
+      "to": "wl.state.org-record.present-disabled",
+      "type": "transitions_to",
+      "via": "wl.record.create.blade-first-save-off"
+    },
+    {
+      "from": "wl.state.org-record.absent",
+      "to": "wl.state.org-record.present-enabled",
+      "type": "transitions_to",
+      "via": "wl.record.create.blade-first-save-on"
+    },
+    {
+      "from": "wl.state.org-record.absent",
+      "to": "wl.state.org-record.present-enabled",
+      "type": "transitions_to",
+      "via": "wl.company-logo.creates-enabled-record",
+      "note": "the storefront path creates ON where the back office creates OFF (D5)"
+    },
+    {
+      "from": "wl.state.org-record.present-disabled",
+      "to": "wl.state.org-record.present-enabled",
+      "type": "transitions_to",
+      "via": "wl.switch.record-enabled.enable"
+    },
+    {
+      "from": "wl.state.org-record.present-enabled",
+      "to": "wl.state.org-record.present-disabled",
+      "type": "transitions_to",
+      "via": "wl.switch.record-enabled.disable"
+    },
+    {
+      "from": "wl.state.store-switch.on",
+      "to": "wl.state.store-switch.off",
+      "type": "transitions_to",
+      "via": "wl.switch.store-master.disable"
+    },
+    {
+      "from": "wl.state.store-switch.off",
+      "to": "wl.state.store-switch.on",
+      "type": "transitions_to",
+      "via": "wl.switch.store-master.enable"
+    },
+    {
+      "from": "wl.render.org-switch",
+      "to": "b2b.switcher.pick",
+      "type": "depends_on",
+      "note": "the switch asks the server for a token in the new organization; branding re-resolves on it"
+    },
+    {
+      "from": "wl.resolve.signed-in-org-context",
+      "to": "b2b.context.scope.white-labeling",
+      "type": "affected_by",
+      "note": "the b2b map states the same rule from its side (UNVERIFIED there)"
+    },
+    {
+      "from": "wl.resolve.signed-in-org-context",
+      "to": "auth.state.session.signed-in",
+      "type": "affected_by",
+      "note": "organizationId comes from the signed-in session"
+    },
+    {
+      "from": "wl.resolve.guest-store-branding",
+      "to": "auth.state.session.anonymous",
+      "type": "affected_by",
+      "note": "a guest has no organizationId, so only the store record resolves"
+    },
+    {
+      "from": "wl.reverse.org-delete-orphans-record",
+      "to": "b2b.org.identity.delete-orphans-memberships",
+      "type": "affected_by",
+      "note": "organization delete leaves other rows behind too; the b2b node is the same defect class for memberships"
+    },
+    {
+      "from": "wl.company-logo.permission",
+      "to": "b2b.org.identity.company-info-edit",
+      "type": "affected_by",
+      "note": "the Company info edit controls are permission-gated on the b2b side"
+    },
+    {
+      "from": "wl.render.favicon.advertised-hrefs-missing",
+      "to": "wl.favicon.advertise.window-before-generation",
+      "type": "depends_on",
+      "note": "the permanent form of the async window"
+    },
+    {
+      "from": "wl.company-logo.upload-save",
+      "to": "wl.resolve.merge-per-field",
+      "type": "depends_on",
+      "note": "the saved org logo shows through the per-field merge"
+    },
+    {
+      "from": "wl.reverse.per-image-clear.falls-back-to-store",
+      "to": "wl.resolve.merge-per-field",
+      "type": "depends_on"
+    },
+    {
+      "from": "wl.reverse.company-logo-delete",
+      "to": "wl.company-logo.upload-save",
+      "type": "depends_on"
+    }
+  ]
+}
