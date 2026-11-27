@@ -2423,13 +2423,19 @@
           "ref": "domain-map:wl@rev1 section 1 link 2",
           "note": "ChangeOrganizationLogoCommandHandler: logoUrl must start /api/files/",
           "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-FC2150C5",
+          "note": "upload to scope organization-logos then changeOrganizationLogo as the organization maintainer returned isSuccess true; xAPI whiteLabelingSettings then returned the new logo with isOrganizationLogoUploaded true",
+          "date": "2026-11-27"
         }
       ],
       "interfaces": [
         "storefront",
         "graphql"
       ],
-      "notes": "The upload and mutation were not exercised (read-only passes). Header then shows the org logo through wl.resolve.merge-per-field."
+      "notes": "Upload and mutation exercised on a disposable organization on 2026-11-27. Header then shows the org logo through wl.resolve.merge-per-field."
     },
     {
       "id": "wl.company-logo.creates-enabled-record",
@@ -2505,7 +2511,7 @@
       "name": "Picking a disallowed type is refused with no upload and no uncaught error",
       "branch_kind": "negative",
       "technique": "EP",
-      "status": "DRIFT",
+      "status": "UNVERIFIED",
       "evidence": [
         {
           "class": "OBSERVED",
@@ -2518,24 +2524,26 @@
           "ref": "kb:KB-5BC4EC37",
           "note": "a PR build of the theme (vc-frontend#2612) showed the refusal with no exception",
           "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-frontend@2.63.0 commit 53042100a (#2612, VCST-6288)",
+          "note": "the fix is in theme 2.63.0, the build on vcst; Jira VCST-6288 is Done (2026-11-03). The commit makes the files[0] status read null-safe; it does not by itself prove the url TypeError of KB-5BC4EC37 is gone",
+          "date": "2026-11-27"
         }
       ],
       "interfaces": [
         "storefront"
       ],
-      "drift": {
-        "expected": "a refused pick shows the inline refusal and nothing else (no uncaught exception)",
-        "observed": "the refusal plus a hidden TypeError (reading url) recorded only in App Insights (KB-5BC4EC37, theme 2.61.0, 2026-10-29)",
-        "route": "VCST-6288 (fix build vc-frontend#2612)"
-      }
+      "notes": "History: DRIFT against VCST-6288 until the fix; VCST-6288 is now Done and the fix ships in 2.63.0. Live re-check on vcst is FWL-074 (blocked on the file picker in the 2026-11-27 run), so the node stays UNVERIFIED until that case runs."
     },
     {
       "id": "wl.company-logo.record-lookup-duplicate",
       "type": "branch",
-      "name": "On an organization whose record is disabled the mutation may create a second record, skipping the validator",
+      "name": "On an organization whose record is disabled the mutation creates a second enabled record, skipping the validator",
       "branch_kind": "negative",
       "technique": "EG",
-      "status": "UNVERIFIED",
+      "status": "DRIFT",
       "evidence": [
         {
           "class": "DOC",
@@ -2547,6 +2555,18 @@
           "class": "HYPOTHESIS",
           "ref": "domain-map:wl@rev1 section 1 sibling-guard hypothesis",
           "note": "the outcome - two records for one organization - was not observed; DB constraint unread (G5)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-FC2150C5",
+          "note": "probe on a disposable organization with one disabled record: changeOrganizationLogo returned isSuccess true and a second record (enabled, logoUrl only) appeared; the first stayed unchanged",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F1605A45",
+          "note": "GET /api/white-labeling/organization/{id} returns the newest record whatever its isEnabled, so it hides the older duplicate; xAPI resolves the enabled one",
+          "date": "2026-11-27"
         }
       ],
       "oracle_refs": [
@@ -2556,7 +2576,12 @@
         "graphql",
         "rest"
       ],
-      "notes": "The guard the sibling path lacks: REST/blade writers run the binding validator, this one does not. Needs the mutation on a disposable organization, then GET /api/white-labeling/organization/{id}. If confirmed it is a defect against BL-WL-005 and this node becomes DRIFT."
+      "notes": "The guard the sibling path lacks: REST/blade writers run the binding validator, this one does not. Observed 2026-11-27 on a disposable organization; the handler is unchanged since 2025-03-03, so this is not new behaviour. Whether the intended result is update, refuse or create is a product decision (open in VCST-7056). A second call updates the new record in place.",
+      "drift": {
+        "expected": "one record per organization; the same binding rules as the REST write path, which answers duplicate-store-or-organization (BL-WL-005)",
+        "observed": "two records for one organization, isSuccess true, no error, no validator call; xAPI returns the new record with isOrganizationLogoUploaded true (vcst, platform 3.1101.0, WhiteLabeling 3.1008.0, 2026-11-27)",
+        "route": "VCST-7056"
+      }
     },
     {
       "id": "wl.company-logo.permission",
@@ -2838,6 +2863,90 @@
       ],
       "technique": "EG",
       "notes": "integrates with: b2b-organizations - organization delete. The orphan's GUID can still be passed as organizationId; what that resolves to is wl.resolve.unknown-organization-id."
+    },
+    {
+      "id": "wl.company-logo.repeat-call-updates-record",
+      "type": "branch",
+      "name": "A second logo change updates the record the first one created, no third record",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-FC2150C5",
+          "note": "second upload and mutation on the same organization left the record count unchanged and updated the enabled record in place",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "Follows wl.company-logo.record-lookup-duplicate: once an enabled record exists the lookup finds it."
+    },
+    {
+      "id": "wl.render.org-switch.single-org-hidden",
+      "type": "branch",
+      "name": "A user who belongs to one organization sees no organization switcher",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "QA lead statement in the 2026-11-27 lifecycle session (not a document)",
+          "note": "the organization switcher is meant to be visible only for users in more than one organization",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/bottom-header.vue (mainMenuItems filter)",
+          "note": "the organizations menu item is dropped unless the user is multi-organization; the source comment says it is for members of several organizations",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Not observed. The multi-organization account WL_USER_MULTI shows the Organizations switcher (observed 2026-11-27, FWL-028). A single-organization account (WL_USER_ELECTRONICS) has not been checked for its absence. integrates with: b2b-organizations - switcher. A screenshot from the QA lead (2026-11-27, /brands on the vcst storefront) shows the Organizations switcher open for a buyer who belongs to two organizations; it shows presence for a multi-organization buyer, not absence for a single-organization one."
+    },
+    {
+      "id": "wl.render.main-menu.children-not-on-desktop-bar",
+      "type": "branch",
+      "name": "On desktop the organization main menu shows its top-level entries as plain links; child entries have no hover dropdown and are reached in the mobile drawer",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue",
+          "note": "each visible item is a plain link; the All products popover holds pinned links and the category tree, not the white-labeling menu children",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-11-27-1325-WLV FWL-021/FWL-024/FWL-029/FWL-044",
+          "note": "hover and Enter on a top-level entry with childItems open no dropdown; a click navigates to the entry route",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-ABAEAFCD",
+          "note": "2.63.0 mega-menu renders top-level titles only",
+          "date": "2026-11-27"
+        },
+        {
+          "class": "SPEC",
+          "ref": "QA lead statement in the 2026-11-27 lifecycle session",
+          "note": "works as designed: not a defect",
+          "date": "2026-11-27"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Decided as design by the QA lead on 2026-11-27, so FWL-021, 022, 024, 029 and 044 assert top-level links only on desktop. The children stay reachable in the mobile drawer (FWL-023). Applies to the header design on vcst (All products button); the classic header has a Catalog dropdown over the same list, not checked."
     }
   ],
   "edges": [
@@ -3436,6 +3545,22 @@
       "from": "wl.reverse.company-logo-delete",
       "to": "wl.company-logo.upload-save",
       "type": "depends_on"
+    },
+    {
+      "from": "wl.company-logo",
+      "to": "wl.company-logo.repeat-call-updates-record",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.org-switch",
+      "to": "wl.render.org-switch.single-org-hidden",
+      "type": "branches_to"
+    },
+    {
+      "from": "wl.render.main-menu",
+      "to": "wl.render.main-menu.children-not-on-desktop-bar",
+      "type": "branches_to"
     }
-  ]
+  ],
+  "amended": "2026-11-27"
 }

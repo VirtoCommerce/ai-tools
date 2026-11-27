@@ -1,18 +1,25 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"FWL-001","Enable thumbnail job for favicons","Backend Jobs","Medium","BL-WL-001",,"[EXCLUSIVE:platform thumbnail job (ImageTools)] [PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-White Labeling module installed; Admin access to backend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin at {{BACK_URL}}
-[ACT] 2. Sign in with admin credentials
-[NAV] 3. Navigate to Settings > Jobs
-[ACT] 4. Locate thumbnail generation job
-[ACT] 5. Enable the job
-[ACT] 6. Add new run for favicon generation
-[WAIT] 7. Wait for job completion
-[NAV] 8. Navigate to White Labeling settings
-[ASSERT] 9. Verify favicons generated in multiple sizes","[DOM] Thumbnail job status shows Enabled
-[DOM] whiteLabelingSettings.favicons array contains entries for 16x16, 32x32, 180x180, 192x192, 512x512
-[STATE] Job run completes without errors","[ADMIN] job run status shows Success
-[CONSOLE] no uncaught JS errors","Favicons not generated; Thumbnail job fails to run; Sizes missing from favicons array","restore original job state","C389425",Draft
+"FWL-001","Favicon thumbnails — with the ImageTools job enabled, every advertised favicons[] href is suffixed with its size and returns HTTP 200",Whitelabeling > Favicon,"Medium","BL-WL-001",,"[EXCLUSIVE:platform thumbnail job (ImageTools)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin and xAPI only (no storefront sign-in). Organization @td(WL_ELECTRONICS.name) has a record with a favicon. The control is Settings > Thumbnail > General ""Enable image processing job"" (setting ImageTools.Thumbnails.EnableImageProcessJob; false on vcst when observed); record the prior value and restore it in Cleanup. favicons[] is computed from faviconUrl whenever it is set; the FILES exist only after the thumbnail task ran. The sizes come from the xAPI answer (the module declares the list) — they are not transcribed here. The storefront half (the tab icon when the files are missing) is the favicon-after-sign-in case","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/ImageTools.Thumbnails.EnableImageProcessJob - [CAPTURE] value as PRIOR_JOB
+[NAV] open {{BACK_URL}} (Admin SPA)
+[ACT] click 'Settings' in the main menu
+[WAIT] the Settings workspace opens
+[ACT] open 'Thumbnail'
+[ACT] open the group 'General'
+[WAIT] the group shows its settings
+[ACT] switch 'Enable image processing job' to ON
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[WAIT] up to 5 minutes, polling every 30 seconds, until the thumbnail files of the organization favicon exist (the first advertised href returns 200)
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] favicons[] as FAV","[COUNT] FAV has at least one entry
+[REL] for each FAV entry the href ends with ""_"" + its sizes value + the extension of faviconUrl (the size is part of the file name the entry advertises)
+[SHAPE] every FAV entry href returns HTTP 200 once the job has run
+[REL] the sizes of the FAV entries are pairwise different","[API] the xAPI response has errors[] empty
+[ADMIN] Settings > Thumbnail > General shows the job ON after the save
+[CONSOLE] no uncaught JS errors",no favicons[] entry although faviconUrl is set; an entry whose href lacks its size suffix; a href answers 404 after the job ran; the job never produces files within 5 minutes,"switch 'Enable image processing job' back to PRIOR_JOB, click 'Save'; confirm GET /api/platform/settings/ImageTools.Thumbnails.EnableImageProcessJob = PRIOR_JOB","C389425 · Behavior:wl.render.favicon · Behavior:wl.favicon.advertise.files-present · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (_faviconsSizes, AddFaviconsAsync) + ImageTools settings; Docs: PlatformUserGuide white-labeling; KB-D4EEDC37 · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "FWL-002","Store and organization have no whitelabeling settings - default branding displayed","Store Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Store exists with White Labeling enabled but no custom settings; Organization exists with no branding configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
 [ACT] 2. Open White Labeling settings tab
@@ -29,112 +36,89 @@ Store exists with White Labeling enabled but no custom settings; Organization ex
 [STATE] Default theme preset colors applied
 [DOM] No organization-specific branding visible","[CONSOLE] no uncaught JS errors
 [NETWORK] logo image loads with HTTP 200","Custom logo shown instead of default; Custom favicon shown; Theme overridden unexpectedly","none","C390295","Manual"
-"FWL-003","Store has whitelabeling settings but organization does not - store defaults shown","Store Settings","High","BL-WL-002",,"[EXCLUSIVE:the store's White Labeling (logo, favicon, theme preset)] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Store has White Labeling enabled with custom logo/favicon/theme; Organization has White Labeling enabled but no custom settings","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Upload store-level logo: store-logo.png
-[ACT] 4. Upload store-level favicon: store-favicon.ico
-[ACT] 5. Set theme preset: Coffee
-[ACT] 6. Save store settings
-[NAV] 7. Navigate to Customer > Organizations > Org Without Branding
-[ACT] 8. Open White Labeling settings
-[ASSERT] 9. Verify Enabled = ON but no custom logo/favicon/theme
-[ACT] 10. Save organization settings
-[NAV] 11. Sign in to storefront with user from Org Without Branding
-[NAV] 12. Navigate to homepage
-[ASSERT] 13. Inspect header logo (should show store logo)
-[ASSERT] 14. Inspect favicon (should show store favicon)
-[ASSERT] 15. Inspect theme colors (should be Coffee preset)","[DOM] Store logo displayed in header (store-logo.png)
-[DOM] Store favicon displayed in browser tab
-[STATE] Coffee theme colors applied
-[DOM] No org-specific branding overrides present","[CONSOLE] no uncaught JS errors
-[NETWORK] logo image loads with HTTP 200","Org overrides shown when org has no branding; Default branding shown instead of store branding; Wrong theme applied","restore store to previous settings; restore org settings","C390296 VCST-1634",Draft
-"FWL-009","Store-level White Labeling = OFF - organization branding disabled regardless of org settings","Store Settings","High","BL-WL-002",,"[EXCLUSIVE:the store's White Labeling (logo, favicon, theme preset)] [PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Store @td(STORE_PRIMARY.id) has White Labeling setting; Organization Company1 has custom branding configured with Enabled = ON","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Set store-level White Labeling = OFF
-[ACT] 4. Save store settings
-[NAV] 5. Navigate to Customer > Organizations > Company1
-[ASSERT] 6. Verify Company1 has Enabled = ON with custom logo/favicon
-[NAV] 7. Sign in to storefront with Company1 user
-[NAV] 8. Navigate to homepage
-[ASSERT] 9. Inspect header logo
-[ASSERT] 10. Inspect favicon
-[ASSERT] 11. Inspect theme","[DOM] Default platform branding displayed (NOT Company1 custom branding)
-[STATE] Organization settings ignored when store-level WL is OFF
-[DOM] Default logo and favicon shown","[CONSOLE] no uncaught JS errors","Org branding shown when store WL is OFF; Store WL OFF not acting as master switch","restore store White Labeling = ON","C389429",Draft
-"FWL-011","Add parent footer links for organization - displayed in storefront footer","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) exists; White Labeling enabled; Link list feature available","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Marketing > Link Lists
-[ACT] 2. Create new link list: footer-org1
-[ACT] 3. Add parent links: About Us (URL: /about, Priority: 1), Customer Support (URL: /support, Priority: 2), Legal (URL: /legal, Priority: 3)
-[ACT] 4. Save link list
-[NAV] 5. Navigate to Customer > Organizations > @td(WL_ELECTRONICS.name)
-[ACT] 6. Open White Labeling settings
-[ACT] 7. Set Footer Link List: footer-org1
-[ACT] 8. Save organization settings
-[NAV] 9. Sign in to storefront with @td(WL_ELECTRONICS.name) user
-[SCROLL] 10. Scroll to footer
-[ASSERT] 11. Inspect footer links structure","[DOM] Three parent sections visible: About Us, Customer Support, Legal
-[DOM] Links displayed in priority order (1, 2, 3)
-[DOM] Link titles match configured values
-[NAV] Link URLs correct: /about, /support, /legal","[CONSOLE] no uncaught JS errors
-[NETWORK] footer link list data loaded successfully","Wrong footer links shown; Priority order not respected; Footer links absent entirely","remove footer-org1 link list from org; delete link list","C389431","Manual"
-"FWL-012","Add children footer links under parent - hierarchical structure displayed","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) has parent footer links configured (state from FWL-011: footer-org1 link list assigned)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > footer-org1
-[ACT] 2. Expand parent link: Customer Support
-[ACT] 3. Add child links: Contact Us (URL: /contact, Priority: 1), FAQ (URL: /faq, Priority: 2), Returns (URL: /returns, Priority: 3)
-[ACT] 4. Save link list
-[NAV] 5. Refresh storefront (signed in as @td(WL_ELECTRONICS.name) user)
-[SCROLL] 6. Scroll to footer
-[ASSERT] 7. Inspect Customer Support section
-[ASSERT] 8. Verify child links nested under parent","[DOM] Customer Support parent link visible
-[DOM] Three child links nested under Customer Support: Contact Us, FAQ, Returns
-[DOM] Child links indented or visually grouped under parent
-[DOM] Priority order respected (Contact Us first, Returns last)
-[NAV] Child link URLs correct when clicked","[CONSOLE] no uncaught JS errors
-[NETWORK] hierarchical link list data loads correctly","Child links not visible; Children shown under wrong parent; Priority order wrong; Other parent sections (About Us, Legal) broken","remove child links added in test; revert to parent-only structure","C389432","Manual"
-"FWL-013","Verify footer links returned in whiteLabelingSettings GraphQL query","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with footer links configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
-[ACT] 2. Execute whiteLabelingSettings query with footerLinks field (cultureName is REQUIRED — omitting it returns empty footerLinks/mainMenuLinks even though they are configured):
+"FWL-003",Organization with an enabled but EMPTY record — the member sees the store's logo and preset (field-by-field fallback),Whitelabeling > Resolution,"High","BL-WL-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_DEFAULT_EMPTY_RECORD]
+READ-ONLY — no store mutation. NEEDS FIXTURE FR-1: an organization with an ENABLED record that carries no logo, favicon, preset or list names, plus an employee account in it; no alias exists yet, so this case is NOT executable until FR-1 is seeded and its alias replaces the placeholder in the sign-in tag above. Store {{STORE_ID}} has an enabled record with a logo and a preset. Image types in the back office are PNG/WEBP for the favicon; the organization menu path is Contacts > row three-dots > Manage > White labeling. Observed 2026-11-26: an organization user sees the store logo and preset; the preset is compared through <html data-preset> and against the guest page's colour, never with a literal colour and never with a preset file (theme 2.63.0 bundles the presets and requests none)","storefront={{FRONT_URL}}, store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO and themePresetName as STORE_PRESET
+[ASSERT] the FR-1 organization record is enabled and its logoUrl, themePresetName, mainMenuLinkListName and footerLinkListName are all empty (GET /api/white-labeling/organization/<FR-1 org id>)
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as the FR-1 employee
+[WAIT] the signed-in home page renders
+[ASSERT] note the computed --color-primary-500 on :root as SIGNED_PRIMARY and <html data-preset> as SIGNED_PRESET","[REL] the header logo src path ends with the path of STORE_LOGO
+[REL] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-"" (a guest sees the store's preset) and SIGNED_PRESET equals the same value (the empty record contributes no preset)
+[REL] SIGNED_PRIMARY equals GUEST_PRIMARY (the member sees the store's palette, the organization record being empty)
+[REL] the header menu titles equal the titles of the store-keyed xAPI mainMenuLinks (the empty organization contributes none)
+[SHAPE] no organization-specific logo path appears in the page HTML","[API] xAPI whiteLabelingSettings(organizationId, storeId) has errors[] empty and logoUrl = STORE_LOGO
+[CONSOLE] no uncaught JS errors
+[NETWORK] the logo image loads with HTTP 200",the theme default logo shows although the store has one; the organization is treated as branded; the palette differs from the store preset,Sign out of the employee context; nothing was written,"C390296 VCST-1634 · Behavior:wl.resolve.org-record-absent-falls-back · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-009","Store setting WhiteLabeling.WhiteLabelingEnabled = false — default logo, palette and catalog menu for the organization member; back to true — the organization branding returns",Whitelabeling > Store master switch,"High","BL-WL-002",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Step 3 sets the STORE SETTING WhiteLabeling.WhiteLabelingEnabled (Stores > store > Settings widget > group White Labeling), NOT the White labeling blade's Enabled toggle (that is FWL-072). The setting is stored explicitly true on {{STORE_ID}}; organization @td(WL_ELECTRONICS.name) replaces ""Company1"" and has an enabled record with its own logo and preset","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO and themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/stores/{{store_id}} - [CAPTURE] settings[?name=WhiteLabeling.WhiteLabelingEnabled].value as PRIOR_SWITCH
+[NAV] open {{BACK_URL}} (Admin SPA)
+[ACT] click 'Stores' in the main menu
+[WAIT] the Stores grid opens
+[ACT] click the row '{{store_id}}'
+[WAIT] the store blade opens
+[ACT] click the widget 'Settings'
+[WAIT] the settings blade opens
+[ACT] set 'WhiteLabeling.WhiteLabelingEnabled' to false
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered
+--- reversal ---
+[ACT] in the admin context set 'WhiteLabeling.WhiteLabelingEnabled' to true
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] reload {{FRONT_URL}} in the member context
+[WAIT] the home page renders","[REL] with the setting false the header logo src path does NOT end with the path of REC_LOGO (the default theme logo shows)
+[REL] with the setting false the computed --color-primary-500 differs from color_primary_500 of REC_PRESET and the header menu is the default catalog menu
+[NETWORK] with the setting false no request is made for the organization logo or its preset file
+[REL] after the setting is true again the header logo src path ends with the path of REC_LOGO and the primary colour equals color_primary_500 of REC_PRESET","[CONSOLE] no uncaught JS errors
+[API] GET /api/stores/{{store_id}} reports the setting false then true",organization branding still applied while the setting is false; branding does not return after true; the blade Enabled toggle changed as a side effect,"Set WhiteLabeling.WhiteLabelingEnabled back to PRIOR_SWITCH (stored explicitly true) in Stores > Settings, click Save and confirm GET /api/stores/{{store_id}}; sign out",C389429 · Behavior:wl.switch.store-master.off-suppresses-all · Behavior:wl.switch.store-master.disable · Behavior:wl.switch.store-master.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 ModuleConstants; Docs: PlatformUserGuide white-labeling settings; KB-6C0AA08A; BL-WL-003 · Synced: qa-suite-sync wl (2026-11-27),Draft
+"FWL-013","Footer links in whiteLabelingSettings — the two section headers and their children, mapped by title to link-list priority (array order is not asserted)","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","Runner-native, read-only. Admin token. Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has footer list @td(WL_ELECTRONICS.footer): section headers Legal and Help, each with two child links. The footer is hierarchical: top level = section header, children = the links (vc-frontend footer-links.vue). The xAPI returns arrays in descending priority and the storefront sorts (KB-3239DE5F)","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); p_legal=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Legal, priority); p_help=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Help, priority); p_privacy=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Privacy Policy, priority)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP wl]
 query {
-  whiteLabelingSettings(
-    organizationId: ""@td(WL_ELECTRONICS.id)""
-    storeId: ""@td(STORE_PRIMARY.id)""
-    cultureName: ""en-US""
-  ) {
-    footerLinks {
-      title
-      url
-      priority
-      childItems {
-        title
-        url
-        priority
-      }
-    }
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
+    footerLinks { title url priority childItems { title url priority } }
   }
 }
-[ASSERT] 3. Verify response structure
-[ASSERT] 4. Verify data matches admin configuration","[DOM] Response includes footerLinks array with 2 top-level SECTION entries from @td(WL_ELECTRONICS.footer) in priority order: Legal (1), Help (2) — each is a section header, not a leaf link
-[DOM] Legal has childItems in order: Privacy Policy (1), Terms of Service (2) — each url non-empty
-[DOM] Help has childItems in order: Support (1), Warranty (2) — each url non-empty
-[DOM] childItems is populated (footer is hierarchical: top-level = section header, children = the actual links — matches the footer render contract in vc-frontend footer-links.vue)
-[DOM] Data matches the @td(WL_ELECTRONICS.footer) link list configured in admin","[API] whiteLabelingSettings query returns correct footerLinks fields
-[API] errors[] is empty in GraphQL response","GraphQL errors in response; footerLinks field missing or null; childItems not returned; Data mismatch with admin config","none","C389433 VCST-4637","Manual"
-"FWL-014","Set footer link list for organization - footer links displayed after sign-in","Footer Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) exists; Footer link list configured: @td(WL_ELECTRONICS.footer)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_ELECTRONICS.name)
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Set Footer Link List Name: @td(WL_ELECTRONICS.footer)
-[ACT] 4. Save settings
-[NAV] 5. Sign in to storefront with @td(WL_ELECTRONICS.name) user
-[NAV] 6. Navigate to homepage
-[SCROLL] 7. Scroll to footer
-[ASSERT] 8. Inspect footer links","[DOM] Footer shows 2 section columns from @td(WL_ELECTRONICS.footer): Legal, Help — the section title is a bold, NON-clickable header (renders as text, not an anchor — by design)
-[DOM] Under Legal: Privacy Policy, Terms of Service; under Help: Support, Warranty — these are the clickable anchors
-[DOM] Links are organization-specific (not default footer)
-[NAV] Clicking each CHILD link (Privacy Policy / Terms of Service / Support / Warranty) navigates without a 404; the section headers themselves are not focusable/clickable (expected)
-[STATE] Footer links persist across page navigation","[CONSOLE] no uncaught JS errors
-[NETWORK] footer link data loads successfully","Default footer shown instead of org footer; Links from wrong org shown; Wrong labels or order","restore org FooterLinkListName to original","C389434","Manual"
+[GQL-EXEC wl]","[ERRORS label=wl] errors[] empty
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].priority = {{p_legal}}
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Help].priority = {{p_help}}
+[COUNT label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].childItems.length = 2
+[COUNT label=wl] data.whiteLabelingSettings.footerLinks[?title=Help].childItems.length = 2
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].childItems[?title=Privacy Policy].priority = {{p_privacy}}
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].childItems[?title=Privacy Policy].url is non-null","[API] the answer is for the organization GUID, not the fixture key",errors[] non-empty; footerLinks missing or null; childItems not returned; a title maps to another priority,none,C389433 VCST-4637 · Behavior:wl.resolve.link-lists.priority-order · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-3239DE5F · Synced: qa-suite-sync wl (2026-11-27),Draft
+"FWL-014","Organization footer after sign-in — two section columns, section titles are non-clickable headers, only the children are links","Footer Links","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only. Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has footer list @td(WL_ELECTRONICS.footer) configured (Legal and Help, two children each); the old step that re-typed the list name in the admin is dropped (it re-saved the fixture for nothing)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] footerLinks as FOOTER
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[SCROLL] scroll to the footer
+[WAIT] the footer columns are visible
+[ACT] click the first child link of the first footer column
+[WAIT] the page loads
+[NAV] navigate back to the home page
+[WAIT] the home page renders","[REL] the footer column header texts equal the titles in FOOTER (order-independent)
+[REL] for each column the link texts equal the child titles of the same FOOTER entry
+[STATE] no column header is an anchor and none is focusable (the header renders as text)
+[NAV] after clicking a child link the URL changes and the page does not show a 404","[CONSOLE] no uncaught JS errors
+[NETWORK] footer data comes from the xAPI call with no 4xx/5xx",the store footer shows instead of the organization footer; a section header is a link; a child link leads to a 404; columns missing,Sign out (account menu > Logout),"C389434 · Behavior:wl.render.footer · Behavior:wl.render.footer.top-level-as-header · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "FWL-015","Verify administrator role has access to White Labeling logo management","User Roles","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Administrator user account exists; White Labeling module installed","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Sign in to Admin at {{BACK_URL}} with administrator credentials
 [NAV] 2. Navigate to Customer > Organizations > Any Organization
@@ -150,254 +134,228 @@ Administrator user account exists; White Labeling module installed","admin={{BAC
 [STATE] Save button enabled
 [STATE] Settings save successfully without permission errors","[ADMIN] settings saved successfully
 [CONSOLE] no permission-related JS errors","White Labeling tab hidden; Upload controls disabled; Permission errors on save","restore any changed settings","C398718 VCST-2627","Manual"
-"FWL-016","Verify organization logo displayed in header after sign-in","Storefront Display","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) has custom logo configured: @td(WL_ELECTRONICS.logo); User account exists for @td(WL_ELECTRONICS.name)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to {{FRONT_URL}}
-[ASSERT] 2. Verify default logo shown before sign-in
-[ACT] 3. Click Sign In
-[ACT] 4. Enter credentials for @td(WL_ELECTRONICS.name) user
-[ACT] 5. Click Sign In button
-[WAIT] 6. Wait for redirect to homepage
-[ASSERT] 7. Inspect header navigation bar
-[ASSERT] 8. Verify logo element","[DOM] Header shows @td(WL_ELECTRONICS.logo) (NOT default logo)
-[DOM] Logo is clear and high quality (not pixelated)
-[DOM] Logo is properly sized (height matches header, no distortion)
-[NAV] Logo is clickable and links to homepage
-[STATE] Logo displays on all pages after sign-in (catalog, product, cart, account)","[CONSOLE] no uncaught JS errors
-[NETWORK] @td(WL_ELECTRONICS.logo) loads with HTTP 200","Default logo still shown after sign-in; Broken image in header; Logo links to wrong URL","none","VCST-4637","Manual"
-"FWL-017","Verify organization favicon displayed in browser tab after sign-in","Storefront Display","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) has custom favicon configured: @td(WL_ELECTRONICS.favicon)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open new browser tab
-[NAV] 2. Navigate to {{FRONT_URL}}
-[ASSERT] 3. Verify browser tab shows default Virto Commerce favicon before sign-in
-[ACT] 4. Sign in with @td(WL_ELECTRONICS.name) user
-[WAIT] 5. Wait for redirect after sign-in
-[ASSERT] 6. Inspect browser tab icon (favicon)
-[NAV] 7. Navigate to different pages (catalog, product page)
-[ASSERT] 8. Verify favicon persists","[DOM] Tab shows @td(WL_ELECTRONICS.favicon) (NOT default favicon)
-[DOM] Favicon displays correctly (32x32 icon visible)
-[STATE] Favicon persists across all pages after sign-in
-[STATE] Favicon remains when opening new tabs within same session","[CONSOLE] no uncaught JS errors
-[NETWORK] favicon request returns HTTP 200","Default favicon still shown after sign-in; Favicon reverts on navigation","none","VCST-4637","Manual"
-"FWL-018","Verify organization secondary logo displayed (if configured)","Storefront Display","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) has secondary logo configured; White Labeling supports secondaryLogoUrl field","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > @td(WL_ELECTRONICS.name)
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Secondary Logo URL is configured: @td(WL_ELECTRONICS.secondary_logo)
-[ACT] 4. Save if needed
-[NAV] 5. Sign in to storefront with user from this org
-[NAV] 6. Navigate to pages that display secondary logo (footer or specific components)
-[ASSERT] 7. Inspect secondary logo element","[DOM] Secondary logo image loads correctly
-[DOM] Image URL matches @td(WL_ELECTRONICS.secondary_logo)
-[DOM] Logo displays in appropriate location (footer, mobile menu, or designated area)
-[STATE] Falls back gracefully if not configured (no broken image)","[CONSOLE] no uncaught JS errors
-[NETWORK] secondary logo image loads with HTTP 200","Broken image where secondary logo should appear; Primary logo shown in secondary logo position","none","VCST-4637","Manual"
-"FWL-021","Verify main menu links displayed in header after sign-in (NEW - VCST-4637)","Main Menu Links","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) has main menu link list configured: @td(WL_ELECTRONICS.main_menu) with 5 top-level links, 1 with children; User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.main_menu)
-[ASSERT] 2. Verify structure: Home (priority 1); Brands (priority 2) with children Laptops (2.1) Phones (2.2) Tablets (2.3); Company (priority 3); Support (priority 4)
-[NAV] 3. Navigate to Admin > Organizations > @td(WL_ELECTRONICS.name)
-[ACT] 4. Set Main Menu Link List Name: @td(WL_ELECTRONICS.main_menu)
-[ACT] 5. Save
-[NAV] 6. Sign in to storefront with user from this org
-[ASSERT] 7. Inspect header navigation
-[ASSERT] 8. Verify main menu structure","[DOM] Top-level links visible in header: Home, Brands, Company, Support
-[DOM] Links displayed in priority order (1 to 4)
-[DOM] Hovering Brands shows dropdown: Laptops, Phones, Tablets
-[STATE] Home, Company, Support have no dropdowns
-[DOM] Main menu matches configured link list","[CONSOLE] no uncaught JS errors
-[API] whiteLabelingSettings query returns correct mainMenuLinks","Main menu not visible in header; Wrong links shown; Dropdown not appearing on hover; Priority order wrong","restore org MainMenuLinkListName to original","VCST-4637","Manual"
-"FWL-022","Verify main menu links hierarchical dropdown behavior (parent + children)","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with hierarchical main menu configured (state from FWL-021: @td(WL_ELECTRONICS.main_menu) assigned)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with user from @td(WL_ELECTRONICS.name)
-[NAV] 2. Navigate to homepage
-[ACT] 3. Hover over Brands parent link in header
-[ASSERT] 4. Observe dropdown menu
-[ASSERT] 5. Verify child links visible: Laptops, Phones, Tablets
-[ACT] 6. Hover over each child link (verify hover state)
-[ACT] 7. Click Laptops child link
-[ASSERT] 8. Verify navigation
-[NAV] 9. Return to homepage
-[ACT] 10. Hover over Home link (no children)
-[ASSERT] 11. Verify no dropdown appears","[DOM] Hovering parent link shows dropdown with children
-[STATE] Dropdown displays smoothly (no flicker)
-[DOM] Child links displayed in priority order
-[STATE] Hovering child link shows hover state (color change or underline)
-[NAV] Clicking child link navigates to correct URL
-[STATE] Dropdown closes when mouse leaves
-[STATE] Parent links without children have no dropdown","[CONSOLE] no uncaught JS errors","Dropdown not opening on hover; Wrong children shown; Navigation to wrong URL; Dropdown flickers; Hover state missing","none","VCST-4637","Manual"
-"FWL-023","Verify main menu links on mobile - hamburger menu with hierarchy","Main Menu Links","Critical","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile device or responsive viewport (375px width)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Resize browser to mobile viewport: 375px width (iPhone size)
-[NAV] 2. Sign in to storefront with user from @td(WL_ELECTRONICS.name)
-[NAV] 3. Navigate to homepage
-[ASSERT] 4. Locate hamburger menu icon in mobile header
-[ACT] 5. Tap hamburger icon
-[ASSERT] 6. Inspect mobile menu drawer
-[ASSERT] 7. Verify main menu structure in mobile view
-[ACT] 8. Tap Brands parent item
-[ASSERT] 9. Verify child links expand/collapse
-[ACT] 10. Tap Laptops child link
-[ASSERT] 11. Verify navigation","[DOM] Hamburger menu icon visible in mobile header
-[STATE] Tapping hamburger opens mobile menu drawer
-[DOM] Main menu links listed: Home, Brands, Company, Support
-[DOM] Brands has expand/collapse icon
-[STATE] Tapping Brands expands to show Laptops, Phones, Tablets
-[DOM] Child links are indented or visually nested
-[NAV] Tapping child link navigates correctly
-[STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding; Navigation broken on mobile; Menu not closing after tap","none","VCST-4637","Manual"
-"FWL-024","Verify main menu links navigation works correctly","Main Menu Links","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with main menu configured; Main menu links pointing to valid URLs","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with user from @td(WL_ELECTRONICS.name)
-[NAV] 2. Navigate to homepage
-[ACT] 3. Hover over Brands in main menu
-[ACT] 4. Click Laptops child link
-[ASSERT] 5. Verify URL changes to the Laptops link's configured route and the page loads (no 404)
-[ASSERT] 6. Verify page loads correctly
-[NAV] 7. Return to homepage
-[ACT] 8. Click Support link (no children)
-[ASSERT] 9. Verify navigation
-[ACT] 10. Test all main menu links (parent and child)","[NAV] Clicking child link changes URL to correct path
-[DOM] Page loads successfully (no 404 errors)
-[NAV] Clicking parent link without children navigates directly
-[NAV] Back button returns to previous page correctly
-[STATE] Navigation is fast and responsive","[CONSOLE] no JS errors during navigation","404 errors on navigation; Wrong URL after click; Page not loading; JavaScript errors on navigation","none","VCST-4637","Manual"
-"FWL-025","Verify fallback when no main menu link list configured for organization","Main Menu Links","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:WL_USER_FOOTER_ONLY]
-Organization @td(WL_FOOTER_ONLY.name) exists with White Labeling enabled but Main Menu Link List Name = NULL or empty (footer @td(WL_FOOTER_ONLY.footer) is configured); User account exists","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_FOOTER_ONLY.email), org_password=@td(WL_USER_FOOTER_ONLY.password)","[NAV] 1. Navigate to Admin > Organizations > @td(WL_FOOTER_ONLY.name)
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Main Menu Link List Name is empty or NULL
-[ACT] 4. Save
-[NAV] 5. Sign in to storefront with user from this org
-[NAV] 6. Navigate to homepage
-[ASSERT] 7. Inspect header navigation area
-[ASSERT] 8. Verify main menu display","[STATE] Application does NOT crash or show errors
-[DOM] Header layout is not broken
-[STATE] Other navigation elements (search, cart, account) work correctly
-[STATE] User can navigate site via search, footer, catalog pages","[CONSOLE] no uncaught JS errors","Application crash on missing main menu config; Header layout broken; Console errors about missing link list","none","VCST-4637","Manual"
-"FWL-026","Verify main menu links returned in whiteLabelingSettings GraphQL query (VCST-4637)","GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with main menu configured; GraphQL endpoint accessible","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/graphql
-[ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks field (cultureName is REQUIRED — omitting it returns empty mainMenuLinks/footerLinks even though they are configured):
+"FWL-016","Verify organization logo displayed in header after sign-in","Storefront Display","Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has a custom logo; the logo is compared by PATH SUFFIX against the live record (the relative alias value is stale, 404 on the storefront host)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] the guest header logo src path differs from the path of REC_LOGO
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders","[REL] the signed-in header logo src path ends with the path of REC_LOGO on the home page and on the catalog page
+[SHAPE] the logo <img> naturalWidth and naturalHeight are both greater than 0 (the image loaded, not broken)
+[REL] the logo link href equals the home page URL
+[NETWORK] the request for REC_LOGO returns HTTP 200",[CONSOLE] no uncaught JS errors,the guest logo already equals the organization logo; the default logo still shows after sign-in; a broken image in the header; the logo links elsewhere,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.header-logo · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-017",Organization favicon after sign-in — the tab icon links are the advertised favicons[] hrefs and the organization's favicon is what the tab shows,"Storefront Display","Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has a favicon. OPEN PRODUCT QUESTION (KB-D4EEDC37, KB-2EAD7A0F): xAPI advertises thumbnail hrefs even when the ImageTools job never generated them and the storefront requests only those hrefs. The assertion that the organization favicon is SHOWN stays as the spec reading; on a build/state where the thumbnails are missing it reds and is a bug candidate, never rewritten to the default icon","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] favicons[] as FAV and faviconUrl as REC_FAV
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the <link rel=""icon""> hrefs of the guest page as GUEST_ICONS
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders","[REL] the set of <link rel=""icon""> hrefs on the signed-in page equals the set of hrefs in FAV and differs from GUEST_ICONS
+[SHAPE] every <link rel=""icon""> href of the signed-in page returns HTTP 200 (the organization favicon is shown, not the default)
+[REL] the same hrefs are present on the catalog page after navigation","[CONSOLE] no uncaught JS errors
+[NETWORK] the favicon requests return 200 (404 here means the thumbnails were never generated)",the signed-in page keeps the guest icon links; an advertised href answers 404 (tab falls back to the default icon); the icon reverts after navigation,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.favicon · Behavior:wl.render.favicon.advertised-hrefs-missing · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-018","Verify organization secondary logo displayed (if configured)","Storefront Display","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only. Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has a secondary logo; the secondary logo shows in the footer (else the theme's inverted logo)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] secondaryLogoUrl as REC_LOGO2
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[SCROLL] scroll to the footer
+[WAIT] the footer is visible","[REL] the footer logo <img> src path ends with the path of REC_LOGO2
+[SHAPE] the footer logo naturalWidth is greater than 0 (it loaded)
+[REL] the footer logo src path differs from the header logo src path","[CONSOLE] no uncaught JS errors
+[NETWORK] the secondary logo request returns HTTP 200",a broken image where the secondary logo belongs; the primary logo shown in the footer; the theme inverted logo shown although the record has a secondary logo,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.footer · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-021","Main menu after sign-in on desktop — the organization list replaces the catalog menu: top-level titles equal the xAPI answer, every entry is a plain link and an entry with childItems opens no dropdown","Main Menu Links","Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only, desktop viewport. By design (QA lead, 2026-11-27) the desktop header bar shows the organization menu's top-level entries as plain links: childItems are not rendered there and are reachable only in the mobile drawer. Organization @td(WL_ELECTRONICS.name) has main-menu list @td(WL_ELECTRONICS.main_menu): Home, Brands (children Laptops, Phones, Tablets), Company, Support","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title url childItems { title url } } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] hover the header menu entry '<title of the MENU entry whose childItems is non-empty>'
+[WAIT] the pointer settles for 1 second
+[ACT] click the same header menu entry
+[WAIT] the target page loads","[REL] the set of top-level header menu titles equals the set of titles in MENU (order-independent; the storefront sorts by priority)
+[SHAPE] each top-level header menu entry is a link: an anchor with an href
+[STATE] hovering the entry whose MENU childItems is non-empty opens no dropdown, and no title from its childItems appears among the header's links or in any popup opened from the menu
+[NAV] clicking that entry navigates to the url of the same MENU entry (not to a child's url)
+[SHAPE] the header menu does not contain the store catalog menu entries","[CONSOLE] no uncaught JS errors
+[API] xAPI errors[] empty",the catalog menu shows instead of the organization list; titles differ from MENU; a dropdown or a child title appears in the desktop header bar; the click leads to a url other than the entry's own,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.main-menu Behavior:wl.render.main-menu.children-not-on-desktop-bar · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue (each visible item is a plain link) + QA-lead decision 2026-11-27 (works as designed: on desktop the organization menu shows top-level links only, children only in the mobile drawer) + REG-2026-11-27-1325-WLV observations; vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-022","Desktop main menu — an entry with childItems behaves like an entry without: no hover dropdown, no child links in the bar, the click leads to the entry's own route","Main Menu Links","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only, desktop viewport. Signed in as @td(WL_USER_ELECTRONICS.email); organization menu @td(WL_ELECTRONICS.main_menu) active: Home, Brands with children Laptops, Phones, Tablets, Company, Support. By design (QA lead, 2026-11-27) the desktop bar renders top-level entries only; childItems are reachable in the mobile drawer","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title url childItems { title url } } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] hover the header menu entry '<title of the MENU entry whose childItems is non-empty>'
+[WAIT] the pointer settles for 1 second
+[ACT] hover a header menu entry whose MENU childItems is empty
+[WAIT] the pointer settles for 1 second
+[ACT] click the entry whose MENU childItems is non-empty
+[WAIT] the target page loads
+[NAV] open {{FRONT_URL}}
+[WAIT] the home page renders
+[ACT] click a header menu entry whose MENU childItems is empty
+[WAIT] the target page loads","[STATE] hovering the entry with childItems opens no dropdown, and hovering an entry without childItems opens none either (the two behave the same)
+[REL] none of the titles in the childItems of any MENU entry is rendered among the header's links on desktop
+[NAV] clicking the entry with childItems navigates to the url of that same MENU entry; clicking an entry without childItems navigates to its own MENU url
+[SHAPE] each target page returns HTTP 200 and shows no 404 page",[CONSOLE] no uncaught JS errors,a dropdown or child links appear in the desktop bar; the click on a parent leads to a child's url; a 404 after a click,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.main-menu Behavior:wl.render.main-menu.children-not-on-desktop-bar · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue (each visible item is a plain link) + QA-lead decision 2026-11-27 (works as designed: on desktop the organization menu shows top-level links only, children only in the mobile drawer) + REG-2026-11-27-1325-WLV observations; vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-023",Verify main menu links on mobile — the drawer's top level is the theme's own list; the organization menu and its children are drill-down panels under 'Catalog',"Main Menu Links","Critical","BL-WL-001","ECL-7.4","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has main menu @td(WL_ELECTRONICS.main_menu); viewport 375 px wide. By design (vc-frontend@2.63.0 useNavigations.ts, mobileMainMenuItems) the drawer's top level is the theme's fixed list (Dashboard, Catalog, Bulk order, Cart, Contact us, Compare); the organization menu sits one level down under 'Catalog' and an entry with children opens a drill-down panel. This is the only place a user reaches the childItems","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[VIEWPORT] 375
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title url childItems { title url } } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the hamburger icon is visible in the mobile header
+[ACT] click the button 'Main menu' in the mobile header
+[WAIT] the menu drawer opens
+[ASSERT] note the drawer's top-level entry titles as DRAWER_TOP
+[ACT] click the drawer entry 'Catalog'
+[WAIT] the panel opened by 'Catalog' renders
+[ASSERT] note the entry titles of that panel as PANEL (its back control and heading are not entries)
+[ACT] click the panel entry that has children
+[WAIT] its child panel renders
+[ASSERT] note the entry titles of the child panel as CHILDREN
+[ACT] click the first child link
+[WAIT] the target page loads","[REL] DRAWER_TOP holds the entry 'Catalog' and none of the titles in MENU (the organization menu is not the drawer's top level)
+[REL] PANEL equals the set of titles in MENU
+[REL] CHILDREN equals the childItems titles of that MENU entry
+[STATE] the entry that has children opens a child panel (a drill-down), not an inline expansion with indented links
+[NAV] clicking a child navigates to its MENU url and the drawer closes",[CONSOLE] no uncaught JS errors,hamburger icon missing; drawer does not open; the panel under 'Catalog' lacks MENU entries; the child panel is empty or differs from childItems; navigation broken on mobile; the drawer stays open after navigation,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.main-menu Behavior:wl.render.main-menu.children-not-on-desktop-bar · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue (each visible item is a plain link) + QA-lead decision 2026-11-27 (works as designed: on desktop the organization menu shows top-level links only, children only in the mobile drawer) + REG-2026-11-27-1325-WLV observations; vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-024","Verify main menu links navigation works correctly","Main Menu Links","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has main menu @td(WL_ELECTRONICS.main_menu) whose links point at routes that exist; desktop viewport. By design (QA lead, 2026-11-27) a parent entry is a plain link on desktop: its click leads to its own route","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title url childItems { title url } } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] click the header menu entry '<title of the MENU entry whose childItems is non-empty>'
+[WAIT] the target page loads
+[NAV] open {{FRONT_URL}}
+[WAIT] the home page renders
+[ACT] click the first header menu entry that has no children
+[WAIT] the target page loads
+[KEY] press the browser Back key
+[WAIT] the previous page renders","[NAV] after each click the URL path equals the url of the clicked MENU entry — for the entry with childItems that is its own url, never the url of its first child
+[SHAPE] each target page returns HTTP 200 and shows no 404 page
+[NAV] Back returns to the page that was open before the click",[CONSOLE] no uncaught JS errors,a 404 after a click; the URL differs from the MENU url; a click on a parent leads to a child's url; the page does not load; JavaScript errors on navigation,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.main-menu Behavior:wl.render.main-menu.children-not-on-desktop-bar · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue (each visible item is a plain link) + QA-lead decision 2026-11-27 (works as designed: on desktop the organization menu shows top-level links only, children only in the mobile drawer) + REG-2026-11-27-1325-WLV observations; vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-025","Organization record without a main-menu name — the header shows the store's menu, the layout is intact","Main Menu Links","Medium","BL-WL-004",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FOOTER_ONLY]
+Read-only. Organization @td(WL_FOOTER_ONLY.name) (record id @td(WL_FOOTER_ONLY_PLATFORM_ID.id)) has an enabled record with footer @td(WL_FOOTER_ONLY.footer) and NO main-menu name; the store record has a main-menu list, so the merged answer is the store's list (per-field merge)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FOOTER_ONLY.email), org_password=@td(WL_USER_FOOTER_ONLY.password), org_id=@td(WL_FOOTER_ONLY_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title } } - [CAPTURE] titles as STORE_MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FOOTER_ONLY.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header navigation is rendered
+[ACT] click the button 'Toggle search bar' in the header
+[WAIT] the search box opens
+[ACT] type a product search term in the search box
+[KEY] press Enter
+[WAIT] the results page renders","[REL] the set of top-level header menu titles equals the set of titles in STORE_MENU
+[DOM] the search box, the cart icon and the account menu are visible in the header
+[SHAPE] the page raised no error banner and the search results page returned HTTP 200",[CONSOLE] no uncaught JS errors,the header is empty or broken; console errors about a missing link list; the organization shows an empty menu although the store has one,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.main-menu.empty-falls-to-catalog-menu · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-026",Main-menu links in whiteLabelingSettings — hierarchy and title-to-priority mapping (array order is not asserted),"GraphQL Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","state from FWL-013 (runner-native, read-only, admin token ADMIN_DEFAULT, organization @td(WL_ELECTRONICS.name) record id @td(WL_ELECTRONICS_PLATFORM_ID.id)); in addition the organization has main-menu list @td(WL_ELECTRONICS.main_menu): Home, Brands (children Laptops, Phones, Tablets), Company, Support. The shared setup of FWL-013 is referenced, not repeated (DUP-004)","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); p_brands=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Brands, priority); p_home=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Home, priority); p_tablets=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Tablets, priority)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP wl]
 query {
-  whiteLabelingSettings(
-    organizationId: ""@td(WL_ELECTRONICS.id)""
-    storeId: ""@td(STORE_PRIMARY.id)""
-    cultureName: ""en-US""
-  ) {
-    mainMenuLinks {
-      title
-      url
-      priority
-      childItems {
-        title
-        url
-        priority
-      }
-    }
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
+    mainMenuLinks { title url priority childItems { title url priority } }
   }
 }
-[ASSERT] 3. Verify response structure
-[ASSERT] 4. Verify data matches admin configuration
-[ASSERT] 5. Verify priority ordering","[DOM] Response includes mainMenuLinks array
-[DOM] Parent links returned with title, url, priority fields
-[DOM] Child links nested under childItems array
-[DOM] Priority ordering is correct (1 2 3 4)
-[DOM] Hierarchy preserved in response
-[DOM] Data matches link list configured in admin","[API] whiteLabelingSettings query returns correct mainMenuLinks fields
-[API] errors[] is empty in GraphQL response","GraphQL errors in response; mainMenuLinks field missing; childItems not returned; Priority order wrong; Data mismatch with admin config","none","VCST-4637","Manual"
-"FWL-027","Verify pageContext query includes whiteLabelingSettings with mainMenuLinks","PageContext Integration","Critical","BL-WL-001, BL-WL-002","ECL-14.1","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with full branding configured (logo, favicon, theme, footer, mainMenu); pageContext query available in xFrontend","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to GraphQL playground
-[ACT] 2. Execute pageContext query:
-query {
-  pageContext(
-    storeId: ""@td(STORE_PRIMARY.id)""
-    organizationId: ""@td(WL_ELECTRONICS.id)""
-    cultureName: ""en-US""
-  ) {
-    slugInfo { ... }
-    store { ... }
-    whiteLabelingSettings {
-      logoUrl
-      faviconUrl
-      themePresetName
-      footerLinks { title url childItems { title url } }
-      mainMenuLinks { title url priority childItems { title url priority } }
-    }
-    user { ... }
-  }
-}
-[ASSERT] 3. Verify whiteLabelingSettings embedded in pageContext
-[ASSERT] 4. Verify mainMenuLinks field present","[DOM] Single pageContext query returns slugInfo, store, whiteLabelingSettings, user sub-objects
-[DOM] whiteLabelingSettings includes logoUrl, faviconUrl, themePresetName, footerLinks, mainMenuLinks
-[DOM] mainMenuLinks array returned with full hierarchy
-[DOM] Data consistent with separate whiteLabelingSettings query
-[FORMAT] Response time approximately 200-400ms","[API] pageContext query returns whiteLabelingSettings with mainMenuLinks
-[API] errors[] is empty in GraphQL response","GraphQL errors; whiteLabelingSettings missing from pageContext; mainMenuLinks not embedded; Response time > 1000ms","none","VCST-4637","Manual"
-"FWL-033","Verify logo renders correctly on mobile viewport (375px - iPhone)","Responsive Mobile","High","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+[GQL-EXEC wl]","[ERRORS label=wl] errors[] empty
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Home].priority = {{p_home}}
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].priority = {{p_brands}}
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems.length = 3
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems[?title=Tablets].priority = {{p_tablets}}","[API] the answer is for the organization GUID, not the fixture key",errors[] non-empty; mainMenuLinks missing; childItems not returned; a title maps to another priority,none,VCST-4637 · Behavior:wl.resolve.link-lists.priority-order · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-3239DE5F · Synced: qa-suite-sync wl (2026-11-27),Draft
+"FWL-033","Verify logo renders correctly on mobile viewport (375px - iPhone)","Responsive Mobile","High","BL-WL-001","ECL-7.4","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 [PRE:RESET_CART]
-Organization @td(WL_ELECTRONICS.name) with custom logo configured; Mobile device or browser with responsive mode","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) organization user
-[ACT] 2. Open browser DevTools
-[ACT] 3. Toggle device toolbar (responsive mode)
-[ACT] 4. Set viewport: 375px width x 667px height (iPhone 8 size)
-[NAV] 5. Navigate to homepage
-[ASSERT] 6. Inspect header logo
-[ASSERT] 7. Verify logo size and positioning
-[NAV] 8. Test across multiple mobile pages (catalog, product, cart)","[DOM] Logo is visible in mobile header
-[DOM] Logo is appropriately sized for mobile (not too large, not too small)
-[DOM] Logo is not cut off or cropped
-[DOM] Logo is clear and legible (not pixelated)
-[STATE] Logo is positioned correctly in mobile header layout
-[STATE] Logo remains clickable (tappable) and links to homepage
-[DOM] Logo does not overlap other mobile header elements","[CONSOLE] no uncaught JS errors","Logo missing on mobile; Logo overlapping hamburger menu; Logo pixelated on mobile; Logo not tappable","none","Mobile Responsive","Manual"
-"FWL-034","Verify main menu links accessible via hamburger menu on mobile","Responsive Mobile","Critical","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with main menu configured; Mobile viewport 375px width","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Resize browser to mobile viewport: 375px width
-[NAV] 2. Sign in with @td(WL_ELECTRONICS.name) user
-[NAV] 3. Navigate to homepage
-[ASSERT] 4. Locate hamburger menu icon in top-left or top-right of mobile header
-[ACT] 5. Tap hamburger icon
-[ASSERT] 6. Verify mobile menu drawer opens
-[ASSERT] 7. Verify main menu links visible in drawer
-[ASSERT] 8. Verify hierarchical structure (parent/child links)
-[ACT] 9. Tap a parent link with children
-[ASSERT] 10. Verify children expand
-[ACT] 11. Tap a child link
-[ASSERT] 12. Verify navigation","[DOM] Hamburger icon visible and tappable in mobile header
-[STATE] Tapping hamburger opens mobile menu drawer
-[DOM] Main menu links listed in drawer with clear labels
-[DOM] Parent links with children have expand/collapse icon
-[STATE] Tapping parent expands to reveal children
-[DOM] Child links are indented or visually nested
-[NAV] Tapping child link navigates to correct page
-[STATE] Menu drawer closes after navigation","[CONSOLE] no uncaught JS errors","Hamburger icon missing; Drawer not opening; Children not expanding on tap; Menu not closing after navigation; Tap targets too small","none","Mobile Responsive","Manual"
-"FWL-035","Verify footer links display correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with footer links configured; Mobile viewport","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Resize to mobile: 375px width
-[NAV] 2. Sign in with @td(WL_ELECTRONICS.name) user
-[SCROLL] 3. Scroll to bottom of page
-[ASSERT] 4. Inspect footer layout
-[ASSERT] 5. Verify footer links visible
-[ASSERT] 6. Verify hierarchical structure preserved or adapted for mobile
-[ACT] 7. Expand a section (tap Legal / Help header) then tap a child link to test navigation","[DOM] Footer is visible at bottom of mobile page
-[DOM] Footer sections (Legal, Help) render as collapsible accordions — the section title is the accordion toggle (chevron), not a link
-[STATE] Tapping a section header expands it to REVEAL its child links (Privacy Policy / Terms of Service under Legal; Support / Warranty under Help) — an accordion that expands to nothing is a FAIL (was the flat-seed symptom)
-[STATE] Child links are tappable (adequate tap targets)
-[STATE] Footer does not overlap content
-[NAV] Tapping a revealed child link navigates correctly","[CONSOLE] no uncaught JS errors","Footer sections not visible on mobile; accordion expands to nothing (no child links); Links too small to tap; Footer overlapping content; Hierarchy broken on mobile","none","Mobile Responsive","Manual"
-"FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_FASHION]
+Organization @td(WL_ELECTRONICS.name) has a custom logo; the viewport is 375 px wide. Whole-page horizontal overflow is out of scope: it comes from non-white-labeling content (home slider arrow icon, KB-7F61A942)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[VIEWPORT] 375x667
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the mobile header is rendered
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders","[REL] the mobile header logo src path ends with the path of REC_LOGO on the home page and on the catalog page
+[SHAPE] the logo naturalWidth is greater than 0 and its bounding box lies inside the viewport (no horizontal overflow)
+[OVERFLOW] the mobile header (logo and hamburger row) has scrollWidth equal to clientWidth and no header descendant extends past the viewport's right edge; overflow outside the header is not asserted here
+[REL] the logo bounding box does not overlap the hamburger icon bounding box",[CONSOLE] no uncaught JS errors,logo missing on mobile; logo overlapping the hamburger menu; logo cut off; the header content overflowing the viewport,Sign out (account menu > Logout),"Mobile Responsive · Behavior:wl.render.header-logo · Audited: 2026-11-27 (TCA-2026-11-27); Source: overflow outside the header belongs to non-white-labeling content (KB-7F61A942); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-035","Verify footer links display correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has footer list @td(WL_ELECTRONICS.footer) (Legal and Help, two children each); viewport 375 px wide","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[VIEWPORT] 375
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { sizes href type } themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] footerLinks as FOOTER
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[SCROLL] scroll to the bottom of the page
+[WAIT] the footer is visible
+[ACT] tap the first section header in the footer
+[WAIT] the section expands
+[ACT] tap the first child link
+[WAIT] the target page loads","[REL] the footer section header texts equal the titles in FOOTER
+[REL] after the tap the revealed child link texts equal the childItems titles of that FOOTER entry — an accordion that expands to nothing is a FAIL
+[STATE] WCAG 2.2 SC 2.5.8 Target Size (Minimum, AA): each revealed child link measures at least 24 by 24 CSS px, or — being undersized — meets the Spacing exception: a 24 CSS px diameter circle centred on its bounding box intersects no other target (neighbouring links, the section header button) and no such circle of another undersized target; measure the boxes and compute it, do not infer it from the gap alone
+[NAV] the tapped child navigates to its url",[CONSOLE] no uncaught JS errors,footer sections not visible on mobile; an accordion that expands to nothing; an undersized link whose 24 px circle meets a neighbouring target or its circle (SC 2.5.8); footer overlapping content,Sign out (account menu > Logout),"Mobile Responsive · Behavior:wl.render.footer · Audited: 2026-11-27 (TCA-2026-11-27); Source: W3C WCAG 2.2 SC 2.5.8 Target Size (Minimum) text (Understanding target-size-minimum); KB-D56DECE5 (280x18 links 8px apart, centres 26px apart); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-036","Verify theme colors applied correctly on mobile viewport","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FASHION]
 [PRE:RESET_CART]
-Organization @td(WL_FASHION.name) with @td(WL_FASHION.theme) theme configured; Mobile viewport","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[ACT] 1. Resize to mobile: 375px width
-[NAV] 2. Sign in with @td(WL_FASHION.theme) theme org user
-[NAV] 3. Navigate to homepage
-[ASSERT] 4. Inspect page colors on mobile
-[ASSERT] 5. Verify header, buttons, links use Coffee theme
-[NAV] 6. Navigate to product page and cart
-[ASSERT] 7. Verify theme consistency on mobile","[FORMAT] Coffee theme colors visible on mobile (browns/creams)
-[FORMAT] Header uses Coffee theme background
-[FORMAT] Buttons use Coffee theme primary color
-[FORMAT] Links use Coffee theme accent color
-[STATE] Theme is consistent across all mobile pages","[CONSOLE] no uncaught JS errors","Default theme showing on mobile; Coffee colors not applied; Theme inconsistent on mobile pages","none","Mobile Responsive","Manual"
-"FWL-037","Verify logo renders correctly on tablet viewport (768px - iPad)","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with custom logo; Tablet device or browser responsive mode","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Set viewport: 768px width x 1024px height (iPad size)
-[NAV] 2. Sign in with @td(WL_ELECTRONICS.name) user
-[NAV] 3. Navigate to homepage
-[ASSERT] 4. Inspect header logo on tablet
-[ASSERT] 5. Verify logo size and positioning
-[ACT] 6. Test landscape and portrait orientations","[DOM] Logo is visible and appropriately sized for tablet
-[DOM] Logo is clear (not pixelated)
-[DOM] Logo positioning is correct in tablet header
-[STATE] Logo works in both portrait (768px) and landscape (1024px) orientations
-[STATE] Logo is clickable and links to homepage","[CONSOLE] no uncaught JS errors","Logo missing or broken on tablet; Logo distorted in landscape; Logo not clickable on tablet","none","Mobile Responsive","Manual"
+Organization @td(WL_FASHION.name) has preset @td(WL_FASHION.theme); the preset differs from the store's preset, which a guest sees; viewport 375 px wide; the colour is checked against the guest's, never against a literal colour or a preset file (theme 2.63.0 bundles the presets)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password), preset=@td(WL_FASHION.theme)","[VIEWPORT] 375
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ASSERT] {{preset}} lower-cased with spaces replaced by ""-"" differs from GUEST_PRESET (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset cannot be told from the store's)
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FASHION.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders","[REL] <html data-preset> equals {{preset}} lower-cased with spaces replaced by ""-"" on the home page and on the catalog page, and differs from GUEST_PRESET
+[REL] the computed --color-primary-500 on :root differs from GUEST_PRIMARY on both pages
+[REL] the primary button background colour equals the --color-primary-500 value
+[SHAPE] the CSS variable value is identical on both pages",[CONSOLE] no uncaught JS errors,default or store theme showing on mobile; the primary colour equals the guest's; inconsistent colour between pages,Sign out (account menu > Logout),"Mobile Responsive · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-037","Verify logo renders correctly on tablet viewport (768px - iPad)","Responsive Mobile","Medium","BL-WL-001","ECL-7.4","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has a custom logo; tablet viewport 768x1024 then 1024x768. Whole-page horizontal overflow is out of scope: at 1024x768 it comes from the builder.io 'Popular categories' row, not from white labeling (KB-83AA266C)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[VIEWPORT] 768x1024
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header is rendered
+[VIEWPORT] 1024x768
+[WAIT] the header re-renders","[REL] the header logo src path ends with the path of REC_LOGO in portrait and in landscape
+[SHAPE] the logo naturalWidth is greater than 0 and its bounding box lies inside the viewport in both orientations
+[OVERFLOW] in both orientations the header (logo and menu row) has scrollWidth equal to clientWidth and no header descendant extends past the viewport's right edge; overflow outside the header is not asserted here",[CONSOLE] no uncaught JS errors,logo missing or broken on tablet; logo distorted in landscape; header content overflowing the viewport,Sign out (account menu > Logout),"Mobile Responsive · Behavior:wl.render.header-logo · Audited: 2026-11-27 (TCA-2026-11-27); Source: overflow outside the header belongs to non-white-labeling content (KB-83AA266C); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements; StorefrontUserGuide · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "FWL-038","Verify whitelabeling renders correctly in Chrome browser (desktop)","Cross-Browser","High","BL-WL-001","","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 [PRE:RESET_CART]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Chrome browser latest version (120+)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Chrome browser (version 120 or later)
@@ -414,7 +372,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Chrome brow
 [STATE] Main menu dropdowns work smoothly on hover
 [DOM] Footer links display in correct hierarchy
 [STATE] All branding persists across pages","[CONSOLE] no uncaught JS errors
-[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Chrome; CSS not loading in Chrome; Dropdown malfunction in Chrome; Console errors","none","Chrome Cross-Browser","Manual"
+[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Chrome; CSS not loading in Chrome; Dropdown malfunction in Chrome; Console errors","none","Chrome Cross-Browser | Deprecated: merged into FWL-078 (lane-parameterised, VCST-7033 lifecycle) (2026-11-27)",Deprecated
 "FWL-039","Verify whitelabeling renders correctly in Firefox browser (desktop)","Cross-Browser","High","BL-WL-001","","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Firefox browser latest version (121+)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Firefox browser (version 121 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
@@ -428,7 +386,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Firefox bro
 [STATE] Main menu dropdowns work (hover may behave slightly differently than Chrome but still functional)
 [DOM] Footer links display correctly
 [STATE] No Firefox-specific rendering issues","[CONSOLE] no uncaught JS errors
-[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Firefox; Firefox-specific CSS rendering issue; Dropdown not working on hover in Firefox","none","Firefox Cross-Browser","Manual"
+[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Firefox; Firefox-specific CSS rendering issue; Dropdown not working on hover in Firefox","none","Firefox Cross-Browser | Deprecated: merged into FWL-078 (lane-parameterised, VCST-7033 lifecycle) (2026-11-27)",Deprecated
 "FWL-040","Verify whitelabeling renders correctly in Edge browser (desktop)","Cross-Browser","High","BL-WL-001","","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; Edge browser latest version (120+)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Edge browser (version 120 or later)
 [NAV] 2. Navigate to {{FRONT_URL}}
@@ -442,7 +400,7 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Edge browse
 [STATE] Main menu dropdowns work smoothly
 [DOM] Footer links display correctly
 [STATE] Rendering is nearly identical to Chrome (both Chromium-based)","[CONSOLE] no uncaught JS errors
-[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Edge; Edge-specific rendering issue; Behavior differs significantly from Chrome","none","Edge Cross-Browser","Manual"
+[NETWORK] all branding assets load with HTTP 200","Broken logo or favicon in Edge; Edge-specific rendering issue; Behavior differs significantly from Chrome","none","Edge Cross-Browser | Deprecated: merged into FWL-078 (lane-parameterised, VCST-7033 lifecycle) (2026-11-27)",Deprecated
 "FWL-041","Verify whitelabeling renders correctly on iPhone Safari (iOS)","Cross-Browser Mobile","Critical","BL-WL-001","ECL-7.4","[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with full branding configured; iPhone device (iPhone 14/15/16) with Safari browser OR BrowserStack iOS simulator","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open Safari on iPhone (or BrowserStack iOS simulator)
 [NAV] 2. Navigate to {{FRONT_URL}}
@@ -473,61 +431,64 @@ Organization @td(WL_ELECTRONICS.name) with full branding configured; Android dev
 [FORMAT] Theme colors applied
 [STATE] No Android-specific rendering issues","[CONSOLE] no uncaught JS errors
 [NETWORK] all branding assets load with HTTP 200","Logo broken on Android Chrome; Touch interactions failing; Android-specific CSS issues; Hamburger menu not working","none","Android Chrome Mobile","Manual"
-"FWL-043","Verify logo has proper alt text for accessibility","Accessibility","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with custom logo configured; Screen reader testing tool or browser accessibility inspector","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
-[NAV] 2. Navigate to homepage
-[ACT] 3. Right-click header logo image
-[ACT] 4. Inspect element in DevTools
-[ASSERT] 5. Verify <img> tag has alt attribute
-[ASSERT] 6. Verify alt text is descriptive (e.g. ""@td(WL_ELECTRONICS.name) Logo"")
-[ACT] 7. Enable screen reader (NVDA, JAWS, or VoiceOver)
-[KEY] 8. Tab to logo element
-[ASSERT] 9. Verify screen reader announces logo with alt text","[DOM] <img> element has alt attribute
-[DOM] Alt text is descriptive and meaningful (e.g. ""<Organization Name> Logo"")
-[STATE] Alt text is NOT empty (alt="""""")
-[STATE] Screen reader announces logo correctly when focused
-[STATE] Logo link is announced as ""link"" by screen reader","[CONSOLE] no accessibility-related JS errors","Missing alt attribute on logo image; Empty alt text; Screen reader not announcing logo","none","Accessibility A11Y","Manual"
-"FWL-044","Verify main menu is keyboard navigable","Accessibility","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with main menu configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
-[NAV] 2. Navigate to homepage
-[KEY] 3. Use Tab key to navigate to main menu
-[KEY] 4. Tab through each main menu link (Home, Brands, Company, Support)
-[KEY] 5. When focused on parent link with children (e.g. Brands), press Enter or Down Arrow
-[ASSERT] 6. Verify dropdown opens
-[KEY] 7. Tab through child links in dropdown (Laptops, Phones, Tablets)
-[KEY] 8. Press Enter on a child link
-[ASSERT] 9. Verify navigation","[STATE] Tab key moves focus through main menu links sequentially
-[STATE] Focus indicator is visible on each link
-[STATE] Parent links with children open dropdown via Enter or Down Arrow
-[STATE] Focus moves to first child link after opening dropdown
-[STATE] Tab key navigates through child links
-[NAV] Enter key on child link navigates to page","[CONSOLE] no accessibility-related JS errors","Tab focus skipping menu items; Focus indicator invisible; Dropdown not opening via keyboard; Child links not reachable via keyboard","none","Accessibility A11Y","Manual"
-"FWL-045","Verify footer links are keyboard navigable","Accessibility","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with footer links configured; Keyboard navigation testing","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
-[NAV] 2. Navigate to homepage
-[KEY] 3. Use Tab key to navigate through page content down to footer
-[KEY] 4. Continue tabbing through footer links
-[ASSERT] 5. Verify focus indicator visible on each footer link
-[KEY] 6. Test parent and child links (if hierarchical)
-[KEY] 7. Press Enter on a footer link to test navigation","[STATE] Tab key moves focus through footer links sequentially
-[STATE] Focus indicator is visible on each link
-[STATE] Parent and child links are both keyboard accessible
-[NAV] Enter key on link navigates to correct page
-[STATE] Keyboard navigation order is logical (parent then children then next parent)","[CONSOLE] no accessibility-related JS errors","Footer links not reachable via Tab; Focus indicator missing; Enter key not navigating; Navigation order illogical","none","Accessibility A11Y","Manual"
-"FWL-046","Verify focus indicators visible on all branded interactive elements","Accessibility","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_FASHION]
-Organization @td(WL_FASHION.name) with custom branding; @td(WL_FASHION.theme) theme preset applied; Keyboard navigation","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[NAV] 1. Sign in to storefront with Coffee theme org user
-[NAV] 2. Navigate to homepage
-[KEY] 3. Use Tab key to navigate through page
-[KEY] 4. Tab to logo (should show focus indicator)
-[KEY] 5. Tab to main menu links (should show focus indicator)
-[KEY] 6. Tab to footer links (should show focus indicator)
-[KEY] 7. Tab to buttons (should show focus indicator)
-[ASSERT] 8. Verify focus indicators are clearly visible against Coffee theme colors","[STATE] Logo has visible focus outline when tabbed to
-[STATE] Main menu links show focus indicator (outline, background highlight, or underline)
-[STATE] Footer links show focus indicator
-[STATE] Buttons show focus indicator
-[FORMAT] Focus indicators have sufficient contrast against Coffee theme background colors (minimum 3:1 contrast ratio)
-[STATE] Focus indicators are NOT hidden or removed by CSS","[CONSOLE] no accessibility-related JS errors","Focus indicators hidden by CSS; Focus outline invisible against theme background; Insufficient contrast ratio for focus indicators","none","Accessibility A11Y","Manual"
+"FWL-043",Header logo has a non-empty alt text equal to the store name (the storefront's own source of the alt),"Accessibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has a custom logo. In vc-frontend 2.63.0 the header logo alt is the store name ($context.storeName), not ""<organization> Logo""; the old expectation had no source and is a product question for accessibility, not asserted here","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql store(storeId: ""{{store_id}}"") { storeName } - [CAPTURE] storeName as STORE_NAME
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] read the alt attribute of the header logo <img>
+[ACT] read the accessible name of the header logo link (browser accessibility snapshot)
+[KEY] press Tab until the logo link has focus
+[WAIT] the focus ring renders","[SHAPE] the header logo <img> has an alt attribute that is not empty
+[REL] the alt equals STORE_NAME
+[DOM] the focused logo link is announced with role ""link"" and an accessible name equal to the alt",[CONSOLE] no accessibility-related JS errors,missing alt attribute; empty alt; the accessible name of the logo link is empty,Sign out (account menu > Logout),"Accessibility A11Y · Behavior:wl.render.header-logo · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-044","Verify the desktop main menu is keyboard navigable: Tab reaches each top-level link in visual order, Enter follows the link, no child is reachable in the bar","Accessibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has main menu @td(WL_ELECTRONICS.main_menu) (Home, Brands with children, Company, Support); desktop viewport. By design (QA lead, 2026-11-27) the desktop bar holds top-level links only, so keyboard users follow the parent link and reach children in the mobile drawer","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title childItems { title } } mainMenuLinks { title url childItems { title url } } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[KEY] press Tab until the first main-menu link has focus
+[KEY] press Tab through every top-level menu link and note the focus order
+[KEY] on the entry that has children press Enter
+[WAIT] the target page loads","[REL] the focus order of the top-level links equals the visual left-to-right order and its titles equal the set of titles in MENU
+[REL] no title from the childItems of any MENU entry receives focus while tabbing the header menu
+[SHAPE] each focused link has a computed outline-style other than ""none"" or a non-empty box-shadow (a visible focus indicator)
+[STATE] Enter on the entry that has children opens no dropdown
+[NAV] Enter on that entry navigates to the url of the same MENU entry",[CONSOLE] no accessibility-related JS errors,Tab skips menu items; no focus indicator; the focus order differs from the visual order; Enter on a parent leads to a child's url; a child link becomes focusable in the bar,Sign out (account menu > Logout),"Accessibility A11Y · Behavior:wl.render.main-menu Behavior:wl.render.main-menu.children-not-on-desktop-bar · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue (each visible item is a plain link) + QA-lead decision 2026-11-27 (works as designed: on desktop the organization menu shows top-level links only, children only in the mobile drawer) + REG-2026-11-27-1325-WLV observations; vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-045","Verify footer links are keyboard navigable","Accessibility","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Organization @td(WL_ELECTRONICS.name) has footer list @td(WL_ELECTRONICS.footer): section headers are NOT links (non-clickable), only the children are","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] footerLinks as FOOTER
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[KEY] press Tab repeatedly until the focus enters the footer
+[KEY] press Tab through every focusable element of the footer and note them in order
+[KEY] press Enter on the first footer child link
+[WAIT] the target page loads","[REL] the focusable elements of the white-labeling footer columns are exactly the child links of FOOTER, in column order (section headers are not focusable); links the theme adds after the columns (the copyright bar) are outside this assertion
+[SHAPE] each focused link has a computed outline-style other than ""none"" or a non-empty box-shadow
+[NAV] Enter on a child link navigates to its url",[CONSOLE] no accessibility-related JS errors,footer links unreachable by Tab; a section header receives focus; no focus indicator; Enter does not navigate,Sign out (account menu > Logout),"Accessibility A11Y · Behavior:wl.render.footer · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-046","Verify focus indicators visible on all branded interactive elements","Accessibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FASHION]
+Organization @td(WL_FASHION.name) has preset @td(WL_FASHION.theme)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FASHION.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[KEY] press Tab until the logo link has focus
+[KEY] press Tab to the first main-menu link
+[KEY] press Tab to the first footer link
+[KEY] press Tab to the first button on the page
+[ASSERT] the computed outline colour and the background colour behind each focused element are read","[SHAPE] the logo, a main-menu link, a footer link and a button each show a focus indicator (outline-style other than ""none"" or a non-empty box-shadow)
+[REL] the contrast ratio between the focus outline colour and the background behind the focused element is at least 3:1
+[SHAPE] no stylesheet rule sets outline to none without a replacement indicator",[CONSOLE] no accessibility-related JS errors,focus indicator hidden by CSS; outline invisible against the theme background; contrast below 3:1,Sign out (account menu > Logout),"Accessibility A11Y · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "FWL-047","Verify screen reader announces main menu structure (parent and child links)","Accessibility","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with hierarchical main menu; Screen reader: NVDA (Windows), JAWS (Windows), or VoiceOver (Mac)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[ACT] 1. Enable screen reader
 [NAV] 2. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
@@ -639,64 +600,90 @@ Organization @td(WL_FASHION.name) with @td(WL_FASHION.theme) theme configured; S
 [STATE] No momentary display of unstyled HTML before CSS applies
 [STATE] Page rendering is smooth and professional
 [STATE] User does NOT see ""flicker"" or color changes during page load","[CONSOLE] no CSS errors","FOUC visible on slow network; Default theme flashing before Coffee theme applies; CSS loading too late","none","Performance UX","Manual"
-"FWL-055","Verify multiple concurrent organization users can access branding without conflicts","Concurrency","Medium","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-2 user accounts from different organizations: User A (@td(WL_ELECTRONICS.name) branding) and User B (@td(WL_FASHION.name) branding); 2 separate browser sessions (Chrome Incognito + Firefox Private)","storefront={{FRONT_URL}}, org_user_a=@td(WL_USER_ELECTRONICS.email), org_password_a=@td(WL_USER_ELECTRONICS.password), org_user_b=@td(WL_USER_FASHION.email), org_password_b=@td(WL_USER_FASHION.password)","[NAV] 1. Open Chrome Incognito window
-[NAV] 2. Navigate to {{FRONT_URL}}
-[ACT] 3. Sign in with User A (@td(WL_ELECTRONICS.name))
-[ASSERT] 4. Verify @td(WL_ELECTRONICS.name) branding displayed (@td(WL_ELECTRONICS.logo), @td(WL_ELECTRONICS.theme) theme)
-[NAV] 5. Open Firefox Private window (separate session)
-[NAV] 6. Navigate to {{FRONT_URL}}
-[ACT] 7. Sign in with User B (@td(WL_FASHION.name))
-[ASSERT] 8. Verify @td(WL_FASHION.name) branding displayed (@td(WL_FASHION.theme) theme)
-[ACT] 9. Switch between browser windows
-[ASSERT] 10. Verify each session maintains its own branding (no cross-contamination)
-[NAV] 11. Navigate pages in both sessions simultaneously
-[ASSERT] 12. Verify branding remains correct in each session","[DOM] User A session displays @td(WL_ELECTRONICS.name) branding (@td(WL_ELECTRONICS.logo), @td(WL_ELECTRONICS.theme) theme)
-[DOM] User B session displays @td(WL_FASHION.name) branding (@td(WL_FASHION.theme) theme)
-[STATE] No cross-contamination between sessions
-[STATE] Navigating pages in one session does NOT affect the other","[CONSOLE] no uncaught JS errors in either session","Cross-contamination: User A sees Org B branding; Caching conflicts between sessions; Wrong logo after navigating in parallel sessions","none","Concurrency","Manual"
-"FWL-056","Verify branding persists after session timeout and re-login","Session Management","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) with custom branding; Session timeout configured (or manually clear session); User account","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
-[ASSERT] 2. Verify branding displayed (logo, favicon, theme, main menu, footer)
-[ACT] 3. Wait for session timeout (or manually clear session cookie in DevTools)
-[NAV] 4. Attempt to navigate to protected page (e.g. account/orders)
-[ASSERT] 5. Verify redirect to sign-in page due to session timeout
-[ACT] 6. Sign in again with same user credentials
-[ASSERT] 7. After successful sign-in, verify branding is restored
-[ASSERT] 8. Verify logo, favicon, theme, main menu, footer all display correctly","[DOM] After session timeout, user is redirected to sign-in page
-[DOM] After re-login, organization logo is restored
-[DOM] After re-login, favicon is restored
-[FORMAT] After re-login, theme is restored
-[DOM] After re-login, main menu and footer are restored","[CONSOLE] no uncaught JS errors","Branding lost after re-login; Default branding showing after session timeout re-login; Main menu/footer missing after re-login","none","Session Management","Manual"
-"FWL-057","Verify branding data is not exposed in client-side code or APIs for other organizations","Security","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-User account from @td(WL_ELECTRONICS.name); Access to browser DevTools and Network tab","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), admin={{BACK_URL}}","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) user
-[ACT] 2. Open DevTools > Network tab
-[NAV] 3. Navigate to homepage
-[ASSERT] 4. Inspect GraphQL or REST API calls
-[ASSERT] 5. Look for whiteLabelingSettings or pageContext responses
-[ASSERT] 6. Verify response contains ONLY @td(WL_ELECTRONICS.name) branding data
-[ASSERT] 7. Verify NO data for @td(WL_FASHION.name), @td(WL_DEFAULT.name), or other organizations is included
-[ASSERT] 8. Inspect page source and JavaScript
-[ASSERT] 9. Verify no hardcoded branding URLs for other organizations
-[ACT] 10. Attempt to query GraphQL with different organizationId (if possible)
-[ASSERT] 11. Verify access is restricted (only authenticated org data returned)","[DOM] API responses contain ONLY current user's organization branding (@td(WL_ELECTRONICS.name))
-[STATE] No data for other organizations is leaked in responses
-[STATE] GraphQL query with different organizationId is blocked or returns null
-[STATE] Page source does not contain hardcoded URLs for other orgs' logos/favicons","[API] whiteLabelingSettings returns only the authenticated org's data
-[CONSOLE] no uncaught JS errors","Org B branding data visible in Org A's API response; Cross-org data exposure; Unauthorized access to other org settings via GraphQL","none","Security","Manual"
-"FWL-058","Verify no broken images when logo or favicon URL is invalid","Error Handling","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Organization with White Labeling enabled; Manually set logoUrl to invalid URL in database or via API","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Manually enter invalid logo URL: https://invalid-cdn.example.com/nonexistent-logo.png
-[ACT] 4. Save settings
-[NAV] 5. Sign in to storefront with Test Org user
-[NAV] 6. Navigate to homepage
-[ASSERT] 7. Inspect header logo area
-[ASSERT] 8. Verify behavior when logo fails to load","[DOM] Page does NOT display broken image icon
-[DOM] Fallback logo is displayed (default Virto Commerce logo OR organization name text)
-[STATE] Page layout is NOT broken (header remains intact)
-[STATE] User can still use the site (navigation works)
-[DOM] Footer and other elements are unaffected","[CONSOLE] no uncaught JS errors related to failed image load","Broken image icon visible in header; Header layout breaking due to missing logo; Console errors about 404 image","restore org logoUrl to valid URL","Error Handling Negative","Manual"
+"FWL-055",Two organization members of different organizations in turn on one browser context — the second member's pages carry none of the first organization's branding (no cross-contamination),"Concurrency","Medium","BL-WL-003",,"[PRE:CLEAR_SESSION]
+Read-only. Two member accounts of different organizations: @td(WL_USER_ELECTRONICS.email) (@td(WL_ELECTRONICS.name)) and @td(WL_USER_FASHION.email) (@td(WL_FASHION.name)). A lane holds one browser context, so the two members sign in one after the other (sign-out in between); what is asserted is that no branding of the first survives in the client state for the second. Simultaneous sessions are not asserted here","storefront={{FRONT_URL}}, org_user_a=@td(WL_USER_ELECTRONICS.email), org_password_a=@td(WL_USER_ELECTRONICS.password), org_user_b=@td(WL_USER_FASHION.email), org_password_b=@td(WL_USER_FASHION.password), org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_b=@td(WL_FASHION_PLATFORM_ID.id)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_a}} - [CAPTURE] logoUrl as LOGO_A
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_b}} - [CAPTURE] logoUrl as LOGO_B
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] note the header logo src path as SEEN_A_HOME and the computed --color-primary-500 on :root as PRIMARY_A
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders
+[ASSERT] note the header logo src path as SEEN_A_CATALOG
+[ACT] sign out (account menu > Logout)
+[WAIT] the guest page renders
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FASHION.email)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] note the header logo src path as SEEN_B_HOME and the computed --color-primary-500 on :root as PRIMARY_B
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders
+[ASSERT] note the header logo src path as SEEN_B_CATALOG","[REL] SEEN_A_HOME and SEEN_A_CATALOG end with the path of LOGO_A
+[REL] SEEN_B_HOME and SEEN_B_CATALOG end with the path of LOGO_B
+[REL] PRIMARY_B differs from PRIMARY_A
+[SHAPE] after the second member signed in, neither the home nor the catalog page HTML contains the path of LOGO_A",[CONSOLE] no uncaught JS errors in either sign-in,cross-contamination: member B sees organization A's logo or colour after A signed out; a cached answer survives the sign-out; a wrong logo after navigating to the catalog,Sign out (account menu > Logout),"Concurrency · Behavior:wl.resolve.signed-in-org-context · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-056","Verify branding after the session ends and a new sign-in — no stale organization branding in between, the organization's branding again after re-login","Session Management","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only. Organization @td(WL_ELECTRONICS.name) has full branding; the session is ended by a real sign-out (account menu > Logout); a real timeout is not waited for. The store {{STORE_ID}} record carries a logo and preset different from the organization's","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO and themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO and themePresetName as STORE_PRESET
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header logo src path ends with the path of REC_LOGO
+[ACT] sign out (account menu > Logout)
+[WAIT] the guest page renders
+[ASSERT] note the header logo src path as GUEST_LOGO and the computed --color-primary-500 on :root as GUEST_PRIMARY
+[NAV] open {{FRONT_URL}}/account/orders
+[WAIT] the sign-in page renders
+[ACT] sign in again as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders","[NAV] after the sign-out the protected page redirects to the sign-in page
+[REL] after the sign-out the guest header logo src path ends with the path of STORE_LOGO, differs from the path of REC_LOGO, and <html data-preset> equals STORE_PRESET lower-cased with spaces replaced by ""-""
+[REL] after re-login the header logo src path ends with the path of REC_LOGO and <html data-preset> equals REC_PRESET lower-cased with spaces replaced by ""-""
+[REL] after re-login the computed --color-primary-500 on :root differs from GUEST_PRIMARY and the header menu titles equal the set of titles in MENU",[CONSOLE] no uncaught JS errors,the organization's logo or preset still shows after sign-out; default branding after re-login; main menu or footer missing after re-login; no redirect to the sign-in page,Sign out (account menu > Logout),"Session Management · Behavior:wl.resolve.signed-in-org-context · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-057","Verify branding data is not exposed in client-side code or APIs for other organizations","Security","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only. Member of @td(WL_ELECTRONICS.name); the other organization is @td(WL_FASHION.name) (record id @td(WL_FASHION_PLATFORM_ID.id)). Security probe: the member's own token is used for a hand-made query about another organization","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, other_org_id=@td(WL_FASHION_PLATFORM_ID.id)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{other_org_id}} - [CAPTURE] logoUrl as OTHER_LOGO
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] collect every GraphQL response the home page loads (browser network log) as RESPONSES
+[ACT] collect every REST response the home page loads (browser network log) as RESPONSES
+[HTTP] POST {{BACK_URL}}/graphql with the MEMBER's Bearer token: whiteLabelingSettings(organizationId: ""{{other_org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl organizationId } - [CAPTURE] answer as CROSS","[SHAPE] no response in RESPONSES contains the path of OTHER_LOGO or the id {{other_org_id}}
+[SHAPE] CROSS.logoUrl does not equal OTHER_LOGO — one organization's member does not read another organization's branding record
+[SHAPE] the home page HTML and scripts contain no URL of another organization's logo","[API] xAPI errors[] empty or an authorization error for the cross-organization query
+[CONSOLE] no uncaught JS errors",organization B branding visible in organization A's responses; the cross-organization query returns organization B's logo,Sign out (account menu > Logout),"Security · Behavior:wl.resolve.signed-in-org-context · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-058","A logo URL that does not load — the header shows the platform no-image placeholder, no broken-image icon, layout intact","Error Handling","Medium","BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_DEFAULT.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_DEFAULT]
+NEEDS A STAND WRITE (NEEDS_WINDOW). The back-office blade only UPLOADS, so a non-loading URL is set by REST: GET-merge-PUT on the record of organization @td(WL_DEFAULT.name) (theme-only fixture; PUT replaces the whole record). Nothing validates logoUrl (domain map §2d). There is no REST delete, so the case owns no new record: it restores the prior logoUrl. Source-backed expectation (vc-image.vue @error -> fallback image NO_IMAGE_URL); not yet run live","storefront={{FRONT_URL}}, org_id=@td(WL_DEFAULT_PLATFORM_ID.id), org_user=@td(WL_USER_DEFAULT.email), org_password=@td(WL_USER_DEFAULT.password), bad_logo={{FRONT_URL}}/assets/agent-test-missing-logo.png","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[HTTP] PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id, same organizationId, isEnabled true) and logoUrl set to {{bad_logo}}
+[WAIT] the PUT returns 204
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_DEFAULT.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered
+[ACT] read the header logo <img> class list
+[ACT] read the header logo <img> src
+[ACT] read the header logo <img> bounding box
+[ACT] read the header layout height","[STATE] the header logo <img> carries the class vc-image--fallback and its src is the platform no-image asset, not {{bad_logo}}
+[SHAPE] the header logo <img> is not in a broken state (complete is true and naturalWidth is greater than 0 after the fallback loaded)
+[OVERFLOW] horizontal == false
+[REL] the header height with the placeholder equals the header height of a guest page of the same store within 1 px (layout intact)","[CONSOLE] no uncaught JS errors related to the failed image load
+[NETWORK] the request for {{bad_logo}} fails with a 404 and no other request fails",a broken-image icon in the header; the header collapses or shifts; console errors about the image; the site becomes unusable,PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so logoUrl is restored; GET it and confirm logoUrl = BEFORE.logoUrl (null stays empty). Nothing is deleted: no REST delete exists,"Error Handling Negative · Behavior:wl.render.header-logo.invalid-url-placeholder · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 vc-image.vue (@error -> setFallback, NO_IMAGE_URL) + VirtoCommerce/vc-module-white-labeling@3.1008.0 (no URL validation); Docs: PlatformUserGuide white-labeling · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "FWL-059","Verify graceful handling when main menu link list does not exist","Error Handling","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Organization with MainMenuLinkListName set to non-existent link list name: nonexistent-menu","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
 [ACT] 2. Open White Labeling settings
@@ -720,35 +707,53 @@ Organization with FooterLinkListName set to non-existent link list name","admin=
 [STATE] Footer may display default links OR be empty
 [DOM] Page layout is NOT broken
 [API] GraphQL returns null or empty array for footerLinks (not an error)","[CONSOLE] no uncaught JS errors","Application crash on missing footer config; Footer area broken; Console errors about missing link list","restore org FooterLinkListName to original","Error Handling Negative","Manual"
-"FWL-065","Verify organization-specific branding applies only to that organization's users","Data Isolation","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-2 organizations: @td(WL_ELECTRONICS.name) (@td(WL_ELECTRONICS.logo)) and @td(WL_FASHION.name) (no custom logo); User A from @td(WL_ELECTRONICS.name); User B from @td(WL_FASHION.name)","storefront={{FRONT_URL}}, org_user_a=@td(WL_USER_ELECTRONICS.email), org_password_a=@td(WL_USER_ELECTRONICS.password), org_user_b=@td(WL_USER_FASHION.email), org_password_b=@td(WL_USER_FASHION.password)","[NAV] 1. Sign in with User A (@td(WL_ELECTRONICS.name))
-[NAV] 2. Navigate to homepage
-[ASSERT] 3. Verify @td(WL_ELECTRONICS.logo) displayed
-[ACT] 4. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
-[NAV] 5. Sign in with User B (@td(WL_FASHION.name))
-[NAV] 6. Navigate to homepage
-[ASSERT] 7. Verify @td(WL_FASHION.name) branding displayed (NOT @td(WL_ELECTRONICS.logo))
-[ACT] 8. Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
-[NAV] 9. Sign in again with User A
-[ASSERT] 10. Verify @td(WL_ELECTRONICS.logo) is back (NOT @td(WL_FASHION.name) branding)","[DOM] User A sees ONLY @td(WL_ELECTRONICS.name) branding (@td(WL_ELECTRONICS.logo))
-[DOM] User B sees ONLY @td(WL_FASHION.name) branding
-[STATE] No cross-contamination (User A never sees @td(WL_FASHION.name) branding)
-[STATE] Switching users switches branding correctly
-[STATE] Data isolation enforced at backend level","[CONSOLE] no uncaught JS errors","Cross-contamination: User A sees Org B logo; Branding persisting after sign-out; Wrong org branding after re-login","sign out; clear session","Data Isolation Security","Manual"
-"FWL-066","Verify anonymous users (not signed in) see default branding","Anonymous User","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Anonymous access enabled; Default platform branding configured","storefront={{FRONT_URL}}","[NAV] 1. Open incognito/private browser window
-[NAV] 2. Navigate to {{FRONT_URL}} (do NOT sign in)
-[ASSERT] 3. Browse as anonymous user
-[ASSERT] 4. Inspect header logo
-[ASSERT] 5. Inspect favicon
-[ASSERT] 6. Inspect theme colors
-[ASSERT] 7. Inspect main menu (if visible)
-[ASSERT] 8. Inspect footer","[DOM] Default Virto Commerce logo displayed (NOT any organization's custom logo)
-[DOM] Default favicon in browser tab
-[FORMAT] Default theme colors applied (no org-specific theme)
-[DOM] Main menu shows default/public links (not org-specific links)
-[DOM] Footer shows default/public links
-[STATE] No organization branding applied before user signs in","[CONSOLE] no uncaught JS errors","Custom org logo visible before sign-in; Org-specific theme applied to anonymous session","none","Anonymous User","Manual"
+"FWL-065","Verify organization-specific branding applies only to that organization's users","Data Isolation","Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
+Read-only. Two organizations with different branding: @td(WL_ELECTRONICS.name) and @td(WL_FASHION.name); member A @td(WL_USER_ELECTRONICS.email), member B @td(WL_USER_FASHION.email), signed in one after the other in one lane","storefront={{FRONT_URL}}, org_user_a=@td(WL_USER_ELECTRONICS.email), org_password_a=@td(WL_USER_ELECTRONICS.password), org_user_b=@td(WL_USER_FASHION.email), org_password_b=@td(WL_USER_FASHION.password), org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_b=@td(WL_FASHION_PLATFORM_ID.id)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_a}} - [CAPTURE] logoUrl as LOGO_A
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_b}} - [CAPTURE] logoUrl as LOGO_B
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] note the header logo src path as SEEN_1
+[ACT] click the user name in the top header
+[WAIT] the account popup opens
+[ACT] click 'Logout' in the popup
+[WAIT] the guest home page renders
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FASHION.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] note the header logo src path as SEEN_2
+[ACT] click the user name in the top header
+[WAIT] the account popup opens
+[ACT] click 'Logout' in the popup
+[WAIT] the guest home page renders
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] note the header logo src path as SEEN_3","[REL] SEEN_1 ends with the path of LOGO_A
+[REL] SEEN_2 ends with the path of LOGO_B and does not end with the path of LOGO_A
+[REL] SEEN_3 equals SEEN_1 — switching users switches the branding and back
+[SHAPE] no page of the sequence shows the other organization's logo path",[CONSOLE] no uncaught JS errors,cross-contamination: member A sees organization B's logo; branding persists after sign-out; wrong branding after re-login,Sign out (account menu > Logout); clear the session,"Data Isolation Security · Behavior:wl.resolve.signed-in-org-context · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-066",A guest (not signed in) sees the STORE record's branding — never an organization's,"Anonymous User","High","BL-WL-002",,"[PRE:CLEAR_SESSION]
+Read-only. Store {{STORE_ID}} has an enabled record with its own logo, preset and menu; organization @td(WL_ELECTRONICS.name) has a DIFFERENT logo. Observed 2026-11-27: a guest sees the store record's logo, menu and footer (the old expectation ""default branding for guests"" was wrong whenever the store has a record)","storefront={{FRONT_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO and themePresetName as STORE_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as ORG_LOGO and themePresetName as ORG_PRESET
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title } footerLinks { title } } - [CAPTURE] answer as STORE_ANSWER
+[ASSERT] ORG_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET)
+[NAV] open {{FRONT_URL}} in a fresh private browser context (no sign-in)
+[WAIT] the guest home page renders
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders","[REL] the guest header logo src path ends with the path of STORE_LOGO
+[SHAPE] the guest page contains no reference to the path of ORG_LOGO
+[REL] the guest header menu titles equal the titles in STORE_ANSWER.mainMenuLinks and the footer headers equal STORE_ANSWER.footerLinks
+[REL] <html data-preset> equals STORE_PRESET lower-cased with spaces replaced by ""-"" and differs from ORG_PRESET normalised the same way
+[SHAPE] the computed --color-primary-500 on :root is non-empty and identical on the guest home page and the catalog page (no preset file is read: theme 2.63.0 bundles the presets)",[CONSOLE] no uncaught JS errors,an organization logo visible to a guest; the guest sees the theme default although the store has a record; the guest page carries the organization's preset or a preset other than the store's; the guest colour differs between pages,none,"Anonymous User · Behavior:wl.resolve.guest-store-branding · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements (""applies the brand elements to every visitor of that store""); KB-753BEB16 · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "FWL-067","Verify branding updates in Admin reflect on storefront without cache issues","Cache Management","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) with custom branding; Admin access; Signed-in storefront session in separate browser tab","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Open storefront in Browser Tab 1
 [ACT] 2. Sign in with @td(WL_ELECTRONICS.name) org user
@@ -763,21 +768,254 @@ Organization @td(WL_ELECTRONICS.name) with custom branding; Admin access; Signed
 [STATE] Old logo is NOT cached indefinitely (cache invalidated or expires quickly)
 [FORMAT] Cache-Control headers allow updates to be seen within reasonable time (< 5 minutes)","[CONSOLE] no uncaught JS errors
 [NETWORK] new logo image loads with HTTP 200 after refresh","Old logo still shown after hard refresh; New logo not visible even after 5 minutes; Cache-Control headers missing","restore org to logo-v1.png","Cache Management","Manual"
-"FWL-068","Verify branding consistency across all storefront pages (homepage catalog product cart account)","Consistency","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+"FWL-068","Verify branding consistency across all storefront pages (homepage catalog product cart account)","Consistency","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 [PRE:RESET_CART]
-Organization @td(WL_ELECTRONICS.name) with full branding configured; User account with items in cart and order history","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Sign in to storefront with @td(WL_ELECTRONICS.name) org user
-[ASSERT] 2. Verify branding on HOMEPAGE: logo, favicon, theme, main menu, footer
-[NAV] 3. Navigate to CATALOG page
-[ASSERT] 4. Verify same branding displayed
-[NAV] 5. Navigate to PRODUCT page (any product)
-[ASSERT] 6. Verify same branding displayed
-[ACT] 7. Add item to cart, navigate to CART page
-[ASSERT] 8. Verify same branding displayed
-[NAV] 9. Navigate to ACCOUNT > Orders
-[ASSERT] 10. Verify same branding displayed
-[NAV] 11. Navigate to ACCOUNT > Profile
-[ASSERT] 12. Verify same branding displayed","[DOM] Logo, favicon, theme, main menu, footer are consistent on: Homepage, Catalog, Product page, Cart, Account pages
-[STATE] No pages show default branding after sign-in
-[STATE] No pages show wrong organization's branding
-[FORMAT] Theme colors are consistent across all pages
-[DOM] Main menu and footer structure remain consistent","[CONSOLE] no uncaught JS errors","Default branding appearing on some pages after sign-in; Theme inconsistent between pages; Main menu/footer changing unexpectedly; Branding flicker on navigation","none","Consistency","Manual"
+Organization @td(WL_ELECTRONICS.name) has full branding; the member has an empty cart (the case adds one item and removes it again)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] mainMenuLinks as MENU
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] note logo src path, --color-primary-500 and top-level menu titles on the home page as HOME
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders
+[ASSERT] note the same three values as CATALOG
+[ACT] click the first product card
+[WAIT] the product page renders
+[ACT] click 'Add to cart'
+[WAIT] the cart badge shows 1
+[NAV] open {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[ASSERT] note the same three values as CART
+[NAV] open {{FRONT_URL}}/account/orders
+[WAIT] the orders page renders
+[ASSERT] note the same three values as ORDERS
+[NAV] open {{FRONT_URL}}/account/profile
+[WAIT] the profile page renders
+[ASSERT] note the same three values as PROFILE","[REL] the logo src path ends with the path of REC_LOGO in HOME, CATALOG, CART, ORDERS and PROFILE
+[REL] the --color-primary-500 value is identical in all five observations
+[REL] the top-level menu title sets are identical in all five observations and equal the set of titles in MENU
+[SHAPE] no observation contains the default theme logo path",[CONSOLE] no uncaught JS errors,default branding on some pages after sign-in; the colour differs between pages; the menu changes between pages,Remove the item from the cart (cart page remove control); sign out (account menu > Logout),"Consistency · Behavior:wl.resolve.signed-in-org-context · Behavior:wl.render.header-logo · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, vc-image.vue, vc-header.vue + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-070,[JOURNEY] White labeling — seeded organization record → xAPI per-field merge → storefront after sign-in → a guest still sees the STORE branding,Whitelabeling > Journey,Critical,"BL-WL-001, BL-WL-002, BL-WL-003",ECL-14.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only over seeded fixtures: organization @td(WL_ELECTRONICS.name) has an ENABLED record carrying logo, secondary logo, theme preset, main-menu list and footer list (@td(WL_ELECTRONICS_PLATFORM_ID.id)); store {{STORE_ID}} has an enabled record with a DIFFERENT logo and preset; store setting WhiteLabeling.WhiteLabelingEnabled is true. Mutations of this chain (master switch off, record disabled) are separate cases (master switch, store-record toggle, organization-record toggle) because they need an exclusive window.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), alt_actor=guest","--- SCREEN: Back office record (REST) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] record fields logoUrl, secondaryLogoUrl, themePresetName, mainMenuLinkListName, footerLinkListName, isEnabled as REC_*
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO and themePresetName as STORE_PRESET
+[ASSERT] REC_isEnabled is true and REC_logoUrl differs from STORE_LOGO and REC_themePresetName lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (the data can tell a wrong merge from a right one)
+--- SCREEN: xAPI per-field merge ---
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl secondaryLogoUrl themePresetName isOrganizationLogoUploaded footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] answer as ORG_ANSWER
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title } mainMenuLinks { title } } - [CAPTURE] answer as STORE_ANSWER
+[ASSERT] ORG_ANSWER.logoUrl = REC_logoUrl and ORG_ANSWER.themePresetName = REC_themePresetName
+--- SCREEN: Storefront signed in as the organization member ---
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header logo <img> is present
+[ASSERT] the footer and the main menu are rendered
+--- SCREEN: Storefront as a guest (fresh context, no sign-in) ---
+[NAV] open {{FRONT_URL}} in a second fresh browser context
+[WAIT] the guest home page renders","[REL] the signed-in header logo src path ends with the path of REC_logoUrl and differs from the path of STORE_LOGO {BL} (BL-WL-002)
+[REL] <html data-preset> equals REC_themePresetName lower-cased with spaces replaced by ""-"" and the computed CSS custom property --color-primary-500 on :root differs from the guest page's value {BL} (BL-WL-002)
+[REL] the set of top-level header menu titles equals the set of titles in ORG_ANSWER.mainMenuLinks (order-independent: the xAPI array is descending by priority and the storefront sorts) {BL} (BL-WL-004)
+[REL] the footer section headers equal the titles in ORG_ANSWER.footerLinks, each header is NOT a link, and every child title in ORG_ANSWER.footerLinks[].childItems is a link {OBSERVED} (vcst_qa 2026-11-27, KB-E7DF9B84)
+[REL] the guest header logo src path ends with the path of STORE_LOGO, the guest <html data-preset> equals STORE_PRESET lower-cased with spaces replaced by ""-"", the guest primary colour differs from the signed-in one, and the guest menu titles equal the titles in STORE_ANSWER.mainMenuLinks {BL} (BL-WL-001)
+[SHAPE] no organization-specific logo path (REC_logoUrl) appears anywhere in the guest page HTML {BL} (BL-WL-001)","[API] every xAPI response has errors[] empty
+[CONSOLE] no TypeError or JS error in either context
+[NETWORK] the logo and footer assets load with 200; no 4xx/5xx on /graphql",the signed-in header shows the store logo (merge or sign-in context lost); the guest sees the organization logo (scope leak); menu titles differ from xAPI; a footer header is a link; the primary colour is identical for the member and the guest,Sign out of the member context (account menu > Logout); close both contexts; nothing was written,"VCST-899 VCST-4644 VCST-4645 · Archetype:SCOPE · Technique:FLOW · Purpose:FUNC · Behavior:wl.resolve.signed-in-org-context Behavior:wl.resolve.merge-per-field Behavior:wl.resolve.guest-store-branding · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-071,Store master switch OFF then back ON — organization branding disappears and RETURNS (reversal of WhiteLabeling.WhiteLabelingEnabled),Whitelabeling > Store master switch,High,BL-WL-003,,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Store setting WhiteLabeling.WhiteLabelingEnabled is stored explicitly true on {{STORE_ID}}; organization @td(WL_ELECTRONICS.name) has an enabled record with its own logo and preset. The setting is the STORE SETTING (Stores > store > Settings widget > group White Labeling > General), NOT the White labeling blade's Enabled toggle (domain map D1).","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] record logoUrl as REC_LOGO, themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/stores/{{store_id}} - [CAPTURE] the value of settings[?name=WhiteLabeling.WhiteLabelingEnabled] as PRIOR_SWITCH
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header logo src path ends with the path of REC_LOGO (baseline: org branding applies)
+--- SCREEN: switch the store setting OFF ---
+[NAV] open {{BACK_URL}} in a second browser context signed in as the admin account
+[GRID] click 'Stores', then the row '{{STORE_ID}}'
+[ACT] click the widget 'Settings'
+[WAIT] the widget's blade opens
+[ACT] in the group 'White Labeling' set 'WhiteLabeling.WhiteLabelingEnabled' to false
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] reload {{FRONT_URL}} in the member context
+[WAIT] the home page renders
+--- SCREEN: switch the store setting back ON ---
+[ACT] in the admin context set 'WhiteLabeling.WhiteLabelingEnabled' to true
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] reload {{FRONT_URL}} in the member context
+[WAIT] the home page renders","[REL] with the setting OFF the header logo src path does NOT end with the path of REC_LOGO and does not end with the path of the store record logo — the theme's own logo shows {OBSERVED} (vcst_qa 2026-11-26, KB-6C0AA08A)
+[REL] with the setting OFF the computed --color-primary-500 on :root differs from the preset color_primary_500 of REC_PRESET {BL} (BL-WL-003)
+[NETWORK] with the setting OFF no request is made for REC_LOGO or for /assets/presets/ of REC_PRESET {OBSERVED} (vcst_qa 2026-11-26, KB-6C0AA08A)
+[REL] after the setting is back ON the header logo src path ends with the path of REC_LOGO again and the primary colour equals the preset color_primary_500 of REC_PRESET — the switch is reversible without re-saving the record {BL} (BL-WL-003)","[API] GET /api/stores/{{store_id}} shows the setting false in the middle and true at the end
+[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx on /graphql",organization branding still applied with the setting false; branding does not come back after the setting is true again; the record's own Enabled flag changed as a side effect; the setting is left false,"Set WhiteLabeling.WhiteLabelingEnabled back to PRIOR_SWITCH (stored explicitly true) in the Stores > Settings widget, click Save, and confirm GET /api/stores/{{store_id}} reports it; sign out of the member context","VCST-899 · Archetype:CONFIG · Technique:ST · Purpose:FUNC · Behavior:wl.switch.store-master Behavior:wl.switch.store-master.off-suppresses-all Behavior:wl.switch.store-master.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · KB-6C0AA08A · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-072,"Store RECORD Enabled OFF (master setting stays ON) — a guest sees the defaults, the organization member keeps the organization branding",Whitelabeling > Two enable layers,High,BL-WL-003,,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Store setting WhiteLabeling.WhiteLabelingEnabled is true; the store {{STORE_ID}} record and organization @td(WL_ELECTRONICS.name) record are both enabled. The toggle flipped here is the per-record Enabled switch on the store's White labeling blade (AngularJS: Stores > store > widget White labeling), NOT the store setting WhiteLabeling.WhiteLabelingEnabled. Storefront-level twin of the xAPI-level store-record toggle case, with two actors.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] record logoUrl as REC_LOGO
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] id as STORE_WL_ID, isEnabled as PRIOR_ENABLED and logoUrl as STORE_LOGO
+[NAV] open {{BACK_URL}} (AngularJS admin) signed in as the admin account
+[GRID] click 'Stores', then the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the widget's blade opens
+[ACT] click the 'Enabled' switch to OFF
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[NAV] open {{FRONT_URL}} in a second fresh context (guest)
+[WAIT] the guest home page renders","[REL] the member's header logo src path ends with the path of REC_LOGO although the store record is disabled {BL} (BL-WL-003)
+[REL] the guest header logo src path does NOT end with the path of STORE_LOGO nor of REC_LOGO — a disabled store record contributes nothing {BL} (BL-WL-003)
+[REL] GET /api/white-labeling/store/{{store_id}} reports isEnabled false and the same id STORE_WL_ID (one record, toggled in place) {OBSERVED} (vcst_qa 2026-11-26, KB-A23A4A41)","[API] whiteLabelingSettings(organizationId, storeId) errors[] empty and logoUrl = REC_LOGO
+[CONSOLE] no TypeError or JS error",the member loses the organization branding when only the store record is disabled (the two layers are confused); the guest still shows the store logo; a second store record appears,"In the store's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; GET the store record and confirm isEnabled = PRIOR_ENABLED and logoUrl = STORE_LOGO; sign out of the member context","VCST-4644 · Archetype:CONFIG · Technique:DT · Purpose:FUNC · Behavior:wl.resolve.store-record-off-org-survives Behavior:wl.switch.record-enabled.disable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · KB-A23A4A41 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-073,Company info — an organization maintainer uploads a PNG as the Company logo and the SAME record carries it (no second record),Whitelabeling > Company logo,High,BL-WL-001,,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+WL_USER_ELECTRONICS is an Organization maintainer (the Company logo block is shown only to roles that can edit the organization). The seeded record is enabled, so the mutation updates it. The case replaces the seeded organization logo with a storefront upload; Cleanup restores the whole record from the captured copy (REST PUT is the sanctioned restore, the mutation cannot restore a /cms-content URL).","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), logo_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE (id, isEnabled, logoUrl, secondaryLogoUrl, faviconUrl, themePresetName, mainMenuLinkListName, footerLinkListName)
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[NAV] open {{FRONT_URL}}/company/info
+[WAIT] the Company info page renders with the Company logo block
+[ACT] click the file picker of the Company logo block
+[WAIT] the file dialog opens
+[ACT] choose {{logo_file}} in the file dialog in the file dialog
+[WAIT] the upload finishes and the preview of the new logo appears next to two icon buttons
+[ACT] click the save (floppy) icon button right of the preview
+[WAIT] the notification 'Logo was successfully changed.' appears
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as AFTER
+[NAV] open {{FRONT_URL}}
+[WAIT] the home page renders","[REL] AFTER.id = BEFORE.id — the mutation updated the existing record instead of creating another {BL} (BL-WL-005)
+[SHAPE] AFTER.logoUrl starts with /api/files/ and differs from BEFORE.logoUrl {DOC} (changeOrganizationLogo: logoUrl must start /api/files/; module@3.1008.0)
+[REL] AFTER.secondaryLogoUrl, faviconUrl, themePresetName, mainMenuLinkListName, footerLinkListName and isEnabled equal BEFORE — only the logo changed {OBSERVED} (vcst_qa 2026-11-27, source ChangeOrganizationLogoCommandHandler)
+[REL] the header logo src path on {{FRONT_URL}} ends with the path of AFTER.logoUrl {BL} (BL-WL-002)
+[SHAPE] the notification text equals the storefront i18n value pages.company.info ""Logo was successfully changed."" {DOC} (vc-frontend@2.63.0 locales/en.json)","[API] the changeOrganizationLogo mutation returns isSuccess true and no errors[]
+[NETWORK] exactly one upload request and one mutation request are sent
+[CONSOLE] no TypeError or JS error",isSuccess false; a second record for the organization; another field changed; the header keeps the old logo; the picker accepts the file but sends no mutation,"PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so the seeded logo is back; GET it and confirm logoUrl = BEFORE.logoUrl. The uploaded file stays on the platform (no REST delete, KB-52D2F554 family) — report it as an orphan file","VCST-6288 · Archetype:SCOPE · Technique:EP · Purpose:FUNC · Behavior:wl.company-logo.upload-save Behavior:wl.company-logo.type-and-size-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · KB-5BC4EC37 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-074,"Company info — a file of a disallowed type is refused inline: no upload, no mutation, no hidden exception",Whitelabeling > Company logo,High,BL-WL-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+WL_USER_ELECTRONICS is an Organization maintainer. Read-only if the build refuses the file (nothing is uploaded). VCST-6288 is Done (vc-frontend#2612, in theme 2.63.0, the build on vcst): expected to PASS on 2.63.0. On a build before the fix the refusal shows but a TypeError is thrown that the Application Insights Vue handler swallows, so the browser console stays clean (KB-5BC4EC37): this case guards the fix, do not rewrite the expectation to the pre-fix behaviour.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), bad_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[NAV] open {{FRONT_URL}}/company/info
+[WAIT] the Company logo block renders and shows the allowed types and size text
+[ACT] click the file picker of the Company logo block
+[WAIT] the file dialog opens
+[ACT] choose {{bad_file}} in the file dialog in the file dialog
+[WAIT] the block reacts to the pick
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as AFTER","[STATE] a danger alert inside the Company logo block shows a refusal text for the picked file and no preview of it appears {OBSERVED} (vcst_qa 2026-10-29 and PR build vc-frontend#2612, KB-5BC4EC37)
+[NETWORK] no upload request and no changeOrganizationLogo request is sent after the pick {OBSERVED} (vcst_qa 2026-10-29, KB-5BC4EC37)
+[NETWORK] no POST to the Application Insights ingestion endpoint (/v2/track) carries an exception item for this pick — the refusal must not raise ""Cannot read properties of undefined (reading 'url')"" {SPEC} (VCST-6288)
+[REL] AFTER equals BEFORE field for field (the record is untouched) {OBSERVED} (vcst_qa 2026-10-29, KB-5BC4EC37)","[CONSOLE] stays clean on every build (the pre-fix exception is swallowed there), so the exception check is the network one above
+[API] no mutation is sent",an upload request or mutation is sent for a WEBP; no refusal text; an App Insights exception item for the pick; the record changed,none — nothing was uploaded; sign out of the member context,"VCST-6288 · Archetype:BOUNDARY · Technique:EP · Purpose:FUNC · Behavior:wl.company-logo.disallowed-type · Catches:VCST-6288 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · KB-5BC4EC37 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-075,Company info — the delete control is enabled exactly when xAPI says the organization logo is the organization's own,Whitelabeling > Company logo,Medium,BL-WL-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only: the case never presses delete. WL_USER_ELECTRONICS is an Organization maintainer of an organization whose record carries its own logo (isOrganizationLogoUploaded true). The other half of the rule (no own logo: delete not offered) needs a maintainer of an organization without its own logo — not seeded, see fixture request FR-2 — and is NOT covered here.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl secondaryLogoUrl themePresetName isOrganizationLogoUploaded footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] isOrganizationLogoUploaded as OWN_LOGO
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { isOrganizationLogoUploaded themePresetName footerLinks { title } mainMenuLinks { title } } - [CAPTURE] the flag as GUEST_FLAG
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[NAV] open {{FRONT_URL}}/company/info
+[WAIT] the Company logo block renders with the preview of the current logo","[REL] OWN_LOGO is true for the member's organization and GUEST_FLAG is false for the store-only answer {OBSERVED} (vcst_qa 2026-11-27, WL_ELECTRONICS vs store)
+[REL] the delete (trash) icon button in the Company logo block is enabled exactly when OWN_LOGO is true {DOC} (vc-frontend@2.63.0 pages/company/info.vue: disabled = !isOrganizationLogoUploaded)
+[REL] the preview <img> src path ends with the path of the organization record logoUrl {BL} (BL-WL-002)","[API] xAPI errors[] empty
+[CONSOLE] no TypeError or JS error",the delete control is disabled although the organization has its own logo; the preview shows the store logo; the flag is true for the store-only answer,none — read-only; sign out of the member context,"VCST-6288 · Archetype:PARITY · Technique:DT · Purpose:FUNC · Behavior:wl.reverse.company-logo-delete · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-076,Company info — upload then delete the Company logo: the STORE logo takes over (not the theme default) and the uploaded file stays on the platform,Whitelabeling > Company logo,Medium,"BL-WL-001, BL-WL-002",,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+WL_USER_ELECTRONICS is an Organization maintainer; the store {{STORE_ID}} record has a logo of its own. The guide says deleting ""restores the default logo""; the handler nulls the organization logo, so the store logo applies and the theme default only when the store has none (domain map D16). Cleanup restores the whole record from the captured copy.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), logo_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[NAV] open {{FRONT_URL}}/company/info
+[WAIT] the Company logo block renders
+[ACT] click the file picker
+[WAIT] the file dialog opens
+[ACT] choose {{logo_file}} in the file dialog
+[WAIT] the preview of the new logo appears
+[ACT] click the save (floppy) icon button
+[WAIT] the notification 'Logo was successfully changed.' appears
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as UPLOADED
+[ACT] click the delete (trash) icon button
+[WAIT] the modal 'Delete organization logo' opens
+[ACT] confirm the deletion in the modal
+[WAIT] the notification 'Logo was deleted.' appears
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as DELETED
+[HTTP] GET {{BACK_URL}}{{UPLOADED.logoUrl}} (the uploaded file path, admin token) - [CAPTURE] status as FILE_STATUS
+[NAV] open {{FRONT_URL}}
+[WAIT] the home page renders","[SHAPE] UPLOADED.logoUrl starts with /api/files/ {DOC} (module@3.1008.0 changeOrganizationLogo)
+[SHAPE] DELETED.logoUrl is null or empty and DELETED.id = BEFORE.id {DOC} (module@3.1008.0 handler: delete sets LogoUrl null)
+[REL] after the delete the header logo src path ends with the path of STORE_LOGO — not the theme default {BL} (BL-WL-002)
+[REL] FILE_STATUS = 200: the uploaded file is not deleted with the logo {OBSERVED} (source ChangeOrganizationLogoCommandHandler, DeleteLogoUrlFile is a no-op)","[API] both mutations return isSuccess true, errors[] empty
+[CONSOLE] no TypeError or JS error",the theme default logo shows although the store has a logo; DELETED keeps a logo; a second record appears; the delete modal is absent,PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so the seeded logo is back; GET it and confirm logoUrl = BEFORE.logoUrl. The uploaded file remains as an orphan file; report it,"VCST-6288 · Archetype:LIFECYCLE · Technique:ST · Purpose:FUNC · Behavior:wl.reverse.company-logo-delete.store-or-default-logo-follows Behavior:wl.reverse.company-logo-delete.file-not-deleted · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · Synced: qa-suite-sync wl (2026-11-27)",Draft
+FWL-077,"Company info — for an organization whose record exists but is DISABLED, the logo mutation must not create a second record",Whitelabeling > Company logo > Defect candidate,High,BL-WL-005,,"[EXCLUSIVE:disposable organization with its own maintainer]
+DEFECT-CANDIDATE case (KB-FC2150C5, source-only, NOT observed): changeOrganizationLogo looks the record up with IsEnabled = true and creates a new enabled one without running the validator, so a disabled record plus an upload may leave TWO records for one organization. Needs a DISPOSABLE organization (name prefix AGENT-TEST-) with a maintainer account and a white-labeling record that is DISABLED — fixture request FR-3, no alias exists yet, so this case is NOT executable until FR-3 is seeded. The mutation is a write and records cannot be deleted by REST: DO NOT RUN on a shared organization.","front_url={{FRONT_URL}}, logo_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)","[ASSERT] the disposable organization (FR-3) has exactly one record and its isEnabled is false (GET /api/white-labeling/organization/<its id>)
+[NAV] open {{FRONT_URL}}
+[ACT] sign in as the disposable organization's maintainer (credentials from FR-3)
+[WAIT] the signed-in home page renders
+[NAV] open {{FRONT_URL}}/company/info
+[WAIT] the Company logo block renders
+[ACT] click the file picker
+[WAIT] the file dialog opens
+[ACT] choose {{logo_file}} in the file dialog
+[WAIT] the preview appears
+[ACT] click the save (floppy) icon button
+[WAIT] the notification 'Logo was successfully changed.' appears
+[HTTP] GET /api/white-labeling/organization/<its id> and enumerate EVERY record bound to that organization (the validator forbids a duplicate binding, so exactly one is correct)","[COUNT] exactly one white-labeling record is bound to the organization after the upload {BL} (BL-WL-005)
+[REL] the record that exists after the upload has the SAME id as before and its isEnabled is unchanged — an upload must not silently enable or replace it {BL} (BL-WL-005)
+[SHAPE] the record's logoUrl starts with /api/files/ {DOC} (module@3.1008.0 changeOrganizationLogo)","[API] the mutation returns isSuccess true; xAPI whiteLabelingSettings(organizationId) errors[] empty
+[CONSOLE] no TypeError or JS error",two records are bound to the organization; a new id replaced the old one; isEnabled flipped to true; the validator error duplicate-store-or-organization is returned to the buyer,Records cannot be deleted by REST (KB-52D2F554). The disposable organization and its record(s) stay; set the surviving record Enabled = false from the blade and report the orphan record(s) and the orphan file,VCST-4657 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Behavior:wl.company-logo.record-lookup-duplicate · Catches:VALIDATOR-BYPASS · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 ChangeOrganizationLogoCommandHandler.GetWhiteLabelingSettingAsync; Docs: PlatformUserGuide white-labeling; BL-WL-005 · KB-FC2150C5 · Synced: qa-suite-sync wl (2026-11-27),Draft
+FWL-078,"Branding renders the same in each desktop browser lane (logo, theme, main menu, footer headers) — lane is Test_Data",Whitelabeling > Cross-browser,High,BL-WL-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only. Run once per desktop lane the run owns (lane = chromium, firefox, edge; mobile Safari and Android Chrome are other cases): the lane is the parameter, the expectation is identical. Replaces FWL-038/039/040, which differed only in the browser name.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, front_url={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), lane=chromium|firefox|edge","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO and themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET)
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl secondaryLogoUrl themePresetName isOrganizationLogoUploaded footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] answer as ORG_ANSWER
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY (the store preset's colour)
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header and footer are rendered","[REL] the header logo src path ends with the path of REC_LOGO in the lane under test {BL} (BL-WL-002)
+[REL] <html data-preset> equals REC_PRESET lower-cased with spaces replaced by ""-"" and the computed --color-primary-500 on :root differs from GUEST_PRIMARY in the lane under test {BL} (BL-WL-002)
+[REL] the set of top-level header menu titles equals the set of titles in ORG_ANSWER.mainMenuLinks {BL} (BL-WL-004)
+[REL] the footer section headers equal the titles in ORG_ANSWER.footerLinks and none of them is a link {OBSERVED} (vcst_qa 2026-11-27, KB-E7DF9B84)
+[SHAPE] no request on the page returns 4xx/5xx for the logo or /graphql {BL} (BL-WL-002)","[CONSOLE] no TypeError or JS error in the lane under test
+[API] xAPI errors[] empty","the logo, colour or menu differs between lanes; a lane shows the store logo after sign-in; console errors in one lane only",Sign out of the member context; close the lane context,"VCST-4637 · Archetype:RENDER · Technique:PW · Purpose:HAPPY · Behavior:wl.render.header-logo · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); VirtoCommerce/vc-frontend@2.63.0 (useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts) + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview; StorefrontUserGuide account/company-info · Synced: qa-suite-sync wl (2026-11-27)",Draft

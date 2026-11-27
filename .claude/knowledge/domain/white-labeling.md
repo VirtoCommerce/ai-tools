@@ -256,3 +256,4 @@ excludes: >-
 
 | Date | By | What moved |
 |---|---|---|
+| 2026-11-27 | QA lead (stated in chat, not observed) | The header Organizations switcher is meant to be visible only to users who belong to more than one organization (UNVERIFIED, SPEC); the multi-organization account WL_USER_MULTI is the only one that should show it. Also: VCST-6288 is Done and its fix (vc-frontend#2612) is in theme 2.63.0. |

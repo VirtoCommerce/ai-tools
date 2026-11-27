@@ -1,32 +1,35 @@
 {
-  "runId": "REG-2026-11-26-1702-WXM",
+  "runId": "REG-2026-11-27-1452-WLV2",
   "status": "completed",
-  "startedAt": "2026-11-26T16:03:06.123Z",
-  "selection": "sprint-26-23 WX — FWL-001/003/004/009 (Manual→Draft, live check)",
+  "startedAt": "2026-11-27T13:53:27.000Z",
+  "selection": "070,071 --ids (21 exact FWL cases, WL v2 re-run of rewritten cases)",
   "env": "vcst",
-  "release": "sprint-26-23",
-  "wave": "WX",
+  "windowStart": "2026-11-27T13:53:27.000Z",
   "suites": {
     "070": {
       "status": "done",
       "lane": "browser",
-      "cases": 3,
+      "cases": 15,
       "description": "Whitelabeling Storefront",
       "browser": "playwright-chrome",
-      "pass": 0,
-      "fail": 2,
-      "blocked": 1
+      "startedAt": "2026-11-27T13:54:05.618Z",
+      "pass": 15,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-27T14:09:34.230Z"
     },
     "071": {
       "status": "done",
       "lane": "browser",
-      "cases": 1,
+      "cases": 6,
       "description": "Whitelabeling Branding",
-      "browser": "playwright-chrome",
-      "pass": 0,
-      "fail": 1,
-      "blocked": 0
+      "browser": "playwright-edge",
+      "startedAt": "2026-11-27T13:54:05.618Z",
+      "pass": 6,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-11-27T14:10:16Z"
     }
   },
-  "finishedAt": "2026-11-26T17:23:23.379Z"
+  "finishedAt": "2026-11-27T14:12:02.925Z"
 }
