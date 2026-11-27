@@ -88,7 +88,8 @@ Done. `/vc-test:qa-ticket` does not call it — QA runs it by hand when the tick
 
 3. **Capture** on a Playwright lane: build check first, then a demo data set made for the walk (never the
    run's fixtures; deleted by id after the last frame), then one full-viewport frame per step of every
-   `PASS` scenario — [`media.md`](media.md) §Capture. Build the scenario GIFs — §GIF.
+   `PASS` scenario, the walk recorded as `{RUN_DIR}/capture-plan.json` and checked on a contact sheet before
+   anything is built — [`media.md`](media.md) §Capture. Build the scenario GIFs — §GIF.
 
 4. **Write the document** from [`template.md`](template.md) under [`rules.md`](rules.md), and save it as
    `reports/ba/<Domain>/<ticket>-<slug>-guide.md`. An existing guide for the ticket is amended in place,
