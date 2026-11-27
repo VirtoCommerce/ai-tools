@@ -44,6 +44,7 @@ import { delimiter, join } from "node:path";
 import { ENV_NAME_RE, currentEnv, envFilePasswords, isPasswordName } from "../skills/project-init/lib/passwords.mjs";
 import { readStore, storeValues } from "../scripts/lib/test-accounts.mjs";
 import { configArg, configHarPath, watchHarDirs } from "./har-scrub.mjs";
+import { endLane, startLaneWatchdog } from "./lane-watchdog.mjs";
 
 /** The envs a project names: every `.env.<env>` file in its root. Pure-ish (one directory read). */
 export function projectEnvs(root, { list = readdirSync } = {}) {
@@ -237,6 +238,10 @@ export async function startPlaywrightMcp({ pkg, version, args, secrets, say: tel
   } catch {
     /* Node without the API — the default order is fine */
   }
+  // A lane does not outlive its session: it ends itself when the process above it is gone or when nothing has used it
+  // for VC_LANE_IDLE_HOURS (bridge/lane-watchdog.mjs). Watching starts before the server so the idle clock covers the
+  // whole life of the lane.
+  startLaneWatchdog({ tell, onExpire: () => endLane() });
   // The package's own cli.js, plus the hook. Resolved from the package so it gets ITS playwright-core.
   const req = createRequire(join(pkg, "package.json"));
   const { program } = req("playwright-core/lib/utilsBundle");

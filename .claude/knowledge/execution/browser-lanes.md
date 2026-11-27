@@ -157,6 +157,22 @@ of the ticket's project (`.design-source/<uuid>/`) and hands the agent the **spe
 session decides whether the axis runs. Source ladder:
 [`plugins/vc-test/skills/qa-design/claude-design-verification.md`](../../../plugins/vc-test/skills/qa-design/claude-design-verification.md) §1.
 
+## Lanes that pile up — symptom, cause, `npm run lanes:reap`
+
+**Symptom (measured 2026-11-27, Windows 11, 24 logical CPUs, 64 GB):** CPU at 100 % and ~26 GB held by `node.exe`; 530 node processes, 244 of them `playwright-lane.mjs` lanes (62 per lane name), 208 older than a day, the oldest 8 days, plus a wrapper (`cmd /c npx` → `npx-cli.js` → `cmd`) around each and ~30 copies each of the chrome-devtools-mcp, serena and vc-secrets stacks.
+
+**Two causes, both fixed:**
+- **CPU** — a lane started before vc-init 0.8.3 spun a core once its `test-results/<lane>/har` folder was deleted (`fs.watch` fired ~200 000 events/s, PR #684). A lane started with 0.8.3 or later burns 0 % idle, with a browser open, and after its HAR folder or all of `test-results/` is deleted (re-measured 2026-11-27).
+- **Count** — a Claude session keeps its MCP servers for as long as the session exists, and the desktop app keeps idle sessions for days; the settings of this repo start **four** lanes (chrome, firefox, edge, mobile) in every one. A lane exits by itself when its stdin closes (killing the session takes the lane and its browser with it), but an open idle session never closes it. Nothing used the lanes, nothing stopped them.
+
+**What stops them now (vc-init ≥ 0.10.0):**
+1. **The lane ends itself** (`bridge/lane-watchdog.mjs`): when a process that was above it at start is gone (**orphaned**), or when nothing has crossed its stdin or stdout for **`VC_LANE_IDLE_HOURS`** (default **4**; `0` turns the idle exit off). A lane serving a request writes to stdout as it works, so it is never stopped mid-request. The client then shows the lane as disconnected — **reconnect it in `/mcp`**. Set the variable in the `env` block of `.claude/settings.local.json` (the lanes inherit the session's environment); the lane log line is `playwright-lane: stopping — idle: …`.
+2. **`npm run lanes:reap`** (`plugins/vc-init/scripts/lanes-reap.mjs`; runs from any checkout with vc-init) lists the MCP stacks — lane, chrome-devtools-mcp, serena, vc-secrets — whose owner process is gone, and every lane older than **24 h** (`--older-than <h>`, `0` = off; `--all-kinds` applies the age rule to the other servers too). **Dry run by default**; `-- --apply` stops each stack whole, browser children first. It never touches a stack younger than `--min-age` minutes (default 30) nor its own process tree; `--lanes-only`, `--json`. A session that was still using a stopped server reconnects it in `/mcp`.
+
+**Starting fewer** (what each session costs): the lanes below are only needed when a run names them — `agents.md` assigns edge to `qa-backend-expert`, firefox to `qa-testing-expert`, mobile to the mobile suites. `/project-init` enables **only `playwright-chrome`**; the other three are enabled by hand in `enabledMcpjsonServers` of `.claude/settings.local.json`. Leave them out of a session that does not run those lanes: each is four processes (`cmd`, `npx`, `cmd`, the lane) and ~50–80 MB before a browser opens. **Lazy start is not possible today:** Claude Code starts every enabled stdio server at session start and has no start-on-first-use; a stub that answers `tools/list` and spawns the real lane on the first call would be a protocol proxy in front of every lane, not worth its own failure modes. The wrappers do not outlive the lane: when the lane exits, `npx` and both `cmd` shells exit with it (verified), so reaping the lane takes its wrappers.
+
+**Not enabled, for you to decide:** running `lanes:reap` (dry run, or `--apply`) from a `SessionStart` hook in the tracked `.claude/settings.json`, so every new session first sweeps the stacks of the ones that ended. It would add a process listing (~1–2 s on Windows) to every start and, with `--apply`, stop other sessions' servers without being asked; it is deliberately **not** wired up.
+
 ## Storybook Visual Regression
 
 Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to the `vc-test:ui-ux-expert` agent). No persistent `storybook/` directory is needed — baselines are stored in test evidence directories per ticket. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`). See `skills/qa-storybook/` for methodology and guides.
