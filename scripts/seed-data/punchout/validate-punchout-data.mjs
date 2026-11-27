@@ -223,7 +223,7 @@ for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
     if (claimed.has(String(pos))) fail(`${env}: position ${pos} is claimed by two active specs`);
     claimed.add(String(pos));
     const dc = d.configs[pos];
-    if (!dc) { fail(`${env}: active ${c.alias} has no deployed declaration at position ${pos}`); continue; }
+    if (!dc) { if (d.absent?.[pos]) { note(`${env}: ${c.alias} (position ${pos}) not deployed — ${d.absent[pos]}; its cases BLOCK`); continue; } fail(`${env}: active ${c.alias} has no deployed declaration at position ${pos} (declare it, or list it in absent with the reason)`); continue; }
     if (!dc.id) fail(`${env}: configuration at position ${pos} has no Id — the platform refuses to start without it`);
     if (!dc.storeId) fail(`${env}: configuration at position ${pos} has no StoreId — the platform refuses to start without it`);
     ids.push(dc.id);
@@ -233,7 +233,9 @@ for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
   // VCST-5888 default-methods triad: ONE store, three diverging code states (SECOND RULE).
   const byAlias = (al) => { const c = CONFIG_SPECS.find((x) => x.alias === al); return c && !c.retired ? f[configPosition(c)] : null; };
   const [abs, val, inv] = [DEFAULT_METHODS_TRIAD.absent, DEFAULT_METHODS_TRIAD.valid, DEFAULT_METHODS_TRIAD.invalid].map(byAlias);
-  if (!abs || !val || !inv) fail(`${env}: default-methods triad incomplete (absent/valid/invalid must all be active, deployed specs)`);
+  const triadAbsent = [DEFAULT_METHODS_TRIAD.absent, DEFAULT_METHODS_TRIAD.valid, DEFAULT_METHODS_TRIAD.invalid].filter((al) => { const c = CONFIG_SPECS.find((x) => x.alias === al); return c && d.absent?.[configPosition(c)]; });
+  if (triadAbsent.length) note(`${env}: default-methods triad not deployed (${triadAbsent.join(", ")} absent) — the T1/T4/T17 divergence is not checkable here`);
+  else if (!abs || !val || !inv) fail(`${env}: default-methods triad incomplete (absent/valid/invalid must all be active, deployed specs)`);
   else {
     if (!(abs.storeId === val.storeId && val.storeId === inv.storeId)) fail(`${env}: triad stores differ [${abs.storeId}, ${val.storeId}, ${inv.storeId}] — only the default methods may vary`);
     if (!abs.storeExists) fail(`${env}: triad store must exist`);
@@ -317,7 +319,8 @@ const allowed = (url, pattern) => (pattern.endsWith('*')
 for (const [env, d] of Object.entries(DEPLOYED_CONFIGS)) {
   for (const p of VERIFY_PROBES) {
     const c = d.configs[p.config]; // p.config is a POSITION
-    if (!c) { fail(`${env}: probe "${p.name}" names undeclared position ${p.config}`); continue; }
+    // A position the env declares absent (DEPLOYED_CONFIGS[env].absent, e.g. BADCODES on vcst) is skipped, not probed.
+    if (!c) { if (!d.absent?.[p.config]) fail(`${env}: probe "${p.name}" names undeclared position ${p.config}`); continue; }
     // Check order (source + KB-62D97984): StoreId present → sender domain → return URL → mapping → store exists.
     const predict = (mapped) => {
       if (!c.storeId) return '500';

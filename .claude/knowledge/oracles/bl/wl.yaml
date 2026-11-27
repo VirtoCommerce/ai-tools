@@ -103,7 +103,8 @@ rules:
       kind: manual
       ref: Admin WL blade with both Store & Org set → "Both Store and Organization set" error; neither → "Store or Organization must be set"; a duplicate store/org → "Duplicate Store or Organization".
     violation_signal: A setting saved with both or neither binding; duplicate bindings persisted.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[bug] VCST-7056 — the xAPI mutation changeOrganizationLogo created a second record for an organization whose record was disabled, without running WhiteLabelingSettingValidator (live probe on vcst, 2026-11-27); the rule holds for the Admin blade and REST, not for this writer"
   - id: BL-WL-006
     title: Distinct allowed upload types — logo vs favicon
     rule: The **Logo** widget accepts **PNG / GIF / SVG**; the **Favicon** widget accepts **PNG / JPG / WEBP**. Other extensions are rejected with a "Filetype error" dialog. The sets are distinct — JPG/WEBP are favicon-only, GIF/SVG are logo-only.

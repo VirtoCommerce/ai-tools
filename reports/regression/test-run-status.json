@@ -1,44 +1,35 @@
 {
-  "runId": "REG-2026-11-26-1000-RB",
+  "runId": "REG-2026-11-27-1452-WLV2",
   "status": "completed",
-  "startedAt": "2026-11-26T05:42:09.938Z",
+  "startedAt": "2026-11-27T13:53:27.000Z",
+  "selection": "070,071 --ids (21 exact FWL cases, WL v2 re-run of rewritten cases)",
   "env": "vcst",
-  "ticket": "VCST-7027",
-  "selection": "033,044,028 --ids AUTH-043,SEC-AUTH-001,SEC-AUTH-003,SEC-AUTH-005,CART-001,CART-006,CART-007,CART-133,CART-134 (re-run of W1/W2 cases blocked by missing runner API access)",
+  "windowStart": "2026-11-27T13:53:27.000Z",
   "suites": {
-    "028": {
+    "070": {
       "status": "done",
       "lane": "browser",
+      "cases": 15,
+      "description": "Whitelabeling Storefront",
       "browser": "playwright-chrome",
-      "startedAt": "2026-11-26T05:45:37Z",
-      "pass": 5,
+      "startedAt": "2026-11-27T13:54:05.618Z",
+      "pass": 15,
       "fail": 0,
       "blocked": 0,
-      "skipped": 0,
-      "finishedAt": "2026-11-26T06:49:58.274Z"
+      "finishedAt": "2026-11-27T14:09:34.230Z"
     },
-    "044": {
+    "071": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-firefox",
-      "startedAt": "2026-11-26T05:45:37Z",
-      "pass": 2,
-      "fail": 0,
-      "blocked": 1,
-      "skipped": 0,
-      "finishedAt": "2026-11-26T06:49:58.279Z"
-    },
-    "033": {
-      "status": "done",
-      "lane": "browser",
+      "cases": 6,
+      "description": "Whitelabeling Branding",
       "browser": "playwright-edge",
-      "startedAt": "2026-11-26T06:34:16Z",
-      "pass": 1,
+      "startedAt": "2026-11-27T13:54:05.618Z",
+      "pass": 6,
       "fail": 0,
       "blocked": 0,
-      "skipped": 0,
-      "finishedAt": "2026-11-26T06:49:58.278Z"
+      "finishedAt": "2026-11-27T14:10:16Z"
     }
   },
-  "finishedAt": "2026-11-26T06:50:34.116Z"
+  "finishedAt": "2026-11-27T14:12:02.925Z"
 }

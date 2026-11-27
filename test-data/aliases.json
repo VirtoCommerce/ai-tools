@@ -1,7 +1,8 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.74",
+    "version": "1.5.75",
+    "changelog_1_5_75": "WL_EMPTY_RECORD + WL_USER_DEFAULT_EMPTY_RECORD + WL_USER_EMPTY_RECORD_MAINTAINER (FR-1/FR-2, seed:white-labeling), WL_DISPOSABLE_ORG + WL_DISPOSABLE_MAINTAINER (FR-3, per-run, seed:white-labeling:disposable), STORE_WITHOUT_WL (FR-4, discovered), WL_ASSET_* over white-labeling/test-assets (FR-5); guard td:validate:white-labeling. WL_* .logo/.secondary_logo/.favicon now come from the live record via aliases.<env>.json (organizations.csv *_url columns blanked: they held a stale relative path with an org GUID).",
     "changelog_1_5_74": "SIZE_RUN_MASTER (seed:size-run, guard td:validate:size-run): single-group Size picker XS,S,M,L,XL on the B2C template for B2C-VAR-001 (suite 009); sibling of VARIANT_PICKER_MASTER, which is unchanged.",
     "changelog_1_5_73": "SB_THEME_B2B + SB_STORE_EDITOR + SB_THEME_EDITOR_NOPUBLISH (seed:site-builder), SB_LEGACY_HEADER_PAGE (seed:cms-pages), SB_WL_ORG_BUYER + SB_PERSONAL_BUYER (reuse combos): the Site Builder fixtures the VCST-6571/6572 runs lacked.",
     "changelog_1_5_72": "DEMO_RETURNS_BUYER + DEMO_NO_ORDERS_CUSTOMER: demo-profile storefront personas (virtostart). Login = the spec contact email, password = the {{SR_DEMO_BUYER_PASSWORD}} token. Spec DEMO_PERSONAS in sales-rep-demo-specs.mjs; guard td:validate:sales-rep-demo [8].",
@@ -2040,6 +2041,20 @@
       "alias_name": "alias_name"
     }
   },
+  "WL_EMPTY_RECORD": {
+    "file": "white-labeling/organizations",
+    "filter": {
+      "org_id": "WL-ORG-F"
+    },
+    "fields": {
+      "name": "org_name",
+      "record_state": "record_state",
+      "id": "org_id",
+      "alias_name": "alias_name"
+    },
+    "seed": "seed:white-labeling",
+    "_notes": "FR-1/FR-2: organization whose white-labeling record is ENABLED but EMPTY (no logo, secondary logo, favicon, preset, main menu or footer). .id is the CSV key; the platform GUID is only in WL_EMPTY_RECORD_PLATFORM_ID (aliases.<env>.json, written by npm run seed:white-labeling)."
+  },
   "WL_USER_ELECTRONICS": {
     "file": "white-labeling/users",
     "filter": {
@@ -2117,6 +2132,110 @@
       "roles": "roles",
       "alias_name": "alias_name"
     }
+  },
+  "WL_USER_DEFAULT_EMPTY_RECORD": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-07"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    },
+    "seed": "seed:white-labeling",
+    "_notes": "FR-1 persona (FWL-003): Organization employee of WL_EMPTY_RECORD. Password var TEST_USER_PASSWORD (lane types TEST_USER_PASSWORD_<ENV>)."
+  },
+  "WL_USER_EMPTY_RECORD_MAINTAINER": {
+    "file": "white-labeling/users",
+    "filter": {
+      "user_id": "WL-USER-08"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "org_id": "org_id",
+      "roles": "roles",
+      "alias_name": "alias_name"
+    },
+    "seed": "seed:white-labeling",
+    "_notes": "FR-2 persona (FWL-075 second half): Organization maintainer of WL_EMPTY_RECORD, an organization with no logo of its own (isOrganizationLogoUploaded false). Password var TEST_USER_PASSWORD."
+  },
+  "WL_DISPOSABLE_ORG": {
+    "_inline": true,
+    "name": "",
+    "record_id": "",
+    "fields": {
+      "name": "name",
+      "record_id": "record_id"
+    },
+    "seed": "seed:white-labeling:disposable",
+    "_notes": "FR-3 (FWL-077), PER RUN: a fresh AGENT-TEST-WL-Disposable-<ts> organization with a DISABLED white-labeling record (record_id). Empty here; aliases.<env>.json carries the armed round. Re-arm right before the case with npm run seed:white-labeling:disposable (it tears the previous round down first); npm run seed:white-labeling:disposable:teardown clears it. The organization's platform GUID is WL_DISPOSABLE_ORG_PLATFORM_ID. Records have no REST delete (KB-52D2F554): each round leaves its record(s) disabled and orphaned."
+  },
+  "WL_DISPOSABLE_MAINTAINER": {
+    "_inline": true,
+    "email": "",
+    "password": "{{TEST_USER_PASSWORD}}",
+    "id": "",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "id": "id"
+    },
+    "seed": "seed:white-labeling:disposable",
+    "_notes": "FR-3 persona: Organization maintainer (Approved, B2B-store) of WL_DISPOSABLE_ORG. email/id from aliases.<env>.json after a re-arm; empty when torn down."
+  },
+  "STORE_WITHOUT_WL": {
+    "_inline": true,
+    "id": "",
+    "name": "",
+    "fields": {
+      "id": "id",
+      "name": "name"
+    },
+    "seed": "seed:white-labeling",
+    "_notes": "FR-4: an Open store whose GET /api/white-labeling/store/{id} returns no record, other than {{STORE_ID}}. Discovered at seed time (white-labeling-specs.mjs pickStoreWithoutWl: sticky, non-AGENT-TEST, lowest id) and written to aliases.<env>.json; the seeder never writes to the store."
+  },
+  "WL_ASSET_LOGO_OK_FAVICON_REJECTED": {
+    "file": "white-labeling/test-assets",
+    "filter": {
+      "asset_id": "WL-ASSET-GIF"
+    },
+    "fields": {
+      "file": "file",
+      "format": "format",
+      "logo_allowed": "admin_logo_allowed",
+      "favicon_allowed": "admin_favicon_allowed"
+    },
+    "_notes": "FR-5: 32x32 GIF under test-data/ (path relative to test-data/, as the *_source columns of white-labeling/organizations). Inline form: @td(white-labeling/test-assets, asset_id=WL-ASSET-GIF, file)."
+  },
+  "WL_ASSET_FAVICON_OK_LOGO_REJECTED": {
+    "file": "white-labeling/test-assets",
+    "filter": {
+      "asset_id": "WL-ASSET-JPEG"
+    },
+    "fields": {
+      "file": "file",
+      "format": "format",
+      "logo_allowed": "admin_logo_allowed",
+      "favicon_allowed": "admin_favicon_allowed"
+    },
+    "_notes": "FR-5: 32x32 JPEG. Inline form: @td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file)."
+  },
+  "WL_ASSET_REJECTED_BY_BOTH": {
+    "file": "white-labeling/test-assets",
+    "filter": {
+      "asset_id": "WL-ASSET-ICO"
+    },
+    "fields": {
+      "file": "file",
+      "format": "format",
+      "logo_allowed": "admin_logo_allowed",
+      "favicon_allowed": "admin_favicon_allowed"
+    },
+    "_notes": "FR-5: 32x32 ICO. Inline form: @td(white-labeling/test-assets, asset_id=WL-ASSET-ICO, file)."
   },
   "LANG_EN": {
     "file": "localization/languages",

@@ -1,0 +1,4 @@
+asset_id,alias_name,file,format,admin_logo_allowed,admin_favicon_allowed,test_purpose
+WL-ASSET-GIF,WL_ASSET_LOGO_OK_FAVICON_REJECTED,white-labeling/assets/test-files/logo-accepted-favicon-rejected.gif,gif,true,false,FR-5 - 32x32 GIF: accepted by the Admin Logo widget (png|gif|svg) and refused by the Favicon widget (png|jpg|jpeg|webp) - KB-6102AC5A / BL-WL-006
+WL-ASSET-JPEG,WL_ASSET_FAVICON_OK_LOGO_REJECTED,white-labeling/assets/test-files/favicon-accepted-logo-rejected.jpg,jpeg,false,true,FR-5 - 32x32 JPEG: accepted by the Admin Favicon widget and refused by the Logo widget - KB-6102AC5A / BL-WL-006
+WL-ASSET-ICO,WL_ASSET_REJECTED_BY_BOTH,white-labeling/assets/test-files/rejected-by-both.ico,ico,false,false,FR-5 - 32x32 ICO (32-bit DIB): refused by both Admin widgets - KB-6102AC5A / BL-WL-006

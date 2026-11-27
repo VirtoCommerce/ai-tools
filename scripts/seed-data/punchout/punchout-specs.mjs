@@ -130,9 +130,26 @@ export const DEPLOYED_CONFIGS = {
            defaultShipmentMethodCode: 'AGENT-TEST-NoSuchShipping', defaultPaymentMethodCode: 'AGENT-TEST-NoSuchPayment', defaultMethodsActive: false },
     },
   },
-  // vcst (vc-deploy-dev#6935) is NOT listed: as of 2026-10-22 the vcst-qa branch's backend/packages.json carries no
-  // VirtoCommerce.Punchout module, so its Punchout__Configurations app settings (0..2, no Id; 3 removed) are read by
-  // nothing. Re-add an entry here — with the Ids the PR #2 build requires — when the module is deployed there again.
+  // vcst: the configurations came with vc-deploy-dev#6935 (no Ids; position 3 had no StoreId) and were read by nothing
+  // until #7167 (2026-11-26) pinned Punchout 3.1001.0, added Ids vcst-punchout-0..2 and turned position 3 into DEFAULTS
+  // on the existing punchout-3-sharedsecret. No BADCODES (position 4): vcst-qa's vault has no punchout-4-sharedsecret.
+  vcst: {
+    source: 'vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)',
+    configs: {
+      0: { id: 'vcst-punchout-0', storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
+           tokenLifetime: '00:15:00', sessionLifetime: '04:00:00' },
+      1: { id: 'vcst-punchout-1', storeId: 'QA-STORE', storeExists: true, senderDomain: '', allowedReturnUrls: [],
+           tokenLifetime: '00:02:00', sessionLifetime: '00:10:00' },
+      2: { id: 'vcst-punchout-2', storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
+           tokenLifetime: '', sessionLifetime: '' },
+      3: { id: 'vcst-punchout-defaults', storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: [],
+           tokenLifetime: '', sessionLifetime: '',
+           defaultShipmentMethodCode: 'FixedRate', defaultPaymentMethodCode: 'DefaultManualPaymentMethod', defaultMethodsActive: true },
+    },
+    // Positions an active spec claims but this env does not deploy: the guard notes them instead of failing, the
+    // overlay resolves them to "" and the verify skips their probes. Add the configuration, then drop the entry.
+    absent: { 4: 'BADCODES needs a Key Vault secret punchout-4-sharedsecret on vcst-qa, which does not exist' },
+  },
 };
 
 /** `{{VAR}}` token for a configuration's secret — the only form a committed file may carry. */
@@ -144,7 +161,9 @@ export const secretToken = (spec) => `{{${spec.secretVar}}}`;
  * reads the number the platform will actually apply.
  */
 export function configOverlayFields(spec, deployed) {
-  if (!deployed) return null;
+  // An env that deploys some configurations but not this one (vcst has no BADCODES): every fact empty, the
+  // reason carried — the same "clear miss" shape as a retired one, so its cases BLOCK instead of reading null.
+  if (!deployed) return { ...retiredOverlayFields(spec), retired: false, retiredReason: '', notDeployedReason: `${spec.alias} is not deployed on this env` };
   const tokenLifetime = deployed.tokenLifetime || DEFAULT_TOKEN_LIFETIME;
   const sessionLifetime = deployed.sessionLifetime || DEFAULT_SESSION_LIFETIME;
   return {

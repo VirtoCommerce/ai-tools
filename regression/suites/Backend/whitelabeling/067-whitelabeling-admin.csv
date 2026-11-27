@@ -1,73 +1,161 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"WL-001","Check White Labeling widget","Dashboard Widget","High","BL-WL-001",,"White Labeling module installed and enabled; Admin access to {{BACK_URL}}","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to {{BACK_URL}}
-[ACT] 2. Sign in with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
-[NAV] 3. Navigate to Admin Dashboard
-[ASSERT] 4. Locate the White Labeling widget on the dashboard","[DOM] White Labeling widget is visible on the dashboard
-[DOM] Widget shows a summary of current settings (Enabled state, theme preset name, logo presence)","[CONSOLE] no uncaught JS errors on dashboard load","Widget missing from dashboard; Widget shows stale or blank summary; Console error on dashboard load","none","C384970","Manual"
-"WL-002","Set theme presets","Theme","High","BL-WL-001",,"White Labeling module installed; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Select a theme preset from the Theme preset name field (e.g. @td(WL_FASHION.theme))
-[ACT] 3. Click 'Save'
-[WAIT] 4. Wait for success notification","[FORM] Theme preset field displays the selected value after save
-[STATE] Success notification confirms settings saved","[STOREFRONT] storefront reflects the new theme colors on next page load for users without an org override","Save button has no effect; Theme preset reverts on refresh; No success notification","restore store theme preset to original value","C384973","Manual"
-"WL-003","Upload custom logo - allowed extensions","Logo","Critical","BL-WL-006",,"White Labeling module enabled; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Click Logo upload widget and select a PNG file
-[WAIT] 3. Wait for upload to complete
-[ACT] 4. Click 'Save'
-[WAIT] 5. Wait for success notification
-[ACT] 6. Repeat steps 2-5 with a GIF file
-[ACT] 7. Repeat steps 2-5 with an SVG file","[DOM] Logo preview updates to the uploaded image after each upload
-[STATE] Save succeeds for PNG, GIF, and SVG without validation error (the logo widget's allowed extension set per en.WhiteLabeling.json — NOT JPG, which is not a valid logo type)","[NETWORK] logo upload request returns HTTP 200
-[STOREFRONT] uploaded logo displays in storefront header after save","Upload rejected for a valid extension; Logo preview does not update; 4xx/5xx on upload request","restore store logo to original value","C384971, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02)","Manual"
-"WL-004","Upload logo - rejected for invalid extension","Logo","Medium","BL-WL-006",,"White Labeling module enabled; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Click Logo upload widget and attempt to select a file with an extension NOT in the logo's allowed set (e.g. .webp — valid for the favicon widget but NOT the logo widget — or .bmp)","[DOM] Filetype-error dialog appears with title 'Filetype error' and message 'Only PNG, GIF or SVG files are allowed'
-[STATE] Logo field remains unchanged (previous logo, or empty, still shown)","[CONSOLE] no uncaught JS error (validation handled, not a crash)","Invalid file silently accepted; No validation message shown; Uncaught JS error on rejected upload; .webp incorrectly accepted by the logo widget","none","C384980, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02)","Manual"
-"WL-005","Upload favicon","Favicon","High","BL-WL-006",,"White Labeling module enabled; store @td(STORE_PRIMARY.id) accessible in Admin","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Click Favicon upload widget and select a valid favicon file (.png)
-[WAIT] 3. Wait for upload to complete
-[ACT] 4. Click 'Save'
-[WAIT] 5. Wait for success notification
-[ACT] 6. Repeat steps 2-5 with a JPG file
-[ACT] 7. Repeat steps 2-5 with a WEBP file","[DOM] Favicon preview updates after each upload
-[STATE] Save succeeds for PNG, JPG, and WEBP without validation error (the favicon widget's allowed extension set per en.WhiteLabeling.json — distinct from the logo widget's PNG/GIF/SVG set; favicon does NOT accept GIF or SVG)","[NETWORK] favicon upload request returns HTTP 200
-[STOREFRONT] uploaded favicon displays in the browser tab on next storefront load","Upload rejected for a valid favicon format; Favicon preview does not update; 4xx/5xx on upload request","restore store favicon to original value","C384972, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02)","Manual"
-"WL-006","Reset branding to defaults","Settings","Medium","BL-WL-001",,"Custom branding (logo, favicon, theme) applied to store @td(STORE_PRIMARY.id)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Click 'Reset to defaults'
-[WAIT] 3. Wait for confirmation dialog and confirm
-[WAIT] 4. Wait for success notification","[FORM] Theme preset, logo, and favicon fields revert to platform default values
-[STATE] Success notification confirms reset","[STOREFRONT] storefront shows default branding on next page load","Reset has no effect; Some fields reset but not others; No confirmation dialog before destructive reset","re-apply the original custom branding removed by this test","C384977","Manual"
-"WL-007","Clear all custom branding","Settings","Medium","BL-WL-001, BL-WL-004",,"Custom branding applied to store @td(STORE_PRIMARY.id)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Click 'Clear' to remove customization
-[WAIT] 3. Wait for confirmation dialog and confirm
-[WAIT] 4. Wait for success notification","[FORM] Logo, favicon, theme preset, footer link list, and main menu link list fields are all empty/NULL after clear
-[STATE] Success notification confirms clear","[STOREFRONT] storefront shows platform default branding after clear","Clear only removes some fields; No confirmation dialog before destructive clear; Fields repopulate on refresh","re-apply the original custom branding removed by this test","C384978","Manual"
-"WL-008","Per-organization footer links - add parent links","Organization Branding","High","BL-WL-004",,"Organization @td(WL_ELECTRONICS.name) exists; White Labeling enabled","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_ELECTRONICS.name), footer_list=@td(WL_ELECTRONICS.footer)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.footer)
-[ASSERT] 2. Verify parent footer links exist: Privacy Policy, Terms of Service, Support, Warranty
-[NAV] 3. Navigate to Customer > Organizations > @td(WL_ELECTRONICS.name) > White Labeling
-[ACT] 4. Set Footer Link List Name: @td(WL_ELECTRONICS.footer)
-[ACT] 5. Click 'Save'
-[WAIT] 6. Wait for success notification","[FORM] Footer Link List Name field persists @td(WL_ELECTRONICS.footer) after save
-[GRID] Link List blade shows 4 parent footer links in priority order","[API] whiteLabelingSettings query for @td(WL_ELECTRONICS.id) returns footerLinks with 4 entries (cross-ref WL-013)","Save fails; Link list shows wrong or missing parent links; Field does not persist after refresh","none (footer-electronics is a shared fixture; do not delete)","C385322","Manual"
+"WL-002",Set theme preset on the store record — select value saved and applied to guests,"Theme","High","BL-WL-001",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store {{STORE_ID}} has an enabled record with a theme preset; the theme preset list is the platform-wide WhiteLabeling.ThemePresetNames dictionary (the pencil beside the select edits THAT dictionary, not this store: do not use it)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, front_url={{FRONT_URL}}, preset=@td(WL_FASHION.theme)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the home page renders
+[ASSERT] note the computed --color-primary-500 on :root as BEFORE_PRIMARY and <html data-preset> as BEFORE_PRESET
+[ASSERT] BEFORE.themePresetName lower-cased with spaces replaced by ""-"" differs from {{preset}} normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the save would change nothing and the guest page could not show it)
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] choose {{preset}} in the select 'Theme preset name'
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as AFTER
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the home page renders
+[ASSERT] note the computed --color-primary-500 on :root as AFTER_PRIMARY and <html data-preset> as AFTER_PRESET","[FORM] the 'Theme preset name' select shows {{preset}} after the save
+[REL] AFTER.themePresetName = {{preset}} and every other AFTER field equals BEFORE
+[REL] the guest page <html data-preset> after the save (AFTER_PRESET) equals {{preset}} lower-cased with spaces replaced by ""-"", and its computed --color-primary-500 on :root (AFTER_PRIMARY) differs from BEFORE_PRIMARY: the palette moved with the preset, read from the page, never from a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","[NETWORK] the save is PUT /api/white-labeling returning 204; no other 4xx/5xx
+[CONSOLE] no TypeError or JS error",Save has no effect; AFTER.themePresetName differs from the choice; another field of the record changed; the guest still shows the previous palette,"Choose BEFORE.themePresetName in 'Theme preset name', click 'Save'; GET the record and confirm themePresetName = BEFORE.themePresetName","C384973 · Behavior:wl.record.edit.angularjs · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Scripts/module.js; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: stale preset-file runtime step removed (guest before/after data-preset + colour, differ guard)",Draft
+"WL-003","Upload custom logo - allowed extensions","Logo","Critical","BL-WL-006",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)), an SVG (@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source)) and the GIF test asset (@td(white-labeling/test-assets, asset_id=WL-ASSET-GIF, file): a 32x32 GIF that the Logo widget accepts)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, png_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source), svg_file=@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source), gif_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-GIF, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Logo' (opens the 'White labeling logo' sub-blade)
+[WAIT] the widget's blade opens
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{png_file}} in the file dialog
+[WAIT] the preview shows the uploaded image
+[ACT] click 'Save' on the sub-blade toolbar
+[WAIT] the sub-blade closes
+[ACT] click 'Save' on the 'White labeling' blade
+[WAIT] the save notification appears
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as AFTER_PNG
+[ACT] repeat the upload with {{gif_file}}, capturing AFTER_GIF
+[ACT] repeat the upload with {{svg_file}}, capturing AFTER_SVG","[DOM] the logo preview changes after each of the three uploads and no 'Filetype error' dialog opens
+[SHAPE] AFTER_PNG, AFTER_GIF and AFTER_SVG each end with the extension of the file picked (.png, .gif, .svg) and differ from each other
+[REL] after each Save the record id equals BEFORE.id (the same record was updated)","[NETWORK] each upload request returns HTTP 200 and each save is PUT /api/white-labeling returning 204
+[STOREFRONT] the guest header shows the last uploaded logo after the final save",a valid extension is refused; the preview does not update; 4xx/5xx on an upload; AFTER_* keeps the previous file,Fill the logo back to BEFORE.logoUrl by PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id); GET it and confirm logoUrl = BEFORE.logoUrl,"C384971, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.logo-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Scripts + Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: GIF taken from the test assets (WL-ASSET-GIF) instead of a file the runner has",Draft
+"WL-004","Upload logo - rejected for invalid extension","Logo","Medium","BL-WL-006",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store {{STORE_ID}} has an enabled record; read-only in effect: a refused pick uploads and saves nothing. Disallowed file for the Logo widget: a WEBP (valid only for the favicon widget)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, bad_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl and modifiedDate as BEFORE
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Logo'
+[WAIT] the widget's blade opens
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{bad_file}} in the file dialog
+[WAIT] a dialog reacts to the pick
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl and modifiedDate as AFTER","[DOM] a dialog titled 'Filetype error' opens and its text names the allowed logo types PNG, GIF and SVG
+[REL] the logo preview and the field are unchanged by the refused pick
+[REL] AFTER.logoUrl = BEFORE.logoUrl and AFTER.modifiedDate = BEFORE.modifiedDate (nothing was uploaded or saved)","[NETWORK] no upload request is sent for the refused file
+[CONSOLE] no uncaught JS error (validation handled, not a crash)",the WEBP is silently accepted; no Filetype error dialog; an upload request is sent; an uncaught JS error on the refused pick,none — nothing was uploaded; close the dialog and the blades without saving,"C384980, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.logo-rejected-type · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"WL-005","Upload favicon","Favicon","High","BL-WL-006",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store {{STORE_ID}} has an enabled record; test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source)), a WEBP (@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)) and the JPEG test asset (@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file): a 32x32 JPEG that the Favicon widget accepts)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, png_file=@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source), webp_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source), jpg_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Favicon' (opens the 'White labeling favicon' sub-blade)
+[WAIT] the widget's blade opens
+[ACT] click the favicon drop zone
+[WAIT] the file dialog opens
+[ACT] select {{png_file}} in the file dialog
+[WAIT] the preview shows the uploaded image
+[ACT] click 'Save' on the sub-blade toolbar
+[WAIT] the sub-blade closes
+[ACT] click 'Save' on the 'White labeling' blade
+[WAIT] the save notification appears
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] faviconUrl as AFTER_PNG
+[ACT] repeat the upload with {{jpg_file}}, capturing AFTER_JPG
+[ACT] repeat the upload with {{webp_file}}, capturing AFTER_WEBP","[DOM] the favicon preview changes after each of the three uploads and no 'Filetype error' dialog opens
+[SHAPE] AFTER_PNG, AFTER_JPG and AFTER_WEBP each end with the extension of the file picked and differ from each other
+[REL] after each Save the record id equals BEFORE.id","[NETWORK] each upload request returns HTTP 200 and each save is PUT /api/white-labeling returning 204
+[API] whiteLabelingSettings(storeId) advertises favicons[] derived from the last faviconUrl (the files exist only after the ImageTools job, see FWL-001)",a valid favicon format is refused; the preview does not update; 4xx/5xx on an upload; AFTER_* keeps the previous file,PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so faviconUrl is restored; GET it and confirm faviconUrl = BEFORE.faviconUrl,"C384972, Source-verified: en.WhiteLabeling.json upload filters (2026-07-02) · Behavior:wl.image.upload.favicon-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: JPEG taken from the test assets (WL-ASSET-JPEG) instead of a file the runner has",Draft
+"WL-007","Clear the Logo on an organization record — per-image Clear nulls the logo and secondary logo, the store logo takes over, the rest of the record stays",Branding > Reversal,"Medium","BL-WL-001, BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Organization @td(WL_ELECTRONICS.name) has an enabled record with a logo, a secondary logo and a favicon; the store record has a logo of its own. There is NO store-level Clear: Clear exists per image, on the Logo sub-blade (it nulls the logo AND the secondary logo) and on the Favicon sub-blade. Replaces the settings-level ""Clear all"" of the old case.","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_name=@td(WL_ELECTRONICS.name)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO
+[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Logo' (opens the 'White labeling logo' sub-blade)
+[WAIT] the widget's blade opens
+[ACT] click 'Clear' on the sub-blade toolbar
+[WAIT] both previews are empty
+[ACT] click 'Save' on the sub-blade toolbar if it is enabled
+[WAIT] the sub-blade closes
+[ACT] click 'Save' on the 'White labeling' blade
+[WAIT] the save notification appears
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as AFTER
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl secondaryLogoUrl faviconUrl } - [CAPTURE] as XAPI","[SHAPE] AFTER.logoUrl and AFTER.secondaryLogoUrl are null or empty
+[REL] AFTER.faviconUrl, themePresetName, mainMenuLinkListName, footerLinkListName and isEnabled equal BEFORE and AFTER.id = BEFORE.id — Clear took one image away, not the record
+[REL] XAPI.logoUrl = STORE_LOGO — a cleared organization image falls back to the store value
+[SHAPE] the URL of the cleared organization logo is no longer served in the xAPI answer for the organization","[NETWORK] the save is PUT /api/white-labeling returning 204; no other 4xx/5xx
+[CONSOLE] no TypeError or JS error","Clear empties only one of the two logos; Clear also wipes the favicon, preset or link lists; the organization is left with no logo although the store has one; the record is disabled as a side effect",PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so the logo and secondary logo are back; GET it and confirm logoUrl = BEFORE.logoUrl and secondaryLogoUrl = BEFORE.secondaryLogoUrl,C384978 · Behavior:wl.reverse.per-image-clear · Behavior:wl.reverse.per-image-clear.angularjs-clear-then-save · Behavior:wl.reverse.per-image-clear.falls-back-to-store · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Scripts/module.js (Logo and Favicon sub-blades) + GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A · Synced: qa-suite-sync wl (2026-11-27),Draft
+"WL-008",Organization footer link list — assigning a list name on an organization that had none shows that list's sections in xAPI instead of the store's footer,"Organization Branding","High","BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_DEFAULT.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Organization @td(WL_DEFAULT.name) (theme-only fixture) has an enabled record with an EMPTY Footer link list; list @td(WL_ELECTRONICS.footer) exists (two section headers, Legal and Help, each with two links); store {{STORE_ID}} has its own footer list. The old path ""Admin > Marketing > Link Lists"" is not walked here: the list is read through xAPI only","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_DEFAULT_PLATFORM_ID.id), org_name=@td(WL_DEFAULT.name), footer_list=@td(WL_ELECTRONICS.footer)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] footerLinkListName as PRIOR_FOOTER and id as WL_ID
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName mainMenuLinks { title } footerLinks { title } } - [CAPTURE] footerLinks titles as FOOTER_BEFORE
+[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] fill 'Footer link list': {{footer_list}}
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName mainMenuLinks { title } footerLinks { title } } - [CAPTURE] footerLinks titles as FOOTER_AFTER
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as AFTER","[FORM] 'Footer link list' shows {{footer_list}} after the save
+[REL] AFTER.footerLinkListName = {{footer_list}} and AFTER.id = WL_ID
+[REL] FOOTER_AFTER differs from FOOTER_BEFORE and equals the section titles of the list {{footer_list}} (Legal and Help)
+[REL] FOOTER_AFTER contains no title that belongs only to the store footer list","[API] every xAPI response has errors[] empty
+[NETWORK] the save is PUT /api/white-labeling returning 204",Save has no effect; the xAPI footer still equals the store footer; a second record appears for the organization; another field of the record changed,clear 'Footer link list' (or fill PRIOR_FOOTER) and click 'Save'; confirm GET /api/white-labeling/organization/{{org_id}} reports footerLinkListName = PRIOR_FOOTER,"C385322 · Behavior:wl.resolve.org-partial-inherits-store · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (AddFooterLinksAsync); Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-002, BL-WL-004 · Synced: qa-suite-sync wl (2026-11-27)",Draft
 "WL-009","Per-organization footer links - add children links","Organization Branding","Medium","BL-WL-004",,"state from WL-008 (@td(WL_ELECTRONICS.name) footer link list @td(WL_ELECTRONICS.footer) assigned)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, footer_list=@td(WL_ELECTRONICS.footer)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.footer)
 [ASSERT] 2. Verify list is currently a flat list (no children) per fixture design
 [ACT] 3. Add a temporary child link under 'Support': 'Contact Us' (url /contacts, priority 1)
 [ACT] 4. Click 'Save'
 [WAIT] 5. Wait for success notification","[GRID] 'Support' parent link now shows 1 nested child: 'Contact Us'
 [FORM] Child link priority and URL persist after save","[API] whiteLabelingSettings footerLinks for @td(WL_ELECTRONICS.id) shows childItems populated under 'Support' (cross-ref WL-013)","Child link not nested under correct parent; Save fails; Child link missing after refresh","remove the temporary 'Contact Us' child link added by this test, restoring @td(WL_ELECTRONICS.footer) to its flat-list fixture state","C385323","Manual"
-"WL-010","Footer links and main menu links returned in GraphQL query","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Organization @td(WL_ELECTRONICS.name) has both footer (@td(WL_ELECTRONICS.footer)) and main menu (@td(WL_ELECTRONICS.main_menu)) link lists configured; GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 2. Execute whiteLabelingSettings query with both footerLinks and mainMenuLinks fields (cultureName is REQUIRED — omitting it returns empty arrays even though configured):
+"WL-010",xAPI whiteLabelingSettings returns the organization's footer and main-menu hierarchy: titles map to their link-list priorities (array order is not asserted),"GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Runner-native, read-only. Admin token. Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has footer list @td(WL_ELECTRONICS.footer) (two section headers, each with two child links) and main-menu list @td(WL_ELECTRONICS.main_menu) configured. The xAPI returns the arrays in DESCENDING priority and the storefront sorts (KB-3239DE5F): assert title-to-priority, never a position.","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); p_legal=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Legal, priority); p_help=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Help, priority); p_home=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Home, priority); p_brands=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Brands, priority); p_support=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Support, priority); p_laptops=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Laptops, priority)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP wl]
 query {
-  whiteLabelingSettings(
-    organizationId: ""@td(WL_ELECTRONICS.id)""
-    storeId: ""@td(STORE_PRIMARY.id)""
-    cultureName: ""en-US""
-  ) {
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
     footerLinks { title url priority childItems { title url priority } }
     mainMenuLinks { title url priority childItems { title url priority } }
   }
 }
-[ASSERT] 3. Verify response structure and hierarchy","[DOM] footerLinks array has 4 entries matching @td(WL_ELECTRONICS.footer): Privacy Policy(1), Terms of Service(2), Support(3), Warranty(4)
-[DOM] mainMenuLinks array has 4 top-level entries matching @td(WL_ELECTRONICS.main_menu): Home(1), Brands(2), About Us(3), Support(4)
-[DOM] Brands entry's childItems contains Laptops(1), Phones(2), Tablets(3)","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; footerLinks or mainMenuLinks missing/null; childItems not returned for Brands; priority order wrong","none","C385324 VCST-4637","Manual"
+[GQL-EXEC wl]","[ERRORS label=wl] errors[] empty
+[COUNT label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].childItems.length = 2
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].priority = {{p_legal}}
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Help].priority = {{p_help}}
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Home].priority = {{p_home}}
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Support].priority = {{p_support}}
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].priority = {{p_brands}}
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems.length = 3
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems[?title=Laptops].priority = {{p_laptops}}","[API] the answer is for the organization GUID, not the fixture key WL-ORG-A (a key reads as the store branding, KB-F98BB191)",errors[] non-empty; footerLinks or mainMenuLinks null or empty; a title maps to another priority; childItems missing under Brands or Legal; the organization key used instead of the GUID,"none",C385324 VCST-4637 · Behavior:wl.resolve.link-lists.priority-order · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (AddMainMenuLinksAsync/AddFooterLinksAsync); Docs: PlatformUserGuide white-labeling customizing-brand-elements (priority determines the order); KB-3239DE5F · Synced: qa-suite-sync wl (2026-11-27),Draft
 "WL-011","Organization-specific logo and favicon","Organization Branding","High","BL-WL-002",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
 Organization @td(WL_ELECTRONICS.name) has custom logo (@td(WL_ELECTRONICS.logo)) and favicon (@td(WL_ELECTRONICS.favicon)) configured","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to {{FRONT_URL}}
@@ -75,116 +163,232 @@ Organization @td(WL_ELECTRONICS.name) has custom logo (@td(WL_ELECTRONICS.logo))
 [WAIT] 3. Wait for redirect to homepage
 [ASSERT] 4. Inspect header logo and browser tab favicon","[DOM] Header logo matches @td(WL_ELECTRONICS.logo) (NOT default platform logo)
 [DOM] Browser tab favicon matches @td(WL_ELECTRONICS.favicon) (NOT default favicon)","[NETWORK] logo and favicon assets load with HTTP 200
-[CONSOLE] no uncaught JS errors","Default logo/favicon shown instead of org branding; Broken image in header; Favicon reverts on navigation","sign out","C385326 C384974","Manual"
-"WL-012","Store master switch (WhiteLabeling.WhiteLabelingEnabled) OFF → default branding for all, including org users","Store Settings","Medium","BL-WL-003",,"Store @td(STORE_PRIMARY.id) has the WhiteLabeling.WhiteLabelingEnabled platform setting = true (default); organization @td(WL_ELECTRONICS.name) has its own White Labeling enabled with custom logo (@td(WL_ELECTRONICS.logo)) and theme (@td(WL_ELECTRONICS.theme)), which would normally apply via the org/store per-field merge","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}, store_id=@td(STORE_PRIMARY.id), org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > Settings
-[ACT] 2. Locate the 'WhiteLabeling.WhiteLabelingEnabled' setting and set it to false
-[ACT] 3. Click 'Save'
-[WAIT] 4. Wait for success notification
-[NAV] 5. Navigate to {{FRONT_URL}} and sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password) (an org with its own enabled White Labeling)
-[ASSERT] 6. Inspect logo, favicon, theme, main menu","[DOM] Default platform logo and favicon displayed (NOT @td(WL_ELECTRONICS.logo))
-[FORMAT] Default theme colors applied (NOT @td(WL_ELECTRONICS.theme))
-[STATE] The storefront (useWhiteLabeling.ts) never fetches White Labeling settings when this platform setting is false — org branding IS suppressed, regardless of the org's own record being enabled (contrast with WL-014's Layer-2 record gating)","[CONSOLE] no uncaught JS errors","WL still applied while the store master switch is OFF; org branding shown despite WhiteLabeling.WhiteLabelingEnabled = false","restore WhiteLabeling.WhiteLabelingEnabled = true","C384975, Store master switch WhiteLabeling.WhiteLabelingEnabled — useWhiteLabeling.ts (2026-07-02)","Manual"
-"WL-013","White Labeling Enabled = ON shows custom branding (store master switch)","Store Settings","Medium","BL-WL-003",,"Custom branding exists on store @td(STORE_PRIMARY.id); Enabled currently OFF (state from WL-012)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings
-[ACT] 2. Set Enabled = ON
-[ACT] 3. Click 'Save'
-[WAIT] 4. Wait for success notification
-[NAV] 5. Navigate to {{FRONT_URL}} in a fresh/anonymous session
-[ASSERT] 6. Inspect logo, favicon, theme","[DOM] Custom logo and favicon displayed (not platform default)
-[FORMAT] Custom theme colors applied","[CONSOLE] no uncaught JS errors","Default branding still visible after Enabled = ON; Stale branding from cache","none (Enabled = ON is the expected end state for subsequent tests)","C384976, Store master switch WhiteLabeling.WhiteLabelingEnabled — source useWhiteLabeling.ts (2026-07-02)","Manual"
-"WL-014","Store's own WL record disabled/absent (master switch ON) does NOT suppress an enabled org's branding","Store Settings","Medium","BL-WL-003",,"Store master switch WhiteLabeling.WhiteLabelingEnabled = true (ON) on store @td(STORE_PRIMARY.id); organization @td(WL_ELECTRONICS.name) has its own White Labeling enabled with custom logo (@td(WL_ELECTRONICS.logo)) and theme (@td(WL_ELECTRONICS.theme))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}, store_id=@td(STORE_PRIMARY.id), org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id) > White Labeling settings (the store's own WL record — distinct from the WhiteLabeling.WhiteLabelingEnabled platform setting tested in WL-012)
-[ACT] 2. Set the store's own WL record Enabled = OFF (disables/removes only the store-level record; the platform master switch stays ON)
-[ACT] 3. Click 'Save'
-[NAV] 4. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 5. Execute whiteLabelingSettings query requesting logoUrl and themePresetName for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ASSERT] 6. Verify the org's logo/theme still resolve despite the store's own WL record being disabled
-[NAV] 7. Navigate to {{FRONT_URL}} and sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password)
-[ASSERT] 8. Inspect header logo and theme on the storefront","[DOM] GraphQL response returns logoUrl matching @td(WL_ELECTRONICS.logo) and themePresetName matching @td(WL_ELECTRONICS.theme) even though the store's own WL record is disabled (independent per-record gating — the platform master switch, not this record, is what would suppress it)
-[DOM] Storefront header displays @td(WL_ELECTRONICS.logo) and the @td(WL_ELECTRONICS.theme) theme (org branding still resolves)","[API] whiteLabelingSettings response errors[] is empty","Org branding disappears when the store's own WL record is off (would indicate a false master-switch — confusing Layer 2 record gating with the Layer 1 platform setting tested in WL-012); errors[] non-empty","restore store's own WL record Enabled = ON; sign out","C384979, Record-level IsEnabled gating (Layer 2) — GetWhiteLabelingSettingsQueryHandler, live TLC-2026-07-02-2043","Manual"
-"WL-015","Enable thumbnail job for favicons","Background Jobs","Medium","BL-WL-001",,"White Labeling module installed; Admin access to backend jobs","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Settings > Jobs
-[ACT] 2. Locate the thumbnail generation job
-[ACT] 3. Enable the job
-[ACT] 4. Add a new run for favicon generation
-[WAIT] 5. Wait for job completion
-[NAV] 6. Navigate to a store's White Labeling settings","[DOM] Job run status shows Success
-[DOM] favicons array (multi-size) contains entries for 16x16, 32x32, 180x180, 192x192, 512x512","[ADMIN] job run history shows Success
-[CONSOLE] no uncaught JS errors","Job fails to run; favicons array remains empty after job completes; Only legacy faviconUrl populated","none","C385320 C385321","Manual"
-"WL-016","Verify MainMenuLinkListName field behaves as nullable varchar(256) (indirect — no DB access in this framework)","Admin UI","High","BL-WL-004",,"state from WL-025 (Admin SPA accessible; @td(WL_MENU_ONLY.name) has Main menu link list field editable)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
-[ACT] 2. Enter a realistic link-list-name string (@td(WL_MENU_ONLY.main_menu)) in the Main menu link list field
-[ACT] 3. Click 'Save'
-[WAIT] 4. Wait for success notification
-[ACT] 5. Clear the Main menu link list field to empty
-[ACT] 6. Click 'Save'
-[WAIT] 7. Wait for success notification","[FORM] Field accepts and persists a typical link-list-name string without a type/length validation error (indirect proof the column is a string type, not a bounded enum)
-[FORM] Field accepts an empty value and saves successfully without a NOT-NULL constraint error (indirect proof the column is nullable)","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) resolves mainMenuLinks without a GraphQL schema error both before and after clearing the field (cross-ref WL-017, WL-019)","Save rejects a normal-length string; Save rejects an empty value; GraphQL errors[] non-empty after either save","restore @td(WL_MENU_ONLY.main_menu) value","VCST-4637 PR#21","Manual"
-"WL-017","GraphQL query returns mainMenuLinks field","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Backend deployed with PR #21; Organization @td(WL_ELECTRONICS.name) has main menu link list @td(WL_ELECTRONICS.main_menu) configured","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 2. Execute whiteLabelingSettings query with the mainMenuLinks field (cultureName required):
+[CONSOLE] no uncaught JS errors","Default logo/favicon shown instead of org branding; Broken image in header; Favicon reverts on navigation","sign out","C385326 C384974 | Deprecated: merged into the rewritten display, label and menu cases (VCST-7033 lifecycle, white-labeling) (2026-11-27)",Deprecated
+"WL-012","Store master switch (setting WhiteLabeling.WhiteLabelingEnabled) OFF — default branding for everyone, an enabled organization included (the blade Enabled toggle is NOT this switch)","Store Settings","Medium","BL-WL-003",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store {{STORE_ID}} has the setting WhiteLabeling.WhiteLabelingEnabled stored explicitly true; organization @td(WL_ELECTRONICS.name) has an enabled record with its own logo and preset (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)). This case flips the STORE SETTING (Stores > store > widget Settings > group White Labeling), never the White labeling blade (that is the record-level Enabled switch of the White labeling blade, see the store-record cases)","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO and themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/stores/{{store_id}} - [CAPTURE] settings[?name=WhiteLabeling.WhiteLabelingEnabled].value as PRIOR_SWITCH
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'Settings'
+[WAIT] the settings of the store list the group 'White Labeling'
+[ACT] set 'WhiteLabeling.WhiteLabelingEnabled' to false
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from GUEST_PRESET (otherwise BLOCKED:CONDITION_NOT_MET: a leaked organization preset could not be told from the default one)
+[ACT] close the guest context
+[NAV] open {{FRONT_URL}} in a fresh context
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders","[REL] the header logo src path does NOT end with the path of REC_LOGO (the default theme logo shows)
+[REL] <html data-preset> after the sign-in does not equal REC_PRESET lower-cased with spaces replaced by ""-"", and the computed --color-primary-500 on :root equals GUEST_PRIMARY (the member sees what a guest sees; read from the pages, never from a preset file: theme 2.63.0 bundles the presets)
+[NETWORK] no request is made for REC_LOGO
+[REL] GET /api/stores/{{store_id}} reports the setting false","[CONSOLE] no uncaught JS errors
+[NETWORK] no 4xx/5xx",white labeling still applied while the store setting is OFF; the organization logo shown despite WhiteLabeling.WhiteLabelingEnabled = false,"set 'WhiteLabeling.WhiteLabelingEnabled' back to PRIOR_SWITCH (stored explicitly true) in Stores > Settings, click 'Save' and confirm GET /api/stores/{{store_id}}; sign out","C384975, Store master switch WhiteLabeling.WhiteLabelingEnabled — useWhiteLabeling.ts (2026-07-02) · Behavior:wl.switch.store-master · Behavior:wl.switch.store-master.disable · Behavior:wl.switch.store-master.off-suppresses-all · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 ModuleConstants; Docs: PlatformUserGuide white-labeling settings; KB-6C0AA08A; BL-WL-003 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: preset-file colour comparison replaced by guest colour + data-preset (differ guard)",Draft
+"WL-013","Store RECORD Enabled switch (blade) — OFF removes the store record from xAPI (null when nothing else is enabled), ON brings it back; independent of the store setting","Store Settings","Medium","BL-WL-003",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store setting WhiteLabeling.WhiteLabelingEnabled is true; store {{STORE_ID}} has an enabled record. The toggle is the per-RECORD Enabled switch on the store's White labeling blade, NOT the store setting of WL-012. A store-keyed query with no organization sees only the store record: with it disabled the answer is null (BL-WL-001)","admin_url={{BACK_URL}}, store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the 'Enabled' switch to OFF
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl } - [CAPTURE] answer as XAPI_OFF
+[ACT] click the 'Enabled' switch to ON
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl } - [CAPTURE] answer as XAPI_ON
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as AFTER","[SHAPE] XAPI_OFF.whiteLabelingSettings is null while the record is disabled
+[REL] XAPI_ON.logoUrl = BEFORE.logoUrl once the record is enabled again
+[REL] AFTER equals BEFORE field for field except modifiedDate — toggling the switch changed nothing else and created no second record","[API] every xAPI response has errors[] empty
+[NETWORK] each save is PUT /api/white-labeling returning 204",the answer is not null with the store record disabled; branding does not return after ON; the toggle also changes the logo or preset; a second record appears,"if the case aborted with the record disabled: open the blade, set 'Enabled' to ON (BEFORE.isEnabled), click 'Save'; confirm GET /api/white-labeling/store/{{store_id}} reports isEnabled = BEFORE.isEnabled","C384976, Store master switch WhiteLabeling.WhiteLabelingEnabled — source useWhiteLabeling.ts (2026-07-02) · Behavior:wl.switch.record-enabled · Behavior:wl.switch.record-enabled.enable · Behavior:wl.switch.record-enabled.disable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (IsEnabled filter); Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-001, BL-WL-003; KB-A23A4A41 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"WL-014","Store's own WL record disabled/absent (master switch ON) does NOT suppress an enabled org's branding","Store Settings","Medium","BL-WL-003",,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Store setting WhiteLabeling.WhiteLabelingEnabled is true on store {{STORE_ID}}; organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has an enabled record with its own logo and preset. The toggle flipped is the store RECORD's Enabled switch on the White labeling blade, distinct from the store SETTING of WL-012","admin_url={{BACK_URL}}, front_url={{FRONT_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as REC_LOGO and themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] isEnabled as PRIOR_ENABLED
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the 'Enabled' switch to OFF
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName } - [CAPTURE] answer as XAPI
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note <html data-preset> as GUEST_PRESET and the computed --color-primary-500 on :root as GUEST_PRIMARY (what the page shows with the store record off and no organization)
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from GUEST_PRESET (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset could not be told from what the page shows without it)
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders
+[ASSERT] note <html data-preset> as MEMBER_PRESET and the computed --color-primary-500 on :root as MEMBER_PRIMARY","[REL] XAPI.logoUrl = REC_LOGO and XAPI.themePresetName = REC_PRESET although the store record is disabled (independent per-record gating)
+[REL] the header logo src path ends with the path of REC_LOGO and MEMBER_PRESET equals REC_PRESET lower-cased with spaces replaced by ""-"" and differs from GUEST_PRESET, and MEMBER_PRIMARY differs from GUEST_PRIMARY: the organization's palette applies although the store record is off, compared by relation on the page, never against a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","[API] the xAPI response has errors[] empty
+[CONSOLE] no uncaught JS errors",organization branding disappears when only the store record is off (the two layers are confused); errors[] non-empty,"in the store's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; confirm GET /api/white-labeling/store/{{store_id}} reports isEnabled = PRIOR_ENABLED; sign out","C384979, Record-level IsEnabled gating (Layer 2) — GetWhiteLabelingSettingsQueryHandler, live TLC-2026-07-02-2043 · Behavior:wl.resolve.store-record-off-org-survives · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-003; KB-A23A4A41 · Synced: qa-suite-sync wl (2026-11-27) · Round 3 2026-11-27: preset oracle by relation",Draft
+"WL-016","Verify MainMenuLinkListName field behaves as nullable varchar(256) (indirect — no DB access in this framework)","Admin UI","High","BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_MENU_ONLY.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin SPA accessible; organization @td(WL_MENU_ONLY.name) has a record whose Main menu link list is editable (the VCST-4637 column is a nullable string)","admin_url={{BACK_URL}}, org_name=@td(WL_MENU_ONLY.name), menu=@td(WL_MENU_ONLY.main_menu)","[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] fill 'Main menu link list': {{menu}}
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[ACT] clear 'Main menu link list' (empty text)
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: @td(WL_MENU_ONLY_PLATFORM_ID.id), storeId: {{STORE_ID}}, cultureName: ""en-US"") { mainMenuLinks { title } } - [CAPTURE] errors[] as XAPI_ERRORS","[FORM] 'Main menu link list' accepts and keeps a typical link-list name after the first save without a validation error
+[FORM] the field accepts an empty value and the second save succeeds without a NOT-NULL error
+[COUNT] XAPI_ERRORS has 0 entries after both saves","[API] whiteLabelingSettings resolves mainMenuLinks without a schema error before and after clearing the field
+[CONSOLE] no uncaught JS errors",Save rejects a normal-length string; Save rejects an empty value; xAPI errors[] non-empty after either save,fill 'Main menu link list' with {{menu}} and click 'Save'; confirm GET /api/white-labeling/organization/@td(WL_MENU_ONLY_PLATFORM_ID.id) reports mainMenuLinkListName = {{menu}},VCST-4637 PR#21 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Scripts/module.js; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27),Draft
+"WL-017","GraphQL query returns mainMenuLinks field","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Runner-native, read-only. Admin token. Organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has main menu list @td(WL_ELECTRONICS.main_menu) configured",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id),"[AUTH role=ADMIN_DEFAULT]
+[GQL-OP wl]
 query {
-  whiteLabelingSettings(
-    organizationId: ""@td(WL_ELECTRONICS.id)""
-    storeId: ""@td(STORE_PRIMARY.id)""
-    cultureName: ""en-US""
-  ) {
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
     mainMenuLinks { title url priority childItems { title url priority } }
   }
 }
-[ASSERT] 3. Verify response contains mainMenuLinks array","[DOM] mainMenuLinks array is returned (not null) with title/url/priority on each entry
-[DOM] at least one entry (Brands) has a non-empty childItems array, proving hierarchical structure is supported","[API] whiteLabelingSettings response errors[] is empty","mainMenuLinks missing or null; errors[] non-empty; childItems absent on Brands","none","VCST-4637 PR#21","Manual"
-"WL-018","mainMenuLinks with hierarchical structure (parent Brands + children Laptops/Phones/Tablets)","GraphQL xAPI","High","BL-WL-004","ECL-14.1","Link list @td(WL_ELECTRONICS.main_menu) has parent 'Brands' (priority 2) with children Laptops(1)/Phones(2)/Tablets(3); organization @td(WL_ELECTRONICS.name) has this list assigned as Main menu link list","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Marketing > Link Lists > @td(WL_ELECTRONICS.main_menu)
-[ASSERT] 2. Verify structure: Home(1), Brands(2) with children Laptops(1)/Phones(2)/Tablets(3), About Us(3), Support(4)
-[NAV] 3. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 4. Execute the whiteLabelingSettings query with mainMenuLinks field for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ASSERT] 5. Verify response structure matches Admin configuration","[DOM] Brands parent link returned with title='Brands', url='/brands', priority=2
-[DOM] Brands.childItems contains exactly Laptops(1), Phones(2), Tablets(3) in that priority order
-[DOM] Home, About Us, Support returned with empty childItems (no children)","[API] whiteLabelingSettings response errors[] is empty","Brands parent missing; childItems not nested under Brands; priority order wrong; errors[] non-empty","none","VCST-4637 PR#21, Synced: Products→Brands rename #79 (2026-07-02)","Manual"
-"WL-019","mainMenuLinks when MainMenuLinkListName is empty/NULL","GraphQL xAPI","High","BL-WL-004","ECL-14.1","Organization @td(WL_DEFAULT.name) has Main Menu Link List Name = NULL (theme-only fixture, no menu/footer configured)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_DEFAULT.name) > White Labeling
-[ASSERT] 2. Verify Main menu link list field is empty
-[NAV] 3. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 4. Execute whiteLabelingSettings query with mainMenuLinks field for organizationId=@td(WL_DEFAULT.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ASSERT] 5. Verify mainMenuLinks field","[DOM] mainMenuLinks is an empty array or null (not an error)
-[NULL] no exception/error is thrown for the missing link list name","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; query throws a 500; mainMenuLinks resolver crashes instead of returning empty","none","VCST-4637 PR#21","Manual"
-"WL-020","mainMenuLinks with non-existent link list name","GraphQL xAPI","Medium","BL-WL-004","ECL-14.1","Organization @td(WL_MENU_ONLY.name) currently has a valid Main menu link list (@td(WL_MENU_ONLY.main_menu))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id), org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
-[ACT] 2. Temporarily set Main menu link list to a non-existent name: nonexistent-menu-wl020
-[ACT] 3. Click 'Save'
-[NAV] 4. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 5. Execute whiteLabelingSettings query with mainMenuLinks field for organizationId=@td(WL_MENU_ONLY.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ASSERT] 6. Verify response","[DOM] mainMenuLinks is an empty array (query executes without error)
-[NULL] no exception thrown for the unresolvable link list name","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; 500 error; query hangs","restore @td(WL_MENU_ONLY.main_menu) value on the organization","VCST-4637 PR#21","Manual"
-"WL-021","Query handler retrieves correct org-specific main menu (no cross-contamination)","Query Handler","High","BL-WL-002","ECL-14.1","@td(WL_ELECTRONICS.name) has main menu @td(WL_ELECTRONICS.main_menu) (Home/Brands/About Us/Support); @td(WL_FASHION.name) has main menu @td(WL_FASHION.main_menu) (Home/Shop/New Arrivals/Contact)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 2. Execute whiteLabelingSettings query with mainMenuLinks for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ASSERT] 3. Record result A
-[ACT] 4. Execute the same query with organizationId=@td(WL_FASHION.id) instead
-[ASSERT] 5. Record result B
-[ASSERT] 6. Compare A and B","[DOM] Result A contains Home/Brands/About Us/Support (@td(WL_ELECTRONICS.main_menu)) and does NOT contain Shop, New Arrivals, or Contact
-[DOM] Result B contains Home/Shop/New Arrivals/Contact (@td(WL_FASHION.main_menu)) and does NOT contain Brands, About Us, or the Electronics Support entry","[API] both responses have errors[] empty","Result A contains Fashion-org links or vice versa; identical mainMenuLinks returned for both orgs","none","VCST-4637 PR#21","Manual"
-"WL-022","Backward compatibility - footerLinks still works alongside mainMenuLinks","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Organization @td(WL_ELECTRONICS.name) has an existing FooterLinkListName (@td(WL_ELECTRONICS.footer))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 2. Execute whiteLabelingSettings query selecting ONLY the footerLinks field (no mainMenuLinks in selection) for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ASSERT] 3. Verify footerLinks field returned correctly","[DOM] footerLinks array has 4 entries matching @td(WL_ELECTRONICS.footer): Privacy Policy(1), Terms of Service(2), Support(3), Warranty(4)
-[DOM] response has no reference to mainMenuLinks (field was not selected, and this does not cause an error)","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; footerLinks missing since the PR #21 migration; query fails when mainMenuLinks is omitted from selection","none","VCST-4637 PR#21","Manual"
-"WL-023","GraphQL query performance with mainMenuLinks","Performance","Medium","BL-WL-004",,"Organization @td(WL_ELECTRONICS.name) has both main menu and footer configured","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
-[ACT] 2. Execute the whiteLabelingSettings query (footerLinks + mainMenuLinks, full field selection) for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
-[ACT] 3. Repeat the same query 9 more times (10 executions total), noting the response time shown in the GraphiQL network panel for each
-[ASSERT] 4. Compute the average response time across the 10 runs","[PERF] average response time across 10 runs is < 500ms
-[DOM] all 10 runs return identical footerLinks/mainMenuLinks data (no flakiness)","[API] all 10 responses have errors[] empty","any single run > 1000ms; average > 500ms; data differs between runs","none","VCST-4637 PR#21","Manual"
+[GQL-EXEC wl]","[ERRORS label=wl] errors[] empty
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks is non-null
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks.length > 0
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems.length >= 1
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].url is non-null","[API] every entry carries title, url and priority (the selection is validated against the schema before send)",mainMenuLinks missing or null; errors[] non-empty; childItems absent on Brands,"none",VCST-4637 PR#21 · Behavior:wl.resolve.link-lists · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27),Draft
+"WL-018","mainMenuLinks hierarchy — parent Brands with its three children, leaf entries have no children (title to priority, array order not asserted)","GraphQL xAPI","High","BL-WL-004","ECL-14.1","Runner-native, read-only. Admin token. Link list @td(WL_ELECTRONICS.main_menu) is assigned to organization @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)): top level Home, Brands (children Laptops, Phones, Tablets), Company, Support","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); p_brands=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Brands, priority); p_laptops=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Laptops, priority); p_phones=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Phones, priority); p_tablets=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Tablets, priority)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP wl]
+query {
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
+    footerLinks { title url priority childItems { title url priority } }
+    mainMenuLinks { title url priority childItems { title url priority } }
+  }
+}
+[GQL-EXEC wl]","[ERRORS label=wl] errors[] empty
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].priority = {{p_brands}}
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems.length = 3
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems[?title=Laptops].priority = {{p_laptops}}
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems[?title=Phones].priority = {{p_phones}}
+[DATA label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].childItems[?title=Tablets].priority = {{p_tablets}}
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Home].childItems.length = 0
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks[?title=Support].childItems.length = 0",[API] the parent url of Brands is non-empty (selection includes url),Brands missing; children not nested under Brands; a priority differs from the link list; a leaf entry carries children; errors[] non-empty,"none","VCST-4637 PR#21, Synced: Products→Brands rename #79 (2026-07-02) · Behavior:wl.resolve.link-lists.priority-order · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-3239DE5F · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"WL-019","mainMenuLinks when the organization record sets no main-menu name — the store record's list applies (no error, not an empty menu while the store has one)","GraphQL xAPI","High","BL-WL-004","ECL-14.1","Runner-native, read-only. Admin token. Organization @td(WL_DEFAULT.name) (record id @td(WL_DEFAULT_PLATFORM_ID.id)) has a theme-only record (no main-menu and no footer name); store {{STORE_ID}} has an enabled record with a main-menu list. Per-field merge (BL-WL-002): an empty organization field takes the store value, so the answer equals the store-keyed answer. (The old expectation ""empty array"" was true of the organization record alone, not of the merged answer.)",org_id=@td(WL_DEFAULT_PLATFORM_ID.id),"[AUTH role=ADMIN_DEFAULT]
+[GQL-OP store_only]
+query { whiteLabelingSettings(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { mainMenuLinks { title } } }
+[GQL-EXEC store_only]
+[GQL-CAPTURE store_only.data.whiteLabelingSettings.mainMenuLinks.length → STORE_MENU_COUNT]
+[GQL-OP org]
+query { whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { mainMenuLinks { title url priority } } }
+[GQL-EXEC org]","[ERRORS label=org] errors[] empty
+[DATA label=org] data.whiteLabelingSettings is non-null
+[COUNT label=org] data.whiteLabelingSettings.mainMenuLinks.length = {{STORE_MENU_COUNT}}
+[COUNT label=store_only] data.whiteLabelingSettings.mainMenuLinks.length > 0",[API] no exception for the missing organization list name; the answer is the store list's links,errors[] non-empty; 500; the organization answer is empty while the store answer is not (fallback broken); a different number of links than the store-keyed answer,"none","VCST-4637 PR#21 · Behavior:wl.resolve.org-partial-inherits-store · Behavior:wl.resolve.link-lists.empty-or-unknown-name · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (GetCombinedWhiteLabelingSetting); Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-002, BL-WL-004 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"WL-020","mainMenuLinks with non-existent link list name","GraphQL xAPI","Medium","BL-WL-004","ECL-14.1","[EXCLUSIVE:white-labeling record of organization @td(WL_MENU_ONLY.name)]
+Runner-native with REST writes. Admin token. Organization @td(WL_MENU_ONLY.name) (record id @td(WL_MENU_ONLY_PLATFORM_ID.id)) has an enabled record with a valid main-menu list. The record is changed by GET-merge-PUT (PUT replaces the whole record) and restored in Cleanup; captured null fields come back as empty strings, which the resolver treats as null.",org_id=@td(WL_MENU_ONLY_PLATFORM_ID.id); bad_list=AGENT-TEST-nonexistent-menu-wl020,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP org_before]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_before]
+[REST-CAPTURE org_before.body.id → WL_ID]
+[REST-CAPTURE org_before.body.isEnabled → WL_ENABLED]
+[REST-CAPTURE org_before.body.logoUrl → WL_LOGO]
+[REST-CAPTURE org_before.body.secondaryLogoUrl → WL_LOGO2]
+[REST-CAPTURE org_before.body.faviconUrl → WL_FAV]
+[REST-CAPTURE org_before.body.themePresetName → WL_THEME]
+[REST-CAPTURE org_before.body.footerLinkListName → WL_FOOTER]
+[REST-CAPTURE org_before.body.mainMenuLinkListName → WL_MENU]
+[REST-OP set_bad]
+PUT {{BACK_URL}}/api/white-labeling
+Content-Type: application/json
+Body: {""id"": ""{{WL_ID}}"", ""organizationId"": ""{{org_id}}"", ""isEnabled"": true, ""logoUrl"": ""{{WL_LOGO}}"", ""secondaryLogoUrl"": ""{{WL_LOGO2}}"", ""faviconUrl"": ""{{WL_FAV}}"", ""themePresetName"": ""{{WL_THEME}}"", ""footerLinkListName"": ""{{WL_FOOTER}}"", ""mainMenuLinkListName"": ""{{bad_list}}""}
+[REST-EXEC set_bad]
+[GQL-OP wl]
+query { whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { mainMenuLinks { title } } }
+[GQL-EXEC wl]","[ERRORS label=set_bad] HTTP 204
+[ERRORS label=wl] errors[] empty
+[COUNT label=wl] data.whiteLabelingSettings.mainMenuLinks.length = 0",[API] no exception for the unresolvable list name; the query completes,errors[] non-empty; 500; the query hangs; mainMenuLinks falls back to some other list although a non-empty name was set,"[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/white-labeling]
+{""id"": ""{{WL_ID}}"", ""organizationId"": ""{{org_id}}"", ""isEnabled"": true, ""logoUrl"": ""{{WL_LOGO}}"", ""secondaryLogoUrl"": ""{{WL_LOGO2}}"", ""faviconUrl"": ""{{WL_FAV}}"", ""themePresetName"": ""{{WL_THEME}}"", ""footerLinkListName"": ""{{WL_FOOTER}}"", ""mainMenuLinkListName"": ""{{WL_MENU}}""}",VCST-4637 PR#21 · Behavior:wl.resolve.link-lists.empty-or-unknown-name · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (AddMainMenuLinksAsync); Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-004 · Synced: qa-suite-sync wl (2026-11-27),Draft
+"WL-021","Query handler retrieves correct org-specific main menu (no cross-contamination)","Query Handler","High","BL-WL-002","ECL-14.1","Runner-native, read-only. Admin token. @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has main menu @td(WL_ELECTRONICS.main_menu) (Home, Brands, Company, Support); @td(WL_FASHION.name) (record id @td(WL_FASHION_PLATFORM_ID.id)) has main menu @td(WL_FASHION.main_menu) (Home, Shop, New Arrivals, Contact)","org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id); org_b=@td(WL_FASHION_PLATFORM_ID.id); pa_brands=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-electronics&link_title=Brands, priority); pb_shop=@td(white-labeling/link-lists, list_name=AGENT-TEST-main-menu-fashion&link_title=Shop, priority)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP a]
+query { whiteLabelingSettings(organizationId: ""{{org_a}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { mainMenuLinks { title priority } } }
+[GQL-EXEC a]
+[GQL-OP b]
+query { whiteLabelingSettings(organizationId: ""{{org_b}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") { mainMenuLinks { title priority } } }
+[GQL-EXEC b]","[ERRORS label=a] errors[] empty
+[ERRORS label=b] errors[] empty
+[DATA label=a] data.whiteLabelingSettings.mainMenuLinks[?title=Brands].priority = {{pa_brands}}
+[NULL label=a] data.whiteLabelingSettings.mainMenuLinks[?title=Shop]
+[DATA label=b] data.whiteLabelingSettings.mainMenuLinks[?title=Shop].priority = {{pb_shop}}
+[NULL label=b] data.whiteLabelingSettings.mainMenuLinks[?title=Brands]",[API] both responses have errors[] empty,result A contains Fashion links or the reverse; identical mainMenuLinks for both organizations; the organization key used instead of the GUID,"none",VCST-4637 PR#21 · Behavior:wl.resolve.link-lists · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-002 · Synced: qa-suite-sync wl (2026-11-27),Draft
+"WL-022","Backward compatibility - footerLinks still works alongside mainMenuLinks","GraphQL xAPI","Critical","BL-WL-004","ECL-14.1","Runner-native, read-only. Admin token. @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has footer list @td(WL_ELECTRONICS.footer): two section headers with two children each","org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); p_legal=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Legal, priority); p_help=@td(white-labeling/link-lists, list_name=AGENT-TEST-footer-electronics&link_title=Help, priority)","[AUTH role=ADMIN_DEFAULT]
+[GQL-OP wl]
+query {
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
+    footerLinks { title url priority childItems { title url priority } }
+  }
+}
+[GQL-EXEC wl]","[ERRORS label=wl] errors[] empty
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Legal].priority = {{p_legal}}
+[DATA label=wl] data.whiteLabelingSettings.footerLinks[?title=Help].priority = {{p_help}}
+[COUNT label=wl] data.whiteLabelingSettings.footerLinks[?title=Help].childItems.length = 2
+[NULL label=wl] data.whiteLabelingSettings.mainMenuLinks",[API] a selection without mainMenuLinks is valid and returns no error,errors[] non-empty; footerLinks missing; the query fails when mainMenuLinks is omitted from the selection,"none",VCST-4637 PR#21 · Behavior:wl.resolve.link-lists · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements; BL-WL-004 · Synced: qa-suite-sync wl (2026-11-27),Draft
+"WL-023","GraphQL query performance with mainMenuLinks","Performance","Medium","BL-WL-004",,"Runner-native, read-only. Admin token. @td(WL_ELECTRONICS.name) (record id @td(WL_ELECTRONICS_PLATFORM_ID.id)) has footer and main menu configured. A first call warms the resolver; the time budget applies to the second, identical call",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id),"[AUTH role=ADMIN_DEFAULT]
+[GQL-OP warm]
+query {
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
+    footerLinks { title url priority childItems { title url priority } }
+    mainMenuLinks { title url priority childItems { title url priority } }
+  }
+}
+[GQL-EXEC warm]
+[GQL-CAPTURE warm.data.whiteLabelingSettings.mainMenuLinks.length → WARM_COUNT]
+[GQL-OP timed]
+query {
+  whiteLabelingSettings(organizationId: ""{{org_id}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"") {
+    footerLinks { title url priority childItems { title url priority } }
+    mainMenuLinks { title url priority childItems { title url priority } }
+  }
+}
+[GQL-EXEC timed]","[ERRORS label=timed] errors[] empty
+[PERF label=timed] elapsed_ms < 1000
+[COUNT label=timed] data.whiteLabelingSettings.mainMenuLinks.length > 0
+[COUNT label=timed] data.whiteLabelingSettings.mainMenuLinks.length = {{WARM_COUNT}}",[API] both responses have errors[] empty,the timed call exceeds 1000 ms; errors[] non-empty; the warm and timed answers differ in link counts,"none",VCST-4637 PR#21 · Behavior:wl.resolve.link-lists · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview · Synced: qa-suite-sync wl (2026-11-27),Draft
 "WL-024","Admin SPA displays main menu link list field","Admin UI","High","BL-WL-001",,"Admin SPA deployed with PR #21; Admin user logged in","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
 [ASSERT] 2. Verify Main menu link list field exists","[DOM] Field is displayed with label 'Main menu link list'
-[DOM] Field placeholder reads 'Enter link list name...'","[CONSOLE] no uncaught JS errors","Field missing from the White Labeling blade; Wrong label or placeholder text","none","VCST-4637 PR#21","Manual"
+[DOM] Field placeholder reads 'Enter link list name...'","[CONSOLE] no uncaught JS errors","Field missing from the White Labeling blade; Wrong label or placeholder text","none","VCST-4637 PR#21 | Deprecated: merged into the rewritten display, label and menu cases (VCST-7033 lifecycle, white-labeling) (2026-11-27)",Deprecated
 "WL-025","Configure MainMenuLinkListName via Admin SPA","Admin UI","Critical","BL-WL-001",,"Admin SPA accessible; link list @td(WL_MENU_ONLY.main_menu) exists","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name), main_menu=@td(WL_MENU_ONLY.main_menu)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
 [ACT] 2. Enter @td(WL_MENU_ONLY.main_menu) in the Main menu link list field
 [ACT] 3. Click 'Save'
 [WAIT] 4. Wait for success notification","[FORM] Value saves successfully
-[STATE] Success notification is displayed","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) returns mainMenuLinks matching @td(WL_MENU_ONLY.main_menu)","Save fails silently; No success notification; Value not reflected in GraphQL query","none (this is the fixture's intended configured state)","VCST-4637 PR#21","Manual"
+[STATE] Success notification is displayed","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) returns mainMenuLinks matching @td(WL_MENU_ONLY.main_menu)","Save fails silently; No success notification; Value not reflected in GraphQL query","none (this is the fixture's intended configured state)","VCST-4637 PR#21 | Deprecated: merged into the rewritten display, label and menu cases (VCST-7033 lifecycle, white-labeling) (2026-11-27)",Deprecated
 "WL-026","MainMenuLinkListName persisted after save","Admin UI","High","BL-WL-001",,"state from WL-025 (@td(WL_MENU_ONLY.name) Main menu link list = @td(WL_MENU_ONLY.main_menu))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
 [KEY] 2. Refresh the page
 [NAV] 3. Navigate back to the White Labeling blade
-[ASSERT] 4. Verify field value","[FORM] Main menu link list field displays @td(WL_MENU_ONLY.main_menu) after refresh","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) still returns mainMenuLinks matching @td(WL_MENU_ONLY.main_menu) after refresh","Field reverts to empty after refresh; Value differs from what was saved","none","VCST-4637 PR#21","Manual"
+[ASSERT] 4. Verify field value","[FORM] Main menu link list field displays @td(WL_MENU_ONLY.main_menu) after refresh","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) still returns mainMenuLinks matching @td(WL_MENU_ONLY.main_menu) after refresh","Field reverts to empty after refresh; Value differs from what was saved","none","VCST-4637 PR#21 | Deprecated: merged into the rewritten display, label and menu cases (VCST-7033 lifecycle, white-labeling) (2026-11-27)",Deprecated
 "WL-027","Clear MainMenuLinkListName value","Admin UI","Medium","BL-WL-001, BL-WL-004",,"state from WL-025/WL-026 (@td(WL_MENU_ONLY.name) Main menu link list = @td(WL_MENU_ONLY.main_menu))","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
 [ACT] 2. Clear the Main menu link list field
 [ACT] 3. Click 'Save'
 [WAIT] 4. Wait for success notification","[FORM] Field clears successfully and shows empty
-[STATE] Success notification confirms save","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) returns mainMenuLinks as empty array (storefront falls back to default — cross-ref WL-019)","Clear has no effect; Field repopulates on refresh; GraphQL still returns the old link list","restore @td(WL_MENU_ONLY.main_menu) value on the organization","VCST-4637 PR#21","Manual"
-"WL-028","Admin UI localization - English","Localization","Medium","BL-WL-001",,"Admin SPA language set to English","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org=@td(WL_MENU_ONLY.name)","[NAV] 1. Navigate to Admin > Customer > Organizations > @td(WL_MENU_ONLY.name) > White Labeling
-[ASSERT] 2. Verify field label and placeholder","[DOM] Field label reads 'Main menu link list'
-[DOM] Field placeholder reads 'Enter link list name...'","[CONSOLE] no uncaught JS errors","Label or placeholder shows a translation key instead of English text (e.g. 'whiteLabeling.mainMenuLinkListName')","none","VCST-4637 PR#21","Manual"
+[STATE] Success notification confirms save","[API] whiteLabelingSettings query for @td(WL_MENU_ONLY.id) returns mainMenuLinks as empty array (storefront falls back to default — cross-ref WL-019)","Clear has no effect; Field repopulates on refresh; GraphQL still returns the old link list","restore @td(WL_MENU_ONLY.main_menu) value on the organization","VCST-4637 PR#21 | Deprecated: merged into the rewritten display, label and menu cases (VCST-7033 lifecycle, white-labeling) (2026-11-27)",Deprecated
+"WL-028","Admin UI localization - English","Localization","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Admin SPA language set to English; organization @td(WL_MENU_ONLY.name) has a record (the White labeling widget is on the organization blade)","admin_url={{BACK_URL}}, org_name=@td(WL_MENU_ONLY.name)","[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ASSERT] the blade shows the field 'Main menu link list'","[DOM] the field label reads 'Main menu link list'
+[SHAPE] the field placeholder is non-empty and does not match /^[a-z]+(\.[A-Za-z]+)+$/ (a translation key such as whiteLabeling.mainMenuLinkListName would match)
+[SHAPE] no label or placeholder on the blade matches a translation-key pattern",[CONSOLE] no uncaught JS errors,label or placeholder shows a translation key; the field is missing from the blade; console error on blade open,"none",VCST-4637 PR#21 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27),Draft
 "WL-029","Storefront displays per-org main menu links (DEPRECATED — see Frontend suite 070 FWL-021)","Storefront Rendering","Critical","BL-WL-001",,"N/A — deprecated, superseded by FWL-021 in suite 070 (Frontend/whitelabeling/070-whitelabeling-storefront.csv)","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-021 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-021 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-021 (suite 070) — storefront rendering is the Frontend suite's responsibility","Deprecated"
 "WL-030","Hierarchical main menu rendering, parent + children (DEPRECATED — see Frontend suite 070 FWL-022)","Storefront Rendering","High","BL-WL-001",,"N/A — deprecated, superseded by FWL-022 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-022 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-022 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-022 (suite 070)","Deprecated"
 "WL-031","Main menu on mobile, responsive design (DEPRECATED — see Frontend suite 070 FWL-023/FWL-034)","Mobile","High","BL-WL-001",,"N/A — deprecated, superseded by FWL-023 and FWL-034 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-023 (hierarchy on mobile) and FWL-034 (hamburger access) for the current, actively-maintained version","[STATE] Coverage moved to FWL-023/FWL-034 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-023/FWL-034 (suite 070)","Deprecated"
@@ -192,29 +396,292 @@ query {
 "WL-033","Main menu accessibility, keyboard navigation (DEPRECATED — see Frontend suite 070 FWL-044/FWL-047)","Accessibility","High","BL-WL-001",,"N/A — deprecated, superseded by FWL-044 and FWL-047 in suite 070","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv FWL-044 (keyboard nav) and FWL-047 (screen reader) for the current, actively-maintained version","[STATE] Coverage moved to FWL-044/FWL-047 in suite 070 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-044/FWL-047 (suite 070)","Deprecated"
 "WL-034","Switching between organizations updates main menu (DEPRECATED — see Frontend suite 071 FWL-029)","Multi-Organization","Critical","BL-CROSS-008",,"N/A — deprecated, superseded by FWL-029 in suite 071 (Frontend/whitelabeling/071-whitelabeling-branding.csv)","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/071-whitelabeling-branding.csv FWL-029 for the current, actively-maintained version of this scenario","[STATE] Coverage moved to FWL-029 in suite 071 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-029 (suite 071)","Deprecated"
 "WL-035","Main menu + footer both update on org switch (DEPRECATED — see Frontend suite 071 FWL-029/FWL-030)","Multi-Organization","High","BL-CROSS-008",,"N/A — deprecated, superseded by FWL-029 and FWL-030 in suite 071","n/a","[NAV] 1. See regression/suites/Frontend/whitelabeling/071-whitelabeling-branding.csv FWL-029 (main menu) and FWL-030 (footer) for the current, actively-maintained version","[STATE] Coverage moved to FWL-029/FWL-030 in suite 071 — no independent assertion here","n/a","N/A — deprecated","none","VCST-4637 PR#21, Deprecated 2026-07-02: duplicate of FWL-029/FWL-030 (suite 071)","Deprecated"
-"WL-036","Existing footer-only configs still work (backward compatibility)","Backward Compatibility","Critical","BL-WL-004",,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:WL_USER_FOOTER_ONLY]
-Organization @td(WL_FOOTER_ONLY.name) has a pre-existing FooterLinkListName (@td(WL_FOOTER_ONLY.footer)) and MainMenuLinkListName = NULL (partial-config fixture, predates VCST-4637)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FOOTER_ONLY.email), org_password=@td(WL_USER_FOOTER_ONLY.password)","[NAV] 1. Navigate to {{FRONT_URL}}
-[ACT] 2. Sign in with @td(WL_USER_FOOTER_ONLY.email) / @td(WL_USER_FOOTER_ONLY.password)
-[SCROLL] 3. Scroll to footer
-[ASSERT] 4. Inspect footer links","[DOM] Footer displays @td(WL_FOOTER_ONLY.footer) links correctly
-[STATE] Application does not error or degrade due to the missing MainMenuLinkListName","[CONSOLE] no uncaught JS errors
-[API] whiteLabelingSettings for @td(WL_FOOTER_ONLY.id) returns footerLinks populated and mainMenuLinks empty/null, errors[] empty","Footer broken by the mainMenuLinks migration; Console error referencing MainMenuLinkListName; Header layout broken by missing main menu","sign out","VCST-4637 PR#21","Manual"
-"WL-037","Existing logo configs still work (backward compatibility)","Backward Compatibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
-Organization @td(WL_ELECTRONICS.name) has a pre-existing custom logo (@td(WL_ELECTRONICS.logo)) configured before the VCST-4637 migration","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password)","[NAV] 1. Navigate to {{FRONT_URL}}
-[ACT] 2. Sign in with @td(WL_USER_ELECTRONICS.email) / @td(WL_USER_ELECTRONICS.password)
-[ASSERT] 3. Inspect header logo","[DOM] Header logo displays @td(WL_ELECTRONICS.logo) unchanged","[CONSOLE] no uncaught JS errors
-[NETWORK] logo asset loads with HTTP 200","Logo broken or reverted to default after the migration; Broken image in header","sign out","VCST-4637 PR#21","Manual"
-"WL-038","Existing theme preset configs still work (backward compatibility)","Backward Compatibility","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:WL_USER_FASHION]
-Organization @td(WL_FASHION.name) has a pre-existing theme preset (@td(WL_FASHION.theme)) configured before the VCST-4637 migration","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password)","[NAV] 1. Navigate to {{FRONT_URL}}
-[ACT] 2. Sign in with @td(WL_USER_FASHION.email) / @td(WL_USER_FASHION.password)
-[ASSERT] 3. Inspect page theme colors","[FORMAT] @td(WL_FASHION.theme) theme colors display unchanged","[CONSOLE] no uncaught JS errors","Theme reverted to default after the migration; Theme colors partially applied","sign out","VCST-4637 PR#21","Manual"
-"WL-039","Store-level white labeling still works (backward compatibility)","Backward Compatibility","High","BL-WL-003",,"Store @td(STORE_PRIMARY.id) has store-level white labeling configured (Enabled = ON, theme preset, logo)","storefront={{FRONT_URL}}, admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to {{FRONT_URL}} without any org context (anonymous or personal-account user)
-[ASSERT] 2. Inspect logo, favicon, theme","[DOM] Store-level branding displays correctly (unaffected by the MainMenuLinkListName migration)","[CONSOLE] no uncaught JS errors
-[API] whiteLabelingSettings for the store-level fallback (no organizationId) returns errors[] empty","Store-level branding broken after migration; Fallback logic errors when organizationId is absent","none","VCST-4637 PR#21","Manual"
 "WL-040","GraphQL query without mainMenuLinks field still works (backward compatibility)","Backward Compatibility","High","BL-WL-004","ECL-14.1","GraphQL endpoint accessible at {{BACK_URL}}/graphql","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=@td(STORE_PRIMARY.id)","[NAV] 1. Navigate to GraphQL playground: {{BACK_URL}}/ui/graphiql
 [ACT] 2. Execute the whiteLabelingSettings query selecting only pre-existing fields (logoUrl, faviconUrl, themePresetName, footerLinks) — deliberately WITHOUT mainMenuLinks — for organizationId=@td(WL_ELECTRONICS.id), storeId=@td(STORE_PRIMARY.id), cultureName=""en-US""
 [ASSERT] 3. Verify query executes successfully","[DOM] Query executes without errors and returns the requested fields
-[NULL] no error is raised for omitting the optional mainMenuLinks field","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; query fails because mainMenuLinks was not selected; unexpected required-field validation error","none","VCST-4637 PR#21","Manual"
+[NULL] no error is raised for omitting the optional mainMenuLinks field","[API] whiteLabelingSettings response errors[] is empty","errors[] non-empty; query fails because mainMenuLinks was not selected; unexpected required-field validation error","none","VCST-4637 PR#21 | Deprecated: merged into the rewritten display, label and menu cases (VCST-7033 lifecycle, white-labeling) (2026-11-27)",Deprecated
+WL-041,REST create — a record with BOTH a store and an organization is rejected (400 store-and-organization-set),Whitelabeling > REST contract > Record validation,High,BL-WL-005,ECL-14.1,"Runner-native REST. Admin token (role ADMIN_DEFAULT). Seeded fixtures: organization @td(WL_ELECTRONICS.name) has an enabled record (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) and store {{STORE_ID}} has an enabled record. The case sends only requests the validator must REJECT, so nothing it sends may create or change a record (no REST delete exists, KB-52D2F554).",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); store_id={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP org_before]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_before]
+[REST-CAPTURE org_before.body.id → WL_ID_BEFORE]
+[REST-CAPTURE org_before.body.modifiedDate → WL_MOD_BEFORE]
+[REST-OP both_set]
+POST {{BACK_URL}}/api/white-labeling
+Content-Type: application/json
+Body: {""isEnabled"": false, ""storeId"": ""{{store_id}}"", ""organizationId"": ""{{org_id}}""}
+[REST-EXEC both_set]
+[REST-OP org_after]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_after]","[ERRORS label=both_set] HTTP 400 {SPEC} (VCST-4657)
+[DATA label=both_set] body.[0].errorMessage = store-and-organization-set {BL} (BL-WL-005)
+[DATA label=org_after] body.id = {{WL_ID_BEFORE}} {BL} (BL-WL-005)
+[DATA label=org_after] body.modifiedDate = {{WL_MOD_BEFORE}} {BL} (BL-WL-005)",[ADMIN] the AngularJS and Admin Shell blades enforce the same rule through this validator: a record bound to both is never saved from either,HTTP 200/201 on the both-bound POST; the organization record changed (modifiedDate moved); a second record exists for the organization; errorMessage names another rule; 5xx instead of 400,"none — the request is rejected and creates nothing. If the request was NOT rejected a record now exists and cannot be removed over REST (KB-52D2F554): report it as an orphan, never retry","VCST-4657 · Archetype:LIFECYCLE · Technique:EP · Purpose:FUNC · Behavior:wl.record.validate.both-bound · Catches:VCST-4657 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Validation/WhiteLabelingSettingValidator.cs, Web/Controllers/Api/WhiteLabelingController.cs; Docs: PlatformUserGuide white-labeling; BL-WL-005 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+WL-042,REST create — a record with NEITHER a store nor an organization is rejected (400 store-or-organization-must-be-set),Whitelabeling > REST contract > Record validation,High,BL-WL-005,ECL-14.1,"Runner-native REST. Admin token (role ADMIN_DEFAULT). Seeded fixtures: organization @td(WL_ELECTRONICS.name) has an enabled record (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) and store {{STORE_ID}} has an enabled record. The case sends only requests the validator must REJECT, so nothing it sends may create or change a record (no REST delete exists, KB-52D2F554).",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); store_id={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP store_before]
+GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}
+[REST-EXEC store_before]
+[REST-CAPTURE store_before.body.id → STORE_WL_ID]
+[REST-CAPTURE store_before.body.modifiedDate → STORE_WL_MOD]
+[REST-OP neither_set]
+POST {{BACK_URL}}/api/white-labeling
+Content-Type: application/json
+Body: {""isEnabled"": false}
+[REST-EXEC neither_set]
+[REST-OP store_after]
+GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}
+[REST-EXEC store_after]","[ERRORS label=neither_set] HTTP 400 {SPEC} (VCST-4657)
+[DATA label=neither_set] body.[0].errorMessage = store-or-organization-must-be-set {BL} (BL-WL-005)
+[DATA label=store_after] body.id = {{STORE_WL_ID}} {BL} (BL-WL-005)
+[DATA label=store_after] body.modifiedDate = {{STORE_WL_MOD}} {BL} (BL-WL-005)",[API] no unbound record is ever returned by GET /api/white-labeling/store/{{store_id}} or /organization/{{org_id}},HTTP 200/201 on the unbound POST; a record with neither binding persisted (it would be invisible to every resolver and cannot be deleted); errorMessage names another rule; 5xx instead of 400,"none — the request is rejected and creates nothing. If it was NOT rejected an unbound record now exists and cannot be removed over REST (KB-52D2F554): report it as an orphan, never retry","VCST-4657 · Archetype:LIFECYCLE · Technique:EP · Purpose:FUNC · Behavior:wl.record.validate.neither-bound · Catches:VCST-4657 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Validation/WhiteLabelingSettingValidator.cs, Web/Controllers/Api/WhiteLabelingController.cs; Docs: PlatformUserGuide white-labeling; BL-WL-005 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+WL-043,REST create — a second record for an already-bound store or organization is rejected (400 duplicate-store-or-organization),Whitelabeling > REST contract > Record validation,High,BL-WL-005,ECL-14.1,"Runner-native REST. Admin token (role ADMIN_DEFAULT). Seeded fixtures: organization @td(WL_ELECTRONICS.name) has an enabled record (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) and store {{STORE_ID}} has an enabled record. The case sends only requests the validator must REJECT, so nothing it sends may create or change a record (no REST delete exists, KB-52D2F554).",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); store_id={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP org_before]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_before]
+[REST-CAPTURE org_before.body.id → WL_ID_BEFORE]
+[REST-OP dup_org]
+POST {{BACK_URL}}/api/white-labeling
+Content-Type: application/json
+Body: {""isEnabled"": false, ""organizationId"": ""{{org_id}}""}
+[REST-EXEC dup_org]
+[REST-OP dup_store]
+POST {{BACK_URL}}/api/white-labeling
+Content-Type: application/json
+Body: {""isEnabled"": false, ""storeId"": ""{{store_id}}""}
+[REST-EXEC dup_store]
+[REST-OP org_after]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_after]","[ERRORS label=dup_org] HTTP 400 {SPEC} (VCST-4657)
+[DATA label=dup_org] body.[0].errorMessage = duplicate-store-or-organization {BL} (BL-WL-005)
+[ERRORS label=dup_store] HTTP 400 {SPEC} (VCST-4657)
+[DATA label=dup_store] body.[0].errorMessage = duplicate-store-or-organization {BL} (BL-WL-005)
+[DATA label=org_after] body.id = {{WL_ID_BEFORE}} {BL} (BL-WL-005)",[API] the organization-keyed GET still returns the original record id after both rejected requests,HTTP 200/201 on either duplicate POST (a second record for the same store or organization now exists and cannot be deleted); the organization GET returns a different id; errorMessage names another rule,"none — both requests are rejected and create nothing. If either was NOT rejected a duplicate record now exists and cannot be removed over REST (KB-52D2F554): report it as an orphan, never retry","VCST-4657 · Archetype:LIFECYCLE · Technique:EP · Purpose:FUNC · Behavior:wl.record.validate.duplicate-binding · Catches:VCST-4657 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Validation/WhiteLabelingSettingValidator.cs, Web/Controllers/Api/WhiteLabelingController.cs; Docs: PlatformUserGuide white-labeling; BL-WL-005 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+WL-044,REST update — the store or organization of an existing record cannot be changed (400 store-or-organization-changed),Whitelabeling > REST contract > Record validation,High,BL-WL-005,ECL-14.1,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
+Runner-native REST. Admin token (role ADMIN_DEFAULT). Seeded fixtures: organization @td(WL_ELECTRONICS.name) has an enabled record (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) and store {{STORE_ID}} has an enabled record. The case sends only requests the validator must REJECT, so nothing it sends may create or change a record (no REST delete exists, KB-52D2F554). PUT replaces the whole record, so a PUT the validator wrongly accepts would rebind the seeded record: run only in a window the orchestrator owns and re-read the record afterwards.",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); store_id={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP org_before]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_before]
+[REST-CAPTURE org_before.body.id → WL_ID]
+[REST-CAPTURE org_before.body.modifiedDate → WL_MOD_BEFORE]
+[REST-OP rebind_to_store]
+PUT {{BACK_URL}}/api/white-labeling
+Content-Type: application/json
+Body: {""id"": ""{{WL_ID}}"", ""isEnabled"": true, ""storeId"": ""{{store_id}}""}
+[REST-EXEC rebind_to_store]
+[REST-OP org_after]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_after]","[ERRORS label=rebind_to_store] HTTP 400 {SPEC} (VCST-4657)
+[DATA label=rebind_to_store] body.[0].errorMessage = store-or-organization-changed {BL} (BL-WL-005)
+[DATA label=org_after] body.id = {{WL_ID}} {BL} (BL-WL-005)
+[DATA label=org_after] body.modifiedDate = {{WL_MOD_BEFORE}} {BL} (BL-WL-005)",[API] GET /api/white-labeling/{{WL_ID}} still returns organizationId = {{org_id}} and storeId null,HTTP 204 on the rebinding PUT; the record now carries storeId and no organizationId (the organization lost its branding silently); modifiedDate moved; errorMessage names another rule,"If the PUT was accepted: PUT the record back from the captured GET (organizationId restored, same fields) and report a defect candidate; otherwise none (the request was rejected)","VCST-4657 · Archetype:LIFECYCLE · Technique:EP · Purpose:FUNC · Behavior:wl.record.validate.binding-immutable-on-update · Catches:VCST-4657 · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Validation/WhiteLabelingSettingValidator.cs, Web/Controllers/Api/WhiteLabelingController.cs; Docs: PlatformUserGuide white-labeling; BL-WL-005 · Synced: qa-suite-sync wl (2026-11-27)",Draft
+WL-045,REST — no delete path exists for a white-labeling record: DELETE answers 405 and the record stays readable,Whitelabeling > REST contract > Removal,Medium,BL-WL-003,,"Runner-native REST, read-only in effect: DELETE targets an id that matches no record (so it can delete nothing even if a delete route existed). Admin token ADMIN_DEFAULT. Organization @td(WL_ELECTRONICS.name) has an enabled seeded record. This case records OBSERVED behaviour — no published document states that records cannot be deleted (KB-52D2F554, swagger lists 5 operations); if a delete route is added later the case reds on purpose and the expectation is re-decided by a human.",org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id); missing_id=00000000-0000-0000-0000-000000000000,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP org_before]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_before]
+[REST-CAPTURE org_before.body.id → WL_ID_BEFORE]
+[REST-OP del_by_id]
+DELETE {{BACK_URL}}/api/white-labeling/{{missing_id}}
+[REST-EXEC del_by_id]
+[REST-OP del_by_ids]
+DELETE {{BACK_URL}}/api/white-labeling?ids={{missing_id}}
+[REST-EXEC del_by_ids]
+[REST-OP org_after]
+GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}}
+[REST-EXEC org_after]","[ERRORS label=del_by_id] HTTP 405 {OBSERVED} (vcst 2026-11-27, KB-52D2F554)
+[ERRORS label=del_by_ids] HTTP 405 {OBSERVED} (vcst 2026-11-27, KB-52D2F554)
+[DATA label=org_after] body.id = {{WL_ID_BEFORE}} {OBSERVED} (vcst 2026-11-27)
+[ERRORS label=org_after] HTTP 200 {OBSERVED} (vcst 2026-11-27)",[ADMIN] neither admin UI offers a delete action for the record; the only way to remove a record from the storefront is the per-record Enabled switch (WL-012 family),HTTP 200/204 on a DELETE (a delete route exists now: the removal story and WL-007 change); the seeded record id changed or the GET stops returning it,none,KB-52D2F554 · Archetype:LIFECYCLE · Technique:EG · Purpose:FUNC · Behavior:wl.reverse.record-removal · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 WhiteLabelingController (5 operations); Docs: PlatformUserGuide white-labeling (no deletion described) · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-046,"xAPI — an organizationId that matches no organization returns the store branding (HTTP 200, no errors, not null)",Whitelabeling > GraphQL xAPI > Resolution,Medium,BL-WL-002,ECL-14.1,"Runner-native, read-only. Admin token. Store {{STORE_ID}} has an enabled record with a logo. OBSERVATION, NOT a spec: the published guide is silent on a wrong organization id; the expectation is the behaviour recorded in KB-F98BB191 (and the source reading: org record null, store record returned). A fixture key such as WL-ORG-A passed in place of the GUID reads exactly like this, which is why the case exists.",missing_org_id=00000000-0000-0000-0000-000000000001; store_id={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[GQL-OP store_only]
+query { whiteLabelingSettings(storeId: ""{{store_id}}"" cultureName: ""en-US"") { organizationId storeId logoUrl themePresetName } }
+[GQL-EXEC store_only]
+[GQL-CAPTURE store_only.data.whiteLabelingSettings.logoUrl → STORE_LOGO]
+[GQL-CAPTURE store_only.data.whiteLabelingSettings.themePresetName → STORE_PRESET]
+[GQL-OP unknown_org]
+query { whiteLabelingSettings(organizationId: ""{{missing_org_id}}"" storeId: ""{{store_id}}"" cultureName: ""en-US"") { organizationId storeId logoUrl themePresetName } }
+[GQL-EXEC unknown_org]","[ERRORS label=unknown_org] errors[] empty {OBSERVED} (KB-F98BB191)
+[DATA label=unknown_org] data.whiteLabelingSettings is non-null {OBSERVED} (KB-F98BB191)
+[NULL label=unknown_org] data.whiteLabelingSettings.organizationId {OBSERVED} (KB-F98BB191)
+[DATA label=unknown_org] data.whiteLabelingSettings.storeId = {{store_id}} {OBSERVED} (KB-F98BB191)
+[DATA label=unknown_org] data.whiteLabelingSettings.logoUrl = {{STORE_LOGO}} {OBSERVED} (KB-F98BB191)
+[DATA label=unknown_org] data.whiteLabelingSettings.themePresetName = {{STORE_PRESET}} {OBSERVED} (KB-F98BB191)","[API] the answer to the unknown id is field-for-field the store-keyed answer (REL), so a typo in an organization id is invisible to the caller",errors[] non-empty; data.whiteLabelingSettings null; a field differs from the store-keyed answer,none — read-only,KB-F98BB191 · Archetype:FALLBACK · Technique:EG · Purpose:FUNC · Behavior:wl.resolve.unknown-organization-id · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling (silent on this) · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-047,xAPI — the domain argument resolves a store (never an organization); no storeId and no domain resolves nothing,Whitelabeling > GraphQL xAPI > Resolution,Medium,BL-WL-001,ECL-14.1,"Runner-native, read-only. Admin token. Store {{STORE_ID}} is served on {{STOREFRONT_DOMAIN}}. The guide says a custom domain assigned to an ORGANIZATION brands the first visit before sign-in; module 3.1008.0 resolves only a store from `domain` (domain map D9, MISSING). This case pins what `domain` resolves today; an organization-from-domain feature would change the first assertion on purpose.",store_id={{STORE_ID}}; domain={{STOREFRONT_DOMAIN}},"[AUTH role=ADMIN_DEFAULT]
+[GQL-OP by_store]
+query { whiteLabelingSettings(storeId: ""{{store_id}}"" cultureName: ""en-US"") { organizationId storeId logoUrl themePresetName } }
+[GQL-EXEC by_store]
+[GQL-CAPTURE by_store.data.whiteLabelingSettings.logoUrl → STORE_LOGO]
+[GQL-OP by_domain]
+query { whiteLabelingSettings(domain: ""{{domain}}"" cultureName: ""en-US"") { organizationId storeId logoUrl themePresetName } }
+[GQL-EXEC by_domain]
+[GQL-OP neither]
+query { whiteLabelingSettings(cultureName: ""en-US"") { organizationId storeId logoUrl } }
+[GQL-EXEC neither]","[ERRORS label=by_domain] errors[] empty {OBSERVED} (vcst 2026-11-27)
+[DATA label=by_domain] data.whiteLabelingSettings.storeId = {{store_id}} {OBSERVED} (vcst 2026-11-27)
+[NULL label=by_domain] data.whiteLabelingSettings.organizationId {OBSERVED} (vcst 2026-11-27)
+[DATA label=by_domain] data.whiteLabelingSettings.logoUrl = {{STORE_LOGO}} {OBSERVED} (vcst 2026-11-27)
+[ERRORS label=neither] errors[] empty {OBSERVED} (vcst 2026-11-27)
+[NULL label=neither] data.whiteLabelingSettings {OBSERVED} (vcst 2026-11-27)",[API] a domain-keyed answer equals the store-keyed answer for the same store (REL),organizationId non-null for a domain-only call (an organization is now resolved from a domain); the domain answer differs from the store answer; the no-argument call returns branding or an error,none — read-only,VCST-899 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC · Behavior:wl.resolve.domain-resolves-store-only Behavior:wl.resolve.store-not-resolvable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview (custom domain sentence) · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-049,"Admin Shell — White labeling opens from ""More widgets"" on the store blade as ONE blade with Save and Reset and the record's own values",Whitelabeling > Admin Shell > Store blade,High,BL-WL-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform with VirtoCommerce.AdminShell 3.1101.0 and WhiteLabeling 3.1008.0; store {{STORE_ID}} has an enabled white-labeling record with a logo, a theme preset and link-list names (seeded on the stand).","admin_url={{ADMIN_URL}}, store_id={{STORE_ID}}","[NAV] open {{ADMIN_URL}}/apps/admin-shell/ in a fresh browser context, English UI
+[ACT] sign in as the admin account (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the Admin Shell home renders
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[BLADE] the store blade opens; its primary widget strip does not list White labeling
+[ACT] click the toolbar chevron 'More widgets'
+[WAIT] the list of further widgets opens
+[ACT] click 'White labeling'
+[WAIT] the 'White labeling' blade renders with its fields filled
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}
+[CAPTURE] record fields isEnabled, themePresetName, mainMenuLinkListName, footerLinkListName, logoUrl, secondaryLogoUrl, faviconUrl as REC_*","[BLADE] exactly one new blade ('White labeling') opens after the click; no Logo or Favicon sub-blade opens {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[DOM] the blade toolbar holds the buttons 'Save' and 'Reset' and no 'Clear' button {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] the 'Enabled' switch state equals REC_isEnabled of GET /api/white-labeling/store/{{store_id}} {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] the 'Theme preset', 'Main menu link list' and 'Footer link list' fields equal REC_themePresetName, REC_mainMenuLinkListName and REC_footerLinkListName {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[FORM] three upload zones (Logo, Secondary logo, Favicon) each have exactly one free-text URL box beneath, and the three boxes equal REC_logoUrl, REC_secondaryLogoUrl, REC_faviconUrl (an empty record value shows an empty box) {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[FORM] the Logo preview carries the buttons 'Fullscreen' and 'Delete' (the Shell's per-image removal is the preview's 'Delete' button, not a toolbar 'Clear') {OBSERVED} (vcst_qa 2026-11-27, live proof of this case)","[CONSOLE] no TypeError or JS error while the blade opens
+[NETWORK] GET /api/white-labeling/store/{{store_id}} returns 200; no 4xx/5xx",White labeling listed in the primary widget strip instead of More widgets; two blades open; a Clear button present; a field differs from the record; console TypeError on open,none — read-only (nothing is saved; close the blade without editing),VCST-899 · Archetype:PARITY · Technique:EP · Purpose:FUNC · Behavior:wl.record.edit.shell · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce.AdminShell@3.1101.0 + VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/vue/src/modules (details.vue); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-595C7FF0 · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-050,Admin Shell — the Enabled switch persists after Save and the Save does not clear the record's other fields,Whitelabeling > Admin Shell > Store blade,High,BL-WL-003,,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform with VirtoCommerce.AdminShell 3.1101.0 and WhiteLabeling 3.1008.0; store {{STORE_ID}} has an enabled white-labeling record with a logo, a theme preset and link-list names (seeded on the stand). The case flips the record's own Enabled switch (NOT the store master switch) and restores it; during the window guests of {{STORE_ID}} may see default branding.","admin_url={{ADMIN_URL}}, store_id={{STORE_ID}}","[NAV] open {{ADMIN_URL}}/apps/admin-shell/ in a fresh browser context, English UI
+[ACT] sign in as the admin account (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the Admin Shell home renders
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}
+[CAPTURE] the whole record as BEFORE (isEnabled, themePresetName, mainMenuLinkListName, footerLinkListName, logoUrl, secondaryLogoUrl, faviconUrl)
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[BLADE] the store blade opens; its primary widget strip does not list White labeling
+[ACT] click the toolbar chevron 'More widgets'
+[WAIT] the list of further widgets opens
+[ACT] click 'White labeling'
+[WAIT] the 'White labeling' blade renders with its fields filled
+[ACT] click the 'Enabled' switch to the opposite of BEFORE.isEnabled
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears and the blade settles
+[NAV] reload the page (F5)
+[WAIT] the Admin Shell renders
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[BLADE] the store blade opens; its primary widget strip does not list White labeling
+[ACT] click the toolbar chevron 'More widgets'
+[WAIT] the list of further widgets opens
+[ACT] click 'White labeling'
+[WAIT] the 'White labeling' blade renders with its fields filled
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}
+[CAPTURE] the whole record as AFTER","[FORM] after the reload the 'Enabled' switch shows the opposite of BEFORE.isEnabled {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] AFTER.isEnabled = NOT BEFORE.isEnabled {SPEC} (VCST-899)
+[REL] AFTER.themePresetName, mainMenuLinkListName, footerLinkListName, logoUrl, secondaryLogoUrl and faviconUrl each equal their BEFORE value — a blade Save writes the whole record, so a field the form failed to carry would be cleared {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] AFTER.id = BEFORE.id and AFTER.storeId = BEFORE.storeId {BL} (BL-WL-005)","[API] the Save is a PUT /api/white-labeling returning 204
+[CONSOLE] no TypeError or JS error","the switch reverts after the reload; a Shell Save nulls the logo, theme or a link-list name; a second record appears for the store; 4xx/5xx on the PUT","Open the blade again, set 'Enabled' back to BEFORE.isEnabled, click 'Save'; GET the record and confirm isEnabled = BEFORE.isEnabled and every other field = BEFORE",VCST-899 · Archetype:LIFECYCLE · Technique:ST · Purpose:FUNC · Behavior:wl.record.edit.shell Behavior:wl.switch.record-enabled.disable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce.AdminShell@3.1101.0 + VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/vue/src/modules (details.vue); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-595C7FF0 · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-051,Admin Shell — Reset reverts unsaved edits only and writes nothing,Whitelabeling > Admin Shell > Store blade,Medium,BL-WL-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform with VirtoCommerce.AdminShell 3.1101.0 and WhiteLabeling 3.1008.0; store {{STORE_ID}} has an enabled white-labeling record with a logo, a theme preset and link-list names (seeded on the stand). Nothing in this case is saved.","admin_url={{ADMIN_URL}}, store_id={{STORE_ID}}, probe_text=AGENT-TEST-reset-probe","[NAV] open {{ADMIN_URL}}/apps/admin-shell/ in a fresh browser context, English UI
+[ACT] sign in as the admin account (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the Admin Shell home renders
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[BLADE] the store blade opens; its primary widget strip does not list White labeling
+[ACT] click the toolbar chevron 'More widgets'
+[WAIT] the list of further widgets opens
+[ACT] click 'White labeling'
+[WAIT] the 'White labeling' blade renders with its fields filled
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}
+[CAPTURE] record modifiedDate as MOD_BEFORE
+[ACT] note the value of 'Enabled' as V0_enabled
+[ACT] note the value of 'Footer link list' as V0_footer
+[ACT] note the value of 'Main menu link list' as V0_menu
+[ACT] click the 'Enabled' switch
+[WAIT] the 'Save' button becomes enabled
+[ACT] fill 'Footer link list': {{probe_text}}
+[ACT] fill 'Main menu link list': {{probe_text}}
+[ASSERT] the three fields differ from V0 (the edits are visible)
+[ACT] click 'Reset'
+[WAIT] the blade settles
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}}","[FORM] after 'Reset' the 'Enabled' switch, 'Footer link list' and 'Main menu link list' equal V0 {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] the record's modifiedDate from GET after 'Reset' equals MOD_BEFORE — Reset wrote nothing {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[FORM] the 'Has unsaved changes' alert is shown after the edits and is gone after 'Reset', and the toolbar 'Save' and 'Reset' buttons are enabled after the edits and disabled after 'Reset' {OBSERVED} (vcst_qa 2026-11-27, live proof of this case)
+[FORM] the URL boxes under Logo, Secondary logo and Favicon still equal the record values (Reset touched no image) {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)","[NETWORK] no PUT or POST to /api/white-labeling during the whole case
+[CONSOLE] no TypeError or JS error",a field keeps its edited value after Reset; a PUT is sent; modifiedDate moved; Reset also clears an image,none — nothing was saved; close the blade without Save,VCST-899 · Archetype:LIFECYCLE · Technique:EP · Purpose:FUNC · Behavior:wl.record.edit.shell · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce.AdminShell@3.1101.0 + VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/vue/src/modules (details.vue); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-595C7FF0 · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-052,Admin Shell — a logo URL typed in the URL box and saved is returned by xAPI for the store and shown to a guest,Whitelabeling > Admin Shell > Store blade,High,BL-WL-002,ECL-14.1,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform with VirtoCommerce.AdminShell 3.1101.0 and WhiteLabeling 3.1008.0; store {{STORE_ID}} has an enabled white-labeling record with a logo, a theme preset and link-list names (seeded on the stand). asset_url is the logoUrl of the seeded organization record @td(WL_ELECTRONICS.name) (an image that loads); it is written to the STORE record and restored in Cleanup.","admin_url={{ADMIN_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id)","[NAV] open {{ADMIN_URL}}/apps/admin-shell/ in a fresh browser context, English UI
+[ACT] sign in as the admin account (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the Admin Shell home renders
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl as ASSET_URL
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[BLADE] the store blade opens; its primary widget strip does not list White labeling
+[ACT] click the toolbar chevron 'More widgets'
+[WAIT] the list of further widgets opens
+[ACT] click 'White labeling'
+[WAIT] the 'White labeling' blade renders with its fields filled
+[ACT] fill the free-text URL box under 'Logo': ASSET_URL
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as AFTER
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName } - [CAPTURE] as XAPI
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the storefront header renders","[REL] AFTER.logoUrl = ASSET_URL {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] XAPI.logoUrl = AFTER.logoUrl — the store record feeds the storefront answer {BL} (BL-WL-002)
+[REL] the guest header logo src path ends with the path of ASSET_URL {BL} (BL-WL-002)
+[REL] AFTER.themePresetName, mainMenuLinkListName, footerLinkListName and faviconUrl equal BEFORE — saving one image left the rest of the record alone {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)","[API] the xAPI call returns errors[] empty
+[NETWORK] the logo request returns 200
+[CONSOLE] no TypeError or JS error",xAPI still returns the previous logo; the guest header keeps the old logo; Save nulls another field; the URL box value is rewritten on Save,"Open the blade, fill the 'Logo' URL box with BEFORE.logoUrl, click 'Save'; GET the record and confirm logoUrl = BEFORE.logoUrl and every other field = BEFORE",VCST-899 · Archetype:PARITY · Technique:FLOW · Purpose:FUNC · Behavior:wl.record.edit.shell Behavior:wl.resolve.merge-per-field · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce.AdminShell@3.1101.0 + VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/vue/src/modules (details.vue); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-595C7FF0 · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-053,"Admin Shell vs AngularJS admin — a Save from the Shell writes the SAME record the AngularJS blade reads, with no other field changed",Whitelabeling > Admin Shell > Parity with AngularJS admin,High,BL-WL-005,,"[EXCLUSIVE:store white labeling]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform with VirtoCommerce.AdminShell 3.1101.0 and WhiteLabeling 3.1008.0; store {{STORE_ID}} has an enabled white-labeling record with a logo, a theme preset and link-list names (seeded on the stand). The AngularJS admin is {{BACK_URL}} (classic workspace). The case writes the Footer link list name (a free string nothing validates) and restores it; the Shell and AngularJS blades are driven one after the other in the same lane.","admin_url={{ADMIN_URL}}, store_id={{STORE_ID}}, probe_text=AGENT-TEST-parity-footer","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as BEFORE
+[NAV] open {{ADMIN_URL}}/apps/admin-shell/ in a fresh browser context, English UI
+[ACT] sign in as the admin account (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the Admin Shell home renders
+[GRID] click 'Stores' in the main menu, then click the row '{{STORE_ID}}'
+[BLADE] the store blade opens; its primary widget strip does not list White labeling
+[ACT] click the toolbar chevron 'More widgets'
+[WAIT] the list of further widgets opens
+[ACT] click 'White labeling'
+[WAIT] the 'White labeling' blade renders with its fields filled
+[ACT] fill 'Footer link list': {{probe_text}}
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] the whole record as AFTER_SHELL
+[NAV] open {{BACK_URL}} (AngularJS admin), signed in as the admin account
+[BLADE] Stores > '{{STORE_ID}}' > widget 'White labeling' opens the AngularJS 'White labeling' blade
+[WAIT] the blade fields fill","[REL] AFTER_SHELL.id = BEFORE.id and AFTER_SHELL.storeId = BEFORE.storeId — one record per store, the Shell updated it in place {BL} (BL-WL-005)
+[REL] AFTER_SHELL.footerLinkListName = probe_text {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[REL] AFTER_SHELL.logoUrl, secondaryLogoUrl, faviconUrl, themePresetName, mainMenuLinkListName and isEnabled equal BEFORE {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)
+[FORM] the AngularJS blade's 'Footer link list' field shows probe_text and its 'Enabled' switch equals BEFORE.isEnabled {OBSERVED} (vcst_qa 2026-11-27, KB-595C7FF0)","[CONSOLE] no TypeError or JS error in either admin UI
+[NETWORK] the Shell save is PUT /api/white-labeling returning 204","the Shell creates a second record; a Shell Save clears the logo, favicon or preset; the AngularJS blade shows the old footer name; the two UIs disagree about Enabled","In the AngularJS blade fill 'Footer link list' with BEFORE.footerLinkListName, click 'Save'; GET the record and confirm footerLinkListName = BEFORE.footerLinkListName and every other field = BEFORE",VCST-899 · Archetype:PARITY · Technique:FLOW · Purpose:FUNC · Behavior:wl.record.edit.shell Behavior:wl.record.edit.angularjs · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce.AdminShell@3.1101.0 + VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/vue/src/modules (details.vue); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-595C7FF0 · Synced: qa-suite-sync wl (2026-11-27),Draft
+WL-055,"Organization record — the Main menu link list name is saved, persists after reload, and clearing it hands the menu back to the STORE record's list",Whitelabeling > Admin UI > Organization blade,High,"BL-WL-002, BL-WL-004",ECL-14.1,"[EXCLUSIVE:white-labeling record of organization @td(WL_MENU_ONLY.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Organization @td(WL_MENU_ONLY.name) (platform id @td(WL_MENU_ONLY_PLATFORM_ID.id)) has an enabled record whose Main menu link list is @td(WL_MENU_ONLY.main_menu); store {{STORE_ID}} has an enabled record with its own Main menu link list. Replaces WL-025, WL-026 and WL-027 (one value chain: set, persisted, cleared).","admin_url={{BACK_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_MENU_ONLY_PLATFORM_ID.id), other_list=@td(WL_ELECTRONICS.main_menu), prior_list=@td(WL_MENU_ONLY.main_menu)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] mainMenuLinkListName as PRIOR_LIST and modifiedDate as MOD_BEFORE
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title } } - [CAPTURE] the titles as STORE_MENU
+[NAV] open {{BACK_URL}} (AngularJS admin), signed in as the admin account
+[GRID] click 'Contacts', find the row '@td(WL_MENU_ONLY.name)', open its three-dots menu and click 'Manage'
+[BLADE] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the blade shows the record
+[ACT] fill 'Main menu link list': {{other_list}}
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[NAV] reload the page (F5)
+[WAIT] the Admin SPA renders
+[NAV] reopen the same blade
+[WAIT] the blade shows the record
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title } } - [CAPTURE] the titles as ORG_MENU_SET
+[ACT] clear 'Main menu link list' (empty text)
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql with the same organization query - [CAPTURE] the titles as ORG_MENU_CLEARED
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as AFTER","[FORM] after the reload 'Main menu link list' shows {{other_list}} {OBSERVED} (vcst_qa 2026-11-27)
+[REL] ORG_MENU_SET differs from STORE_MENU and equals the titles of the link list {{other_list}} {BL} (BL-WL-004)
+[REL] ORG_MENU_CLEARED equals STORE_MENU — an empty organization name hands the field to the store record, not to an empty menu {BL} (BL-WL-002)
+[REL] AFTER.mainMenuLinkListName is null or empty and AFTER.id, organizationId and isEnabled equal their pre-case values (a Save changes only the field edited) {BL} (BL-WL-002)","[API] every xAPI response has errors[] empty
+[CONSOLE] no TypeError or JS error",the saved name is gone after reload; the organization menu stays on the old list after clear; the cleared organization shows an EMPTY menu while the store has one (fallback broken); Save clears another field,"Fill 'Main menu link list' with PRIOR_LIST, click 'Save'; GET the record and confirm mainMenuLinkListName = PRIOR_LIST (it is @td(WL_MENU_ONLY.main_menu))",VCST-4637 VCST-4645 · Archetype:FALLBACK · Technique:ST · Purpose:FUNC · Behavior:wl.resolve.org-partial-inherits-store Behavior:wl.resolve.link-lists · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler (GetCombinedWhiteLabelingSetting); Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27),Draft

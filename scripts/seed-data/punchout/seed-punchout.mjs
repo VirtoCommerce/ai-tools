@@ -423,6 +423,7 @@ async function verifyProbes(mappingIds, onlyMappings = null) {
   for (const p of VERIFY_PROBES) {
     if (onlyMappings && !onlyMappings.has(p.mapping)) continue; // a scoped seed probes only its own buyers
     const cfg = CONFIG_SPECS.find((c) => configPosition(c) === p.config); // a POSITION, never a legacy alias index
+    if (!DEPLOYED_CONFIGS[TEST_ENV]?.configs?.[p.config]) { log(`! skip probe (position ${p.config} is not deployed on ${TEST_ENV}): ${p.name}`); continue; }
     const secret = process.env[cfg.secretVar];
     if (!secret) { log(`! skip probe (no {{${cfg.secretVar}}} on ${TEST_ENV}): ${p.name}`); continue; }
     const identity = p.identity || MAPPING_SPECS.find((m) => m.alias === p.mapping)?.externalId;

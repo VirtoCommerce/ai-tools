@@ -2952,7 +2952,13 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": true,
+    "configurationId": "vcst-punchout-0",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_1": {
     "storeId": "QA-STORE",
@@ -2965,7 +2971,13 @@
     "sessionLifetime": "00:10:00",
     "tokenLifetimeMinutes": 2,
     "sessionLifetimeMinutes": 10,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": true,
+    "configurationId": "vcst-punchout-1",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_2": {
     "storeId": "AGENT-TEST-no-such-store",
@@ -2978,7 +2990,13 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": true,
+    "configurationId": "vcst-punchout-2",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_CONFIG_3": {
     "storeId": "",
@@ -2987,11 +3005,19 @@
     "senderDomainCheck": false,
     "allowedReturnUrl": "",
     "returnUrlCheck": false,
-    "tokenLifetime": "00:15:00",
-    "sessionLifetime": "04:00:00",
-    "tokenLifetimeMinutes": 15,
-    "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": null,
+    "sessionLifetimeMinutes": null,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)",
+    "deployed": false,
+    "retired": true,
+    "retiredReason": "not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The \"no StoreId\" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.",
+    "configurationId": "",
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null
   },
   "PUNCHOUT_MAPPING_MULTI_ORG": {
     "persona_email_var": "MULTI_ORG_USER_EMAIL",
@@ -3000,7 +3026,7 @@
     "id": "1726b489-fdd9-4619-9eca-9fc1ac9e356f",
     "userId": "0cc0a829-d7fe-448c-b98c-a621e34ba788",
     "memberId": "54729f13-9fd0-47d2-af72-1a04a41175ed",
-    "currentOrganizationId": "organization-acme-store",
+    "currentOrganizationId": "organization-double-quotes",
     "otherOrganizationId": "organization-redwood-provisions",
     "organizationCount": 12
   },
@@ -3988,5 +4014,243 @@
     "control_product_id": "08c33cfc9f664426a52fac8882da2df0",
     "control_product_sku": "566903892",
     "control_product_name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier"
+  },
+  "SR_REP_CALL": {
+    "id": "2463812b-3089-4479-b58a-d90dfcf20c29",
+    "user_id": "68e22a03-866b-4873-86ae-36d4cdb12fcc"
+  },
+  "ORG_SR_CALL_MULTI": {
+    "id": "a7f489e9-5bfd-410b-b31b-1ff6460ff1d5",
+    "platform_id": "a7f489e9-5bfd-410b-b31b-1ff6460ff1d5",
+    "primary_contact_id": "b3f21c92-6522-4775-be61-51fd9e774d48",
+    "contact_V1C": "b3f21c92-6522-4775-be61-51fd9e774d48",
+    "default_href": "tel:+15550102031"
+  },
+  "ORG_SR_CALL_DUP": {
+    "id": "cd3e852d-cf34-4f3d-b851-d22a8016dbdb",
+    "platform_id": "cd3e852d-cf34-4f3d-b851-d22a8016dbdb",
+    "primary_contact_id": "1d8f2b6a-c67a-4547-ba61-0b742df615fa",
+    "contact_V2C": "1d8f2b6a-c67a-4547-ba61-0b742df615fa",
+    "default_href": "tel:+15550203040"
+  },
+  "ORG_SR_CALL_ORGONLY": {
+    "id": "73b89c3e-056a-4982-8d1f-0c7e97dc3bed",
+    "platform_id": "73b89c3e-056a-4982-8d1f-0c7e97dc3bed",
+    "primary_contact_id": "",
+    "default_href": "tel:+15550304050"
+  },
+  "ORG_SR_CALL_OWNERLESS": {
+    "id": "ae3a73a4-8993-40a8-95e6-86408b8860d0",
+    "platform_id": "ae3a73a4-8993-40a8-95e6-86408b8860d0",
+    "primary_contact_id": "096fff7e-0369-4f1f-8573-115c6adcebfe",
+    "contact_V4C": "096fff7e-0369-4f1f-8573-115c6adcebfe",
+    "default_href": "tel:+15550410002"
+  },
+  "ORG_SR_CALL_NONE": {
+    "id": "b7600ff8-3816-4daf-8789-6dbd599074ff",
+    "platform_id": "b7600ff8-3816-4daf-8789-6dbd599074ff",
+    "primary_contact_id": "98849fb2-b009-42b6-b02e-20b7768565cf",
+    "contact_V5C": "98849fb2-b009-42b6-b02e-20b7768565cf",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_EXT": {
+    "id": "4cfef7f1-11c9-4f63-b5e1-4193e1928598",
+    "platform_id": "4cfef7f1-11c9-4f63-b5e1-4193e1928598",
+    "primary_contact_id": "a47c8abc-f650-443b-87d2-5a0b6dbfd174",
+    "contact_V6C": "a47c8abc-f650-443b-87d2-5a0b6dbfd174",
+    "default_href": "tel:+15550405060,45"
+  },
+  "ORG_SR_CALL_ADDR": {
+    "id": "a4805b78-23d2-43e0-a332-39a3a3128b6b",
+    "platform_id": "a4805b78-23d2-43e0-a332-39a3a3128b6b",
+    "primary_contact_id": "af9bb690-f94a-4d06-b8c1-d2af20237272",
+    "contact_V7C": "af9bb690-f94a-4d06-b8c1-d2af20237272",
+    "default_href": "tel:+15550506070"
+  },
+  "ORG_SR_CALL_ORGADDR": {
+    "id": "a878df0c-6e0c-4999-b072-071d167634a0",
+    "platform_id": "a878df0c-6e0c-4999-b072-071d167634a0",
+    "primary_contact_id": "d9112431-a69a-4fe3-a2ff-082d1719d011",
+    "contact_V8C": "d9112431-a69a-4fe3-a2ff-082d1719d011",
+    "default_href": "tel:+15550809010"
+  },
+  "ORG_SR_CALL_FILL09": {
+    "id": "f4ab61f8-831e-4f45-98ad-cdabb687502c",
+    "platform_id": "f4ab61f8-831e-4f45-98ad-cdabb687502c",
+    "primary_contact_id": "",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_FILL10": {
+    "id": "4e531d53-d9b5-46a6-847f-b99de6f6ba4e",
+    "platform_id": "4e531d53-d9b5-46a6-847f-b99de6f6ba4e",
+    "primary_contact_id": "",
+    "default_href": ""
+  },
+  "ORG_SR_CALL_PAGE2": {
+    "id": "306ccb1c-a576-4f16-bc2f-59a16d81d546",
+    "platform_id": "306ccb1c-a576-4f16-bc2f-59a16d81d546",
+    "primary_contact_id": "42b38757-e324-451c-aff3-4f8593dc0466",
+    "contact_P2C": "42b38757-e324-451c-aff3-4f8593dc0466",
+    "default_href": "tel:+15551101100"
+  },
+  "ORG_SR_CALL_EXTONLY": {
+    "id": "cd6e5d11-92c0-472c-9961-5572641862ed",
+    "platform_id": "cd6e5d11-92c0-472c-9961-5572641862ed",
+    "primary_contact_id": "5d7595cf-92d2-45b4-a402-c3e59908a823",
+    "contact_V12C": "5d7595cf-92d2-45b4-a402-c3e59908a823",
+    "default_href": ""
+  },
+  "PUNCHOUT_CONFIG_DEFAULTS": {
+    "deployed": true,
+    "configurationId": "vcst-punchout-defaults",
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "NetworkId",
+    "senderDomainCheck": true,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "defaultShipmentMethodCode": "FixedRate",
+    "defaultPaymentMethodCode": "DefaultManualPaymentMethod",
+    "defaultMethodsDeclared": true,
+    "defaultMethodsActive": true,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)"
+  },
+  "PUNCHOUT_CONFIG_BADCODES": {
+    "deployed": false,
+    "retired": false,
+    "retiredReason": "",
+    "configurationId": "",
+    "storeId": "",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": null,
+    "sessionLifetimeMinutes": null,
+    "defaultShipmentMethodCode": "",
+    "defaultPaymentMethodCode": "",
+    "defaultMethodsDeclared": false,
+    "defaultMethodsActive": null,
+    "notDeployedReason": "PUNCHOUT_CONFIG_BADCODES is not deployed on this env",
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3, branch vcst-qa) + #7167 (Punchout 3.1001.0 pinned, Ids vcst-punchout-0..2, position 3 vcst-punchout-defaults, 2026-11-26)"
+  },
+  "PUNCHOUT_MAPPING_REQUISITION": {
+    "id": "b2d0a7eb-6e1e-4af1-862f-c690d1a723e6",
+    "userId": "f0de3d5f-1178-4298-aff3-a1dda8b9ad01",
+    "memberId": "6165c0e8-4bdc-415b-931e-fd1102e6ebef",
+    "currentOrganizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173",
+    "otherOrganizationId": "",
+    "organizationCount": 1,
+    "organizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173"
+  },
+  "PUNCHOUT_MAPPING_SECOND": {
+    "id": "a2da3169-3080-498c-a994-b54a1309a505",
+    "userId": "f5c2a34c-4fd8-423e-aae0-a6ea4dd3cdd2",
+    "memberId": "eaab266f-14a3-4be7-a82e-4ea7c4df0cd0",
+    "currentOrganizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173",
+    "otherOrganizationId": "",
+    "organizationCount": 1,
+    "organizationId": "f39c1413-32d5-4fde-9dc8-46385a05a173"
+  },
+  "PUNCHOUT_PRODUCT_UOM": {
+    "id": "18f882c2-b505-4cbf-974a-1f34935843cd",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "categoryId": "6953a9a2-32fb-45fa-8271-680d9c74b36e",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3"
+  },
+  "PUNCHOUT_PRODUCT_PLAIN": {
+    "id": "7c3ef222-cfe7-4637-9fc5-3091825f7cb5",
+    "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "categoryId": "6953a9a2-32fb-45fa-8271-680d9c74b36e",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3"
+  },
+  "PUNCHOUT_PRICELIST_USD": {
+    "id": "a40a36a1-6fd4-4a39-a2ba-f82dc3587e37",
+    "currency": "USD",
+    "storeIds": "B2B-store,QA-STORE",
+    "assignmentIds": "2828390a-1743-43c8-9da7-35c17b4b1892,52bd7183-f745-41cd-8158-b211af2f63c0"
+  },
+  "PUNCHOUT_PRICELIST_EUR": {
+    "id": "2bf08b24-41e8-4cbf-9924-2032d887ab34",
+    "currency": "EUR",
+    "storeIds": "B2B-store",
+    "assignmentIds": "fadfba4f-78a5-4ae6-abf5-72813e465205"
+  },
+  "PUNCHOUT_STORE_FFC_CONFIG_1": {
+    "storeId": "QA-STORE",
+    "sourceStoreId": "B2B-store",
+    "field": "mainFulfillmentCenterId",
+    "ffcId": "8989f3a5-e25a-4a3e-afe0-473385734ed3",
+    "assignedFfcId": "",
+    "previousValue": "",
+    "owned": false
+  },
+  "PUNCHOUT_MAPPING_DEFAULT": {
+    "persona_email_var": "ORG_USER_EMAIL",
+    "persona_email": "{{ORG_USER_EMAIL}}",
+    "persona_password": "{{ORG_USER_PASSWORD}}",
+    "id": "0f96be82-451b-49e6-839c-c3382ab76558",
+    "userId": "852c8fcc-9b29-45c3-8328-021a01537659",
+    "memberId": "aaf0bee1-e3dd-4501-874a-3b77cb7f78b2",
+    "currentOrganizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+    "otherOrganizationId": "",
+    "organizationCount": 1
+  },
+  "WL_EMPTY_RECORD_PLATFORM_ID": {
+    "_inline": true,
+    "id": "5b90baf0-3f4d-48c6-950f-8db0f68c615c",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_DEFAULT_EMPTY_RECORD_PLATFORM_ID": {
+    "_inline": true,
+    "id": "6d0c2d1b-9d5d-47d5-b134-3ff1f4c4b031",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_EMPTY_RECORD_MAINTAINER_PLATFORM_ID": {
+    "_inline": true,
+    "id": "9f5a39a1-ac96-4d5c-98fc-a6f7431bb92e",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_ELECTRONICS": {
+    "logo": "https://vcst-qa.govirto.com/cms-content/assets/customization/logo_bf8538bd-ecf5-421b-b7c2-b6380c01b324_1795714054770.png",
+    "secondary_logo": "https://vcst-qa.govirto.com/cms-content/assets/customization/secondary_logo_bf8538bd-ecf5-421b-b7c2-b6380c01b324_1795714054770.png",
+    "favicon": "https://vcst-qa.govirto.com/cms-content/assets/customization/favicons/favicon_bf8538bd-ecf5-421b-b7c2-b6380c01b324_1795714054770.webp"
+  },
+  "WL_FASHION": {
+    "logo": "https://vcst-qa.govirto.com/cms-content/assets/customization/logo_c3618c26-2e67-4c46-8734-025306201e93_1795714054770.svg",
+    "secondary_logo": "https://vcst-qa.govirto.com/cms-content/assets/customization/secondary_logo_c3618c26-2e67-4c46-8734-025306201e93_1795714054770.svg",
+    "favicon": "https://vcst-qa.govirto.com/cms-content/assets/customization/favicons/favicon_c3618c26-2e67-4c46-8734-025306201e93_1795714054770.png"
+  },
+  "STORE_WITHOUT_WL": {
+    "id": "QA-STORE",
+    "name": "QA Regression Store"
+  },
+  "WL_DISPOSABLE_ORG": {
+    "name": "",
+    "record_id": ""
+  },
+  "WL_DISPOSABLE_ORG_PLATFORM_ID": {
+    "_inline": true,
+    "id": "",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_DISPOSABLE_MAINTAINER": {
+    "email": "",
+    "id": ""
   }
 }

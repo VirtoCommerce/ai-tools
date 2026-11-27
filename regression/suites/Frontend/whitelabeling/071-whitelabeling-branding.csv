@@ -1,205 +1,306 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"FWL-004","Store and organization both have whitelabeling settings - organization branding overrides store","Organization Branding","Critical","BL-WL-001",,"[EXCLUSIVE:the store's White Labeling (logo, favicon, theme preset)] [PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Store has White Labeling with store-level logo/favicon/theme; Organization has custom logo/favicon/theme configured","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Stores > @td(STORE_PRIMARY.id)
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Upload store logo: store-logo.png
-[ACT] 4. Set theme: Default
-[ACT] 5. Save
-[NAV] 6. Navigate to Customer > Organizations > Branded Org
-[ACT] 7. Open White Labeling settings
-[ASSERT] 8. Verify Enabled = ON
-[ACT] 9. Upload organization logo: org-logo.png
-[ACT] 10. Upload organization favicon: org-favicon.ico
-[ACT] 11. Set theme preset: Coffee
-[ACT] 12. Configure footer links list: org-footer-links
-[ACT] 13. Configure main menu links list: org-main-menu
-[ACT] 14. Save organization settings
-[NAV] 15. Sign in to storefront with user from Branded Org
-[NAV] 16. Navigate to homepage
-[ASSERT] 17. Inspect header logo (should show org logo, not store logo)
-[ASSERT] 18. Inspect favicon (should show org favicon)
-[ASSERT] 19. Inspect theme (should be Coffee, not Default)
-[ASSERT] 20. Inspect main menu links structure
-[ASSERT] 21. Inspect footer links structure","[DOM] Organization logo displayed in header (org-logo.png, NOT store-logo.png)
-[DOM] Organization favicon displayed in browser tab
-[STATE] Coffee theme applied (NOT Default)
-[DOM] Org-specific main menu links visible
-[DOM] Org-specific footer links visible","[CONSOLE] no uncaught JS errors
-[NETWORK] org logo image loads with HTTP 200","Store logo shown instead of org logo; Store theme applied instead of org theme; Org footer/menu links missing","restore org settings to pre-test state; restore store settings","C390297 VCST-1634","Manual"
-"FWL-005","Set non-existent theme preset - default theme applied as fallback","Theme Preset","Medium","BL-WL-004",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Store/Organization White Labeling configured; Access to backend","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Test Org
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Directly set themePresetName field to non-existent value: Mercury (outdated preset)
-[ACT] 4. Save settings
-[NAV] 5. Sign in to storefront with user from Test Org
-[NAV] 6. Navigate to homepage
-[ASSERT] 7. Inspect page theme colors and styles
-[ASSERT] 8. Verify theme applied","[STATE] Default theme preset applied as fallback (NOT Mercury)
-[DOM] Page renders correctly with default colors
-[DOM] No broken or missing styles visible","[CONSOLE] no theme-related JS errors or warnings
-[NETWORK] theme CSS loads with HTTP 200","Mercury theme applied (should not exist); Console errors on theme load; Broken styles or missing CSS","restore org themePresetName to valid preset","C391195 VCST-1634","Manual"
-"FWL-006","Set custom logo and favicon for organization - displayed after sign-in","Organization Branding","Critical","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Organization exists: Company1; White Labeling enabled; Custom logo and favicon assets prepared","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Enabled = ON
-[ACT] 4. Upload custom logo: company1-logo.png (PNG, 200x60px)
-[ACT] 5. Upload custom favicon: company1-favicon.ico (ICO, 32x32px)
-[ACT] 6. Save settings
-[NAV] 7. Open new browser tab
-[NAV] 8. Navigate to {{FRONT_URL}}
-[ACT] 9. Sign in with user account from Company1 organization
-[WAIT] 10. After successful sign-in, wait for redirect to homepage
-[ASSERT] 11. Inspect header
-[ASSERT] 12. Inspect browser tab favicon","[DOM] company1-logo.png visible in header
-[DOM] company1-favicon.ico displayed in browser tab
-[DOM] Logo is properly sized (not distorted)
-[STATE] Logo links to homepage when clicked
-[DOM] Branding persists across catalog, product, cart pages","[CONSOLE] no uncaught JS errors
-[NETWORK] company1-logo.png loads with HTTP 200","Default logo shown instead of company1 logo; Broken image in header; Favicon not updated","restore org settings (remove logo/favicon)","C389426","Manual"
-"FWL-007","Set White Labeling Enabled = OFF for organization - default logo and favicon displayed","Organization Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Organization Company1 has custom logo/favicon configured; White Labeling currently enabled","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify custom logo and favicon are uploaded
-[ACT] 4. Set Enabled = OFF
-[ACT] 5. Save settings
-[NAV] 6. Sign in to storefront with Company1 user
-[NAV] 7. Navigate to homepage
-[ASSERT] 8. Inspect header logo
-[ASSERT] 9. Inspect browser tab favicon","[DOM] Default Virto Commerce logo displayed in header (NOT company1-logo.png)
-[DOM] Default favicon displayed in browser tab
-[STATE] Custom branding NOT applied even though assets exist","[CONSOLE] no uncaught JS errors
-[NETWORK] default logo loads with HTTP 200","Custom org logo still shown when WL is OFF; Console errors when WL toggled OFF","restore org Enabled = ON","C389427","Manual"
-"FWL-008","Set White Labeling Enabled = ON for organization - custom logo and favicon displayed","Organization Settings","High","BL-WL-002",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Organization Company1 has custom logo/favicon configured; White Labeling currently disabled (OFF)","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Enabled = OFF but custom logo/favicon exist
-[ACT] 4. Set Enabled = ON
-[ACT] 5. Save settings
-[NAV] 6. Sign in to storefront with Company1 user
-[NAV] 7. Navigate to homepage
-[ASSERT] 8. Inspect header logo
-[ASSERT] 9. Inspect browser tab favicon","[DOM] Custom company1-logo.png displayed in header
-[DOM] Custom company1-favicon.ico displayed in browser tab
-[STATE] Organization branding applied correctly","[CONSOLE] no uncaught JS errors
-[NETWORK] company1-logo.png loads with HTTP 200","Default logo still shown after enabling WL; Favicon not updated; Theme preset not applied","restore org Enabled = OFF","C389428","Manual"
-"FWL-010","Set theme preset for organization - Coffee theme applied after sign-in","Theme Preset","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-[PRE:RESET_CART]
-Organization Company1 exists; White Labeling enabled; Available theme presets: Default Coffee","admin={{BACK_URL}}, storefront={{FRONT_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] 1. Navigate to Admin > Customer > Organizations > Company1
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Enabled = ON
-[ACT] 4. Set Theme Preset: Coffee
-[ACT] 5. Save settings
-[NAV] 6. Sign in to storefront with Company1 user
-[NAV] 7. Navigate to homepage
-[ASSERT] 8. Inspect page styles and CSS variables
-[ASSERT] 9. Verify header colors
-[ASSERT] 10. Verify button styles
-[ASSERT] 11. Verify link colors
-[NAV] 12. Navigate to multiple pages (catalog, product, cart)
-[ASSERT] 13. Verify theme consistency","[DOM] CSS variables updated to Coffee theme values
-[FORMAT] Header background color matches Coffee theme spec
-[FORMAT] Button styles use Coffee theme colors
-[FORMAT] Links use Coffee accent color
-[STATE] Theme persists across homepage, catalog, product, cart pages","[CONSOLE] no uncaught JS errors or CSS errors
-[NETWORK] theme CSS loads with HTTP 200","Default theme shown instead of Coffee; Colors not matching Coffee palette; Theme inconsistent across pages; CSS flash during navigation","restore org theme to Default","C389430","Manual"
-"FWL-019","Verify theme preset colors applied to storefront after sign-in - Default theme","Theme Preset","High","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Organization has theme preset: Default; User account for this organization exists","storefront={{FRONT_URL}}, org_user={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}, admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > Org With Default Theme
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Theme Preset = Default
-[ACT] 4. Save
-[NAV] 5. Sign in to storefront with user from this org
-[NAV] 6. Navigate to homepage
-[ASSERT] 7. Open browser DevTools > Elements
-[ASSERT] 8. Inspect CSS variables on :root or body element
-[ASSERT] 9. Verify color values match Default theme
-[ASSERT] 10. Inspect header background color
-[ASSERT] 11. Inspect button primary color
-[ASSERT] 12. Inspect link accent color","[FORMAT] CSS variables match Default theme palette
-[FORMAT] Header uses Default theme colors
-[FORMAT] Buttons use Default theme primary color
-[FORMAT] Links use Default theme accent color
-[STATE] No color conflicts or visual glitches","[CONSOLE] no CSS or JS errors","Wrong theme colors applied; Coffee theme shown when Default expected; CSS variable values don't match Default palette","none","VCST-4637","Manual"
-"FWL-020","Verify theme preset colors applied to storefront after sign-in - Coffee theme","Theme Preset","High","BL-WL-001",,"[PRE:SIGNIN_AS:WL_USER_FASHION]
-Organization @td(WL_FASHION.name) has theme preset: @td(WL_FASHION.theme); User account for this organization exists","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password), admin={{BACK_URL}}","[NAV] 1. Navigate to Admin > Organizations > @td(WL_FASHION.name)
-[ACT] 2. Open White Labeling settings
-[ASSERT] 3. Verify Theme Preset = @td(WL_FASHION.theme)
-[ACT] 4. Save
-[NAV] 5. Sign in to storefront with user from this org
-[NAV] 6. Navigate to homepage
-[ASSERT] 7. Open browser DevTools > Elements
-[ASSERT] 8. Inspect CSS variables
-[ASSERT] 9. Verify color values match Coffee theme (brown/cream palette)
-[ASSERT] 10. Inspect header, buttons, links
-[ASSERT] 11. Compare to Default theme (should be different)","[FORMAT] CSS variables match Coffee theme palette (browns, creams)
-[FORMAT] Header uses Coffee theme colors (NOT Default)
-[FORMAT] Buttons use Coffee theme primary color
-[FORMAT] Links use Coffee theme accent color
-[STATE] Visual difference from Default theme is obvious
-[STATE] No color conflicts","[CONSOLE] no CSS or JS errors","Default theme shown instead of Coffee; CSS variables unchanged from Default; No visual difference between themes","none","VCST-4637","Manual"
-"FWL-028","Switch organization - verify branding updates dynamically (logo and favicon)","Multi-Organization","Critical","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
-User account @td(WL_USER_MULTI.email) is member of 2 organizations: Org A = @td(WL_ELECTRONICS.name) (logo @td(WL_ELECTRONICS.logo), favicon @td(WL_ELECTRONICS.favicon), theme @td(WL_ELECTRONICS.theme)) and Org B = @td(WL_FASHION.name) (logo @td(WL_FASHION.logo), favicon @td(WL_FASHION.favicon), theme @td(WL_FASHION.theme))","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in to storefront with multi-org user account
-[ASSERT] 2. Verify current organization is @td(WL_ELECTRONICS.name) (Org A)
-[ASSERT] 3. Inspect header logo (should be @td(WL_ELECTRONICS.logo))
-[ASSERT] 4. Inspect browser tab favicon (should be @td(WL_ELECTRONICS.favicon))
-[ASSERT] 5. Inspect theme colors (should be @td(WL_ELECTRONICS.theme))
-[ACT] 6. Click organization switcher in header
-[ACT] 7. Select @td(WL_FASHION.name) (Org B) from dropdown
-[WAIT] 8. Wait for organization switch to complete
-[ASSERT] 9. Verify page refreshes or updates
-[ASSERT] 10. Inspect header logo (should NOW be @td(WL_FASHION.logo), NOT stale @td(WL_ELECTRONICS.logo))
-[ASSERT] 11. Inspect browser tab favicon (should NOW be @td(WL_FASHION.favicon), NOT stale @td(WL_ELECTRONICS.favicon))
-[ASSERT] 12. Inspect theme colors (should NOW be @td(WL_FASHION.theme))
-[ACT] 13. Switch back to @td(WL_ELECTRONICS.name) (Org A)
-[ASSERT] 14. Verify logo/favicon/theme revert to Org A branding (@td(WL_ELECTRONICS.logo) / @td(WL_ELECTRONICS.favicon) / @td(WL_ELECTRONICS.theme))","[DOM] Switching Org A to Org B updates header logo from @td(WL_ELECTRONICS.logo) to @td(WL_FASHION.logo)
-[DOM] Browser tab favicon updates from @td(WL_ELECTRONICS.favicon) to @td(WL_FASHION.favicon)
-[STATE] Theme updates from @td(WL_ELECTRONICS.theme) to @td(WL_FASHION.theme)
-[STATE] Switching back to Org A restores @td(WL_ELECTRONICS.logo) / @td(WL_ELECTRONICS.favicon) / @td(WL_ELECTRONICS.theme)
-[STATE] All branding changes persist across page navigation after switch","[CONSOLE] no uncaught JS errors
-[NETWORK] @td(WL_FASHION.logo) loads with HTTP 200 after switch","Stale @td(WL_ELECTRONICS.logo)/favicon still shown after switching to Org B; Theme not updating; Flash of wrong branding during transition; Org A branding not restored on switch-back","none","Multi-Organization","Manual"
-"FWL-029","Switch organization - verify main menu links update dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
-User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (main menu link list @td(WL_ELECTRONICS.main_menu): Home, Brands > Laptops/Phones/Tablets, Company, Support) and Org B = @td(WL_FASHION.name) (main menu link list @td(WL_FASHION.main_menu): Home, Shop > Men/Women/Kids, New Arrivals, Contact)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user
-[ASSERT] 2. Verify current org is @td(WL_ELECTRONICS.name) (Org A)
-[ASSERT] 3. Inspect main menu links in header: Home, Brands, Company, Support
-[ACT] 4. Hover over Brands to verify dropdown: Laptops, Phones, Tablets
-[ACT] 5. Switch organization to @td(WL_FASHION.name) (Org B)
-[WAIT] 6. Wait for refresh
-[ASSERT] 7. Inspect main menu links in header: should NOW show Home, Shop, New Arrivals, Contact
-[ASSERT] 8. Hover over Shop to verify dropdown: Men, Women, Kids
-[ACT] 9. Switch back to @td(WL_ELECTRONICS.name) (Org A)
-[ASSERT] 10. Verify main menu reverts to Home, Brands, Company, Support","[DOM] Org A (@td(WL_ELECTRONICS.main_menu)) displays main menu: Home, Brands, Company, Support
-[DOM] Switching to Org B (@td(WL_FASHION.main_menu)) updates main menu to: Home, Shop, New Arrivals, Contact
-[DOM] Switching back to Org A restores original main menu
-[STATE] No stale links from previous org displayed
-[NAV] Navigation works correctly after org switch","[CONSOLE] no uncaught JS errors","Stale main menu links from previous org; Menu not updating after switch; Navigation broken after switch","none","Multi-Organization","Manual"
-"FWL-030","Switch organization - verify footer links update dynamically","Multi-Organization","Medium","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
-User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (footer link list @td(WL_ELECTRONICS.footer)) and Org B = @td(WL_FASHION.name) (footer link list @td(WL_FASHION.footer))","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user (Org A = @td(WL_ELECTRONICS.name))
-[SCROLL] 2. Scroll to footer
-[ASSERT] 3. Verify footer shows the 4 @td(WL_ELECTRONICS.footer) links: Privacy Policy, Terms of Service, Support, Warranty
-[ACT] 4. Switch organization to @td(WL_FASHION.name) (Org B)
-[WAIT] 5. Wait for refresh
-[SCROLL] 6. Scroll to footer
-[ASSERT] 7. Verify footer now shows the 4 @td(WL_FASHION.footer) links: Shipping Info, Returns & Exchanges, Size Guide, Contact Us (different from Org A)
-[ACT] 8. Switch back to Org A
-[ASSERT] 9. Verify footer reverts to the @td(WL_ELECTRONICS.footer) links (Privacy Policy, Terms of Service, Support, Warranty)","[DOM] Org A footer shows @td(WL_ELECTRONICS.footer): Privacy Policy, Terms of Service, Support, Warranty
-[DOM] Switching to Org B updates footer to @td(WL_FASHION.footer): Shipping Info, Returns & Exchanges, Size Guide, Contact Us
-[STATE] Switching back restores the Org A @td(WL_ELECTRONICS.footer) links
-[STATE] No stale footer links from the other org displayed","[CONSOLE] no uncaught JS errors","Stale footer links from previous org; Footer not updating after switch; Wrong labels or order","none","Multi-Organization","Manual"
-"FWL-031","Switch organization - verify theme preset changes dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
-User @td(WL_USER_MULTI.email) is member of Org A = @td(WL_ELECTRONICS.name) (theme @td(WL_ELECTRONICS.theme)) and Org B = @td(WL_FASHION.name) (theme @td(WL_FASHION.theme))","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user (Org A = @td(WL_ELECTRONICS.name) with @td(WL_ELECTRONICS.theme) theme)
-[ASSERT] 2. Inspect page CSS variables and colors
-[ASSERT] 3. Note @td(WL_ELECTRONICS.theme) theme colors (header, buttons, links)
-[ACT] 4. Switch organization to @td(WL_FASHION.name) (Org B, @td(WL_FASHION.theme) theme)
-[WAIT] 5. Wait for refresh
-[ASSERT] 6. Inspect CSS variables again
-[ASSERT] 7. Verify colors changed to @td(WL_FASHION.theme) theme (browns/creams)
-[ASSERT] 8. Verify visual difference from @td(WL_ELECTRONICS.theme) theme
-[ACT] 9. Switch back to Org A
-[ASSERT] 10. Verify theme reverts to @td(WL_ELECTRONICS.theme)","[FORMAT] Org A displays @td(WL_ELECTRONICS.theme) theme colors
-[FORMAT] Switching to Org B applies @td(WL_FASHION.theme) theme (visual color change obvious)
-[FORMAT] CSS variables update to @td(WL_FASHION.theme) theme values
-[FORMAT] Switching back to Org A restores @td(WL_ELECTRONICS.theme) theme
-[STATE] Theme transition is smooth (no flicker or broken styles)","[CONSOLE] no uncaught JS errors","Theme not changing after org switch; Stale theme from previous org; CSS variables not updating; Theme flicker during transition","none","Multi-Organization","Manual"
+"FWL-004","Store and organization both have records — the organization's logo, preset, menu and footer win per field (read-only over the seeded org)",Whitelabeling > Resolution,"Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+No writes, so no exclusive window. State is asserted from the live records in the first steps: store {{STORE_ID}} record enabled with its own logo and preset; organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id), NOT the CSV key behind @td(WL_ELECTRONICS.id)) enabled with logo, preset, main-menu and footer lists. The organization FAVICON half is an open product question (KB-D4EEDC37) and is not asserted here; the preset is compared through <html data-preset> and against the guest page's colour, never with a literal colour and never with a preset file (theme 2.63.0 bundles the presets and requests none)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] isEnabled as STORE_ENABLED, logoUrl as STORE_LOGO, themePresetName as STORE_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] isEnabled as ORG_ENABLED, logoUrl as ORG_LOGO, themePresetName as ORG_PRESET
+[ASSERT] STORE_ENABLED and ORG_ENABLED are true and ORG_LOGO differs from STORE_LOGO
+[ASSERT] ORG_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the data could not tell the organization's preset from the store's)
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] answer as ORG_ANSWER
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header, the main menu and the footer are rendered","[REL] the header logo src path ends with the path of ORG_LOGO and not with the path of STORE_LOGO
+[REL] GUEST_PRESET equals STORE_PRESET normalised (a guest sees the store's preset)
+[REL] <html data-preset> after sign-in equals ORG_PRESET lower-cased with spaces replaced by ""-"" and differs from STORE_PRESET normalised the same way (the organization preset, not the store preset)
+[REL] the computed --color-primary-500 on :root differs from GUEST_PRIMARY
+[REL] the set of top-level header menu titles equals the set of titles in ORG_ANSWER.mainMenuLinks
+[REL] the footer section headers equal the titles in ORG_ANSWER.footerLinks","[CONSOLE] no uncaught JS errors
+[NETWORK] the logo image loads with HTTP 200
+[API] xAPI errors[] empty",the store logo or preset shows for the member; the menu or footer is the store's; the organization key used instead of the GUID (reads as store branding),Sign out (account menu > Logout),"C390297 VCST-1634 · Behavior:wl.resolve.merge-per-field · Behavior:wl.resolve.signed-in-org-context · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-005",An unresolvable theme preset name falls to the theme's bundled default preset — not to the store's preset,Whitelabeling > Theme,"Medium","BL-WL-004",,"[EXCLUSIVE:white-labeling record of organization @td(WL_DEFAULT.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_DEFAULT]
+NEEDS A STAND WRITE (NEEDS_WINDOW): the record of organization @td(WL_DEFAULT.name) gets themePresetName set to a name that is neither bundled in the theme nor served under /assets/presets/ (""Mercury"" IS bundled — it is the store's preset and resolves, so it cannot be the test value). Nothing validates the name (KB-7EF291B3). The bundled default is the `current` entry of the theme's settings_data.json and the resolved file name lands in <html data-preset>. The store preset differs from the bundled default (Mercury vs default), so the two readings of ""fallback"" are distinguishable","storefront={{FRONT_URL}}, store_id={{STORE_ID}}, org_id=@td(WL_DEFAULT_PLATFORM_ID.id), org_user=@td(WL_USER_DEFAULT.email), org_password=@td(WL_USER_DEFAULT.password), bad_preset=agent-test-unknown-preset","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[HTTP] GET {{FRONT_URL}}/assets/presets/{{bad_preset}}.json - [CAPTURE] status as BAD_STATUS
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note <html data-preset> as GUEST_PRESET (absent => BLOCKED:CONDITION_NOT_MET: design classic writes no data-preset, KB-5D6746FB) and the computed --color-primary-500 on :root as GUEST_PRIMARY
+[ASSERT] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-"" (a guest sees the store's preset) and STORE_PRESET differs from the theme's fallback preset, the `current` entry named in References (otherwise BLOCKED:CONDITION_NOT_MET: the store's preset could not be told from the fallback)
+[HTTP] PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id, same organizationId, isEnabled true) and themePresetName set to {{bad_preset}}
+[WAIT] the PUT returns 204
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_DEFAULT.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered
+[ASSERT] note <html data-preset> as MEMBER_PRESET and the computed --color-primary-500 on :root as MEMBER_PRIMARY","[SHAPE] BAD_STATUS is 404 (the test value is not served, so the fallback path is really taken)
+[REL] MEMBER_PRESET is the theme's own fallback preset (the `current` entry of its settings_data.json, named in References as a source note), observed as: it differs from {{bad_preset}} lower-cased with spaces replaced by ""-"" (the unresolvable name is not echoed, the fallback path is taken) and differs from GUEST_PRESET (the store's preset is not the fallback)
+[SHAPE] MEMBER_PRIMARY is a non-empty colour (the fallback palette applies); it is NOT used to tell the fallback from the store's preset, because two bundled presets can share primary-500 (the store's Mercury and the fallback do in vc-frontend@2.63.0), so MEMBER_PRESET is the only discriminator and no relation between MEMBER_PRIMARY and GUEST_PRIMARY is asserted
+[SHAPE] the page renders with styles (no ""Missing preset"" error page)","[CONSOLE] a warning ""Failed to load preset"" is allowed, an uncaught error is not
+[NETWORK] no 5xx","the storefront throws ""Missing preset""; data-preset equals the store's preset (wrong fallback); data-preset equals the bad name",PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id) so themePresetName is restored; GET it and confirm themePresetName = BEFORE.themePresetName,"C391195 VCST-1634 · Behavior:wl.render.theme-preset.unresolvable-falls-to-bundled-default · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useThemeContext.ts (addPresetToThemeContext, getThemeConfig().current) + module (no preset validation); Docs: PlatformUserGuide white-labeling managing-themes; KB-7EF291B3 · Synced: qa-suite-sync wl (2026-11-27); fallback preset name = the `current` entry of vc-frontend@2.63.0 client-app/config/settings_data.json (""default""), read at source (useThemeContext.ts addPresetToThemeContext), a source note and not a runtime step; KB-1C18DC2F · Round 3 2026-11-27: preset oracle by relation",Draft
+"FWL-006",Organization record with logo and favicon — shown after sign-in (read-only over the seeded organization),"Organization Branding","Critical","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_ELECTRONICS]
+Read-only: organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) replaces ""Company1"" and already has an enabled record with a logo and a favicon; the case does not re-upload. The favicon file types of the back office are PNG, JPG and WEBP (the old ICO is not accepted). The favicon links are compared with the advertised xAPI hrefs; whether those files exist is an open product question (KB-D4EEDC37)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] isEnabled as REC_ENABLED and logoUrl as REC_LOGO
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl faviconUrl favicons { href } footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] favicons[] as FAV
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders
+[NAV] open {{FRONT_URL}}/cart
+[WAIT] the cart page renders","[SHAPE] REC_ENABLED is true
+[REL] the header logo src path ends with the path of REC_LOGO on the home, catalog and cart pages
+[REL] the set of <link rel=""icon""> hrefs equals the set of hrefs in FAV
+[SHAPE] the logo naturalWidth is greater than 0 and its link href is the home page URL","[CONSOLE] no uncaught JS errors
+[NETWORK] the logo request returns HTTP 200",the default logo shows after sign-in; a broken image in the header; the favicon links keep the guest set,Sign out (account menu > Logout),"C389426 · Behavior:wl.render.header-logo · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-007",Organization record Enabled OFF — the member sees the STORE record's branding field by field; the organization's stored assets are not applied,Whitelabeling > Two enable layers,"High","BL-WL-002",,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) replaces ""Company1"": enabled record with logo, preset, menu and footer; store {{STORE_ID}} has an enabled record. With the organization record disabled the resolver drops the ORGANIZATION contribution and merges the store record alone: the member sees the store's values field by field; platform defaults only for a field the store record leaves empty or when no enabled store record exists (the old expectation ""default logo and favicon"" was wrong whenever the store has a record)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, admin_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] isEnabled as PRIOR_ENABLED, logoUrl as ORG_LOGO, themePresetName as ORG_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] logoUrl as STORE_LOGO, themePresetName as STORE_PRESET
+[ASSERT] ORG_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the organization's preset could not be told from the store's)
+[GRID] click 'Contacts' in the main menu and find the row '@td(WL_ELECTRONICS.name)'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the 'Enabled' switch to OFF
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl themePresetName footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] answer as XAPI
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as AFTER
+[NAV] open {{FRONT_URL}} in a fresh guest context
+[WAIT] the guest home page renders
+[ASSERT] note <html data-preset> as GUEST_PRESET and the computed --color-primary-500 on :root as GUEST_PRIMARY (the store's palette)
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the header and the main menu are rendered; note <html data-preset> as MEMBER_PRESET and the computed --color-primary-500 on :root as MEMBER_PRIMARY","[REL] AFTER.isEnabled is false while AFTER.logoUrl equals ORG_LOGO — the organization assets are stored but not applied
+[REL] XAPI.logoUrl = STORE_LOGO and XAPI.themePresetName = STORE_PRESET (the store values apply)
+[REL] the header logo src path ends with the path of STORE_LOGO and not with the path of ORG_LOGO
+[REL] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-""; MEMBER_PRESET equals GUEST_PRESET and differs from ORG_PRESET lower-cased with spaces replaced by ""-"", and MEMBER_PRIMARY equals GUEST_PRIMARY: the member shows the store's palette, compared by relation on the page, never against a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","[CONSOLE] no uncaught JS errors
+[API] xAPI errors[] empty
+[NETWORK] the store logo loads with HTTP 200",the organization logo or preset still applies with Enabled OFF; the member sees theme defaults although the store has a record; the toggle changes any stored asset,"in the organization's White labeling blade set 'Enabled' back to PRIOR_ENABLED, click 'Save'; confirm GET /api/white-labeling/organization/{{org_id}} reports isEnabled = PRIOR_ENABLED and the same logoUrl; sign out",C389427 · Behavior:wl.resolve.org-record-disabled-falls-back · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler L172-217 (per-record IsEnabled filter) + BL-WL-002/003; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27) · Round 3 2026-11-27: preset oracle by relation,Draft
+"FWL-008",Organization record Enabled ON — the organization's logo and favicon links apply after sign-in (reverse of FWL-007),Whitelabeling > Two enable layers,"High","BL-WL-002",,"[EXCLUSIVE:white-labeling record of organization @td(WL_ELECTRONICS.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Organization @td(WL_ELECTRONICS.name) (platform id @td(WL_ELECTRONICS_PLATFORM_ID.id)) replaces ""Company1"". The case first switches its record OFF and saves (its own starting state, so it depends on no other case), then ON. Favicon link assertions use the advertised xAPI hrefs; the existence of the files is an open product question (KB-D4EEDC37)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_ELECTRONICS.email), org_password=@td(WL_USER_ELECTRONICS.password), org_id=@td(WL_ELECTRONICS_PLATFORM_ID.id), store_id={{STORE_ID}}, admin_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] isEnabled as PRIOR_ENABLED and logoUrl as ORG_LOGO
+[GRID] click 'Contacts' in the main menu and find the row '@td(WL_ELECTRONICS.name)'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] set the 'Enabled' switch to OFF
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[ACT] set the 'Enabled' switch to ON
+[WAIT] the 'Save' button becomes enabled
+[ACT] click 'Save'
+[WAIT] the save notification appears
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_id}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { logoUrl favicons { href } footerLinks { title childItems { title } } mainMenuLinks { title childItems { title } } } - [CAPTURE] favicons[] as FAV
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_ELECTRONICS.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu","[REL] the header logo src path ends with the path of ORG_LOGO
+[REL] the set of <link rel=""icon""> hrefs equals the set of hrefs in FAV
+[REL] GET /api/white-labeling/organization/{{org_id}} reports isEnabled = true and logoUrl = ORG_LOGO — toggling twice left the record as it was","[CONSOLE] no uncaught JS errors
+[NETWORK] the logo request returns HTTP 200",the default logo still shows after ON; the favicon links keep the guest set; the toggle changed the stored assets,"set 'Enabled' to PRIOR_ENABLED if it differs, click 'Save'; confirm GET /api/white-labeling/organization/{{org_id}} reports isEnabled = PRIOR_ENABLED; sign out",C389428 · Behavior:wl.switch.record-enabled.enable · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling customizing-brand-elements · Synced: qa-suite-sync wl (2026-11-27),Draft
+"FWL-010",Organization theme preset after sign-in — the organization's preset recolours the storefront (read-only over the seeded organization),"Theme Preset","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FASHION]
+Read-only: organization @td(WL_FASHION.name) (platform id @td(WL_FASHION_PLATFORM_ID.id)) replaces ""Company1"" and already has preset @td(WL_FASHION.theme); the preset is compared through <html data-preset> and against the guest page's colour (the store's preset), never with a literal colour and never with a preset file: theme 2.63.0 bundles the presets and requests none. Absorbs FWL-019 and FWL-020 (the same check per preset)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password), org_id=@td(WL_FASHION_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the data could not tell the organization's preset from the store's)
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FASHION.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered
+[NAV] open {{FRONT_URL}}/catalog
+[WAIT] the catalog page renders
+[NAV] open {{FRONT_URL}}/cart
+[WAIT] the cart page renders","[REL] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-"" (a guest sees the store's preset)
+[REL] <html data-preset> after sign-in equals REC_PRESET lower-cased with spaces replaced by ""-"" and differs from STORE_PRESET normalised the same way, on the home, catalog and cart pages
+[REL] the computed --color-primary-500 on :root differs from GUEST_PRIMARY on the home, catalog and cart pages
+[REL] the primary button background colour equals the --color-primary-500 value
+[SHAPE] the CSS variable value is identical on the three pages",[CONSOLE] no uncaught JS errors,the store preset shows instead of the organization preset; the colour equals the guest's after sign-in; the colour differs between pages,Sign out (account menu > Logout),"VCST-4645 · C389430 · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-019","Verify theme preset colors applied to storefront after sign-in - Default theme","Theme Preset","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_DEFAULT]
+Read-only. Organization @td(WL_DEFAULT.name) (platform id @td(WL_DEFAULT_PLATFORM_ID.id)) has the theme-only record with preset @td(WL_DEFAULT.theme) (replaces ""Org With Default Theme"" and the unnamed ORG_USER_DEFAULT); the case reads the organization record instead of re-saving it; the preset is checked through <html data-preset> and against the guest page's colour, never against a literal colour or a preset file (theme 2.63.0 bundles the presets and requests none)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_DEFAULT.email), org_password=@td(WL_USER_DEFAULT.password), org_id=@td(WL_DEFAULT_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET)
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_DEFAULT.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered
+[ACT] read the computed --color-primary-500 on :root
+[ACT] read the header background colour","[REL] <html data-preset> equals REC_PRESET lower-cased with spaces replaced by ""-"" and differs from GUEST_PRESET (the store's preset)
+[REL] the computed --color-primary-500 on :root differs from GUEST_PRIMARY",[CONSOLE] no CSS or JS errors,wrong palette applied; the store preset shows although the organization names its own; the colour equals the guest's after sign-in,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-020","Verify theme preset colors applied to storefront after sign-in - Coffee theme","Theme Preset","High","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_FASHION]
+Read-only. Organization @td(WL_FASHION.name) (platform id @td(WL_FASHION_PLATFORM_ID.id)) has preset @td(WL_FASHION.theme); the case reads the record instead of re-saving it; the preset is compared through <html data-preset> and against the guest page's colour, never with a literal colour and never with a preset file (theme 2.63.0 bundles the presets and requests none). Duplicate of FWL-010 per preset: FWL-010 carries the shared check","storefront={{FRONT_URL}}, org_user=@td(WL_USER_FASHION.email), org_password=@td(WL_USER_FASHION.password), org_id=@td(WL_FASHION_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] themePresetName as REC_PRESET
+[HTTP] GET {{BACK_URL}}/api/white-labeling/store/{{store_id}} - [CAPTURE] themePresetName as STORE_PRESET
+[ASSERT] REC_PRESET lower-cased with spaces replaced by ""-"" differs from STORE_PRESET normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the data could not tell the organization's preset from the store's)
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[WAIT] the guest home page renders
+[ASSERT] note the computed --color-primary-500 on :root as GUEST_PRIMARY and <html data-preset> as GUEST_PRESET
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_FASHION.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ASSERT] the home page is rendered","[REL] GUEST_PRESET equals STORE_PRESET lower-cased with spaces replaced by ""-"" (a guest sees the store's preset)
+[REL] <html data-preset> after sign-in equals REC_PRESET lower-cased with spaces replaced by ""-"" and differs from STORE_PRESET normalised the same way
+[REL] the computed --color-primary-500 on :root differs from GUEST_PRIMARY (the two palettes are visibly different)",[CONSOLE] no CSS or JS errors,the store preset shows instead of the organization preset; the colour equals the guest's after sign-in; <html data-preset> is not the organization's,Sign out (account menu > Logout),"VCST-4637 · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-028",Switch organization — logo and theme update to the new organization and revert on switching back (favicon links via xAPI),"Multi-Organization","Critical","BL-WL-003",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_MULTI]
+Read-only. @td(WL_USER_MULTI.email) belongs to Org A = @td(WL_ELECTRONICS.name) and Org B = @td(WL_FASHION.name) (different logos, favicons and presets); values are compared against the live records (path suffix of the logo, <html data-preset>; theme 2.63.0 bundles the presets and requests no preset file), not the stale relative alias values","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password), org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_b=@td(WL_FASHION_PLATFORM_ID.id)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_a}} - [CAPTURE] logoUrl as LOGO_A and themePresetName as PRESET_A
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_b}} - [CAPTURE] logoUrl as LOGO_B and themePresetName as PRESET_B
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_MULTI.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A (@td(WL_ELECTRONICS.name)) in the list
+[WAIT] the active organization is Org A
+[ASSERT] note the header logo src path, the favicon link hrefs and <html data-preset> as STATE_A
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org B (@td(WL_FASHION.name)) in the list
+[WAIT] the organization switch completes and the page settles
+[ASSERT] note the same three values as STATE_B
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A (@td(WL_ELECTRONICS.name)) in the list
+[WAIT] the organization switch completes and the page settles
+[ASSERT] note the same three values as STATE_A2","[REL] STATE_A logo path ends with the path of LOGO_A and STATE_B logo path ends with the path of LOGO_B
+[REL] STATE_A data-preset equals PRESET_A normalised (lower-case, spaces to ""-"") and STATE_B data-preset equals PRESET_B normalised
+[REL] the favicon link hrefs of STATE_B differ from those of STATE_A and none of STATE_B belongs to Org A
+[REL] STATE_A2 equals STATE_A — the switch back restores Org A branding
+[SHAPE] after each switch no value of the previous organization remains on the page","[CONSOLE] no uncaught JS errors
+[NETWORK] the new organization's logo loads with HTTP 200 after the switch",the previous organization's logo or favicon still shown after the switch; the preset does not change; Org A branding not restored on switch-back,Sign out (account menu > Logout),"Multi-Organization · Behavior:wl.render.org-switch · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 bundled presets, no preset file is requested (KB-29A75D95); vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-029","Switch organization - verify main menu links update dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_MULTI]
+Read-only. @td(WL_USER_MULTI.email) belongs to Org A (@td(WL_ELECTRONICS.name), menu @td(WL_ELECTRONICS.main_menu)) and Org B (@td(WL_FASHION.name), menu @td(WL_FASHION.main_menu)); menu titles are compared with each organization's xAPI answer","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password), org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_b=@td(WL_FASHION_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_a}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title childItems { title } } } - [CAPTURE] as MENU_A
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_b}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { mainMenuLinks { title childItems { title } } } - [CAPTURE] as MENU_B
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_MULTI.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A (@td(WL_ELECTRONICS.name)) in the list
+[WAIT] the page settles
+[ASSERT] note the top-level header menu titles as TITLES_A
+[ACT] hover the header menu entry '<title of the MENU entry whose childItems is non-empty>'
+[WAIT] the pointer settles for 1 second
+[ASSERT] note whether a dropdown opened and the header link titles then visible as HOVER_A
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org B (@td(WL_FASHION.name)) in the list
+[WAIT] the organization switch completes and the page settles
+[ASSERT] note the top-level header menu titles as TITLES_B
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A again in the list
+[WAIT] the page settles
+[ASSERT] note the top-level header menu titles as TITLES_A2","[REL] TITLES_A equals the set of titles in MENU_A
+[STATE] HOVER_A shows no dropdown and holds no title from the childItems of MENU_A's entry that has children (by design, QA lead 2026-11-27, children are reachable only in the mobile drawer)
+[REL] TITLES_B equals the set of titles in MENU_B and shares no title with TITLES_A except titles both lists contain
+[REL] TITLES_A2 equals TITLES_A
+[SHAPE] no title that only the other organization's list contains remains after a switch",[CONSOLE] no uncaught JS errors,stale menu links from the previous organization; the menu does not update after the switch; navigation broken after the switch,Sign out (account menu > Logout),"VCST-5028 · Multi-Organization · Behavior:wl.render.org-switch · Behavior:wl.render.main-menu Behavior:wl.render.main-menu.children-not-on-desktop-bar · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 client-app/shared/layout/components/header/_internal/mega-menu.vue (each visible item is a plain link) + QA-lead decision 2026-11-27 (works as designed: on desktop the organization menu shows top-level links only, children only in the mobile drawer) + REG-2026-11-27-1325-WLV observations; vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-030","Switch organization - verify footer links update dynamically","Multi-Organization","Medium","BL-WL-003",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_MULTI]
+Read-only. @td(WL_USER_MULTI.email) belongs to Org A (@td(WL_ELECTRONICS.name), footer @td(WL_ELECTRONICS.footer): Legal and Help sections) and Org B (@td(WL_FASHION.name), footer @td(WL_FASHION.footer): Customer Service and Our Company sections); footer columns are compared with each organization's xAPI answer","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password), org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_b=@td(WL_FASHION_PLATFORM_ID.id), store_id={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_a}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { footerLinks { title childItems { title } } } - [CAPTURE] as FOOTER_A
+[HTTP] POST {{BACK_URL}}/graphql whiteLabelingSettings(organizationId: ""{{org_b}}"", storeId: ""{{store_id}}"", cultureName: ""en-US"") { footerLinks { title childItems { title } } } - [CAPTURE] as FOOTER_B
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_MULTI.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A (@td(WL_ELECTRONICS.name)) in the list
+[WAIT] the page settles
+[SCROLL] scroll to the footer
+[ASSERT] note the footer section headers and the links under them as COLS_A
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org B (@td(WL_FASHION.name)) in the list
+[WAIT] the organization switch completes and the page settles
+[SCROLL] scroll to the footer
+[ASSERT] note the footer section headers and the links under them as COLS_B
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A again in the list
+[WAIT] the page settles
+[SCROLL] scroll to the footer
+[ASSERT] note the footer section headers and links as COLS_A2","[REL] COLS_A section headers equal the titles in FOOTER_A and the links under each equal that entry's childItems titles
+[REL] COLS_B section headers equal the titles in FOOTER_B and contain no title that belongs only to FOOTER_A
+[REL] COLS_A2 equals COLS_A
+[SHAPE] no section header is a link",[CONSOLE] no uncaught JS errors,stale footer links from the previous organization; the footer does not update after the switch; wrong labels,Sign out (account menu > Logout),"Multi-Organization · Behavior:wl.render.org-switch · Behavior:wl.render.footer · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27)",Draft
+"FWL-031","Switch organization - verify theme preset changes dynamically","Multi-Organization","High","BL-WL-003",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:WL_USER_MULTI]
+Read-only. @td(WL_USER_MULTI.email) belongs to Org A (@td(WL_ELECTRONICS.name), preset @td(WL_ELECTRONICS.theme)) and Org B (@td(WL_FASHION.name), preset @td(WL_FASHION.theme)); the presets are compared through <html data-preset> and the palettes against each other, never with a preset file (theme 2.63.0 bundles the presets and requests none, KB-29A75D95)","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password), org_a=@td(WL_ELECTRONICS_PLATFORM_ID.id), org_b=@td(WL_FASHION_PLATFORM_ID.id)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_a}} - [CAPTURE] themePresetName as PRESET_A
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_b}} - [CAPTURE] themePresetName as PRESET_B
+[ASSERT] PRESET_A lower-cased with spaces replaced by ""-"" differs from PRESET_B normalised the same way (otherwise BLOCKED:CONDITION_NOT_MET: the data could not tell the two organizations' palettes apart)
+[NAV] open {{FRONT_URL}} in a fresh browser context
+[ACT] click 'Sign in'
+[WAIT] the sign-in form is visible
+[ACT] sign in as @td(WL_USER_MULTI.email) (credentials from the PRE:SIGNIN_AS cluster)
+[WAIT] the signed-in home page renders with the account menu
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A (@td(WL_ELECTRONICS.name)) in the list
+[WAIT] the page settles
+[ASSERT] note the computed --color-primary-500 as SEEN_A and <html data-preset> as DP_A
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org B (@td(WL_FASHION.name)) in the list
+[WAIT] the organization switch completes and the page settles
+[ASSERT] note the computed --color-primary-500 as SEEN_B and <html data-preset> as DP_B
+[ACT] open the organization switcher in the header
+[WAIT] the organization list opens
+[ACT] choose Org A again in the list
+[WAIT] the page settles
+[ASSERT] note the computed --color-primary-500 as SEEN_A2 and <html data-preset> as DP_A2","[REL] DP_A equals PRESET_A lower-cased with spaces replaced by ""-"" and DP_B equals PRESET_B normalised the same way (each organization's own preset applies)
+[REL] SEEN_A differs from SEEN_B (the two presets differ in the data, guarded in the Steps)
+[REL] SEEN_A2 equals SEEN_A — the switch back restores the first palette
+[REL] DP_A2 equals DP_A — the preset follows the switch back as well",[CONSOLE] no uncaught JS errors,the theme does not change after the switch; a stale palette from the previous organization; broken styles during the transition,Sign out (account menu > Logout),"Multi-Organization · Behavior:wl.render.org-switch · Behavior:wl.render.theme-preset · Audited: 2026-11-27 (TCA-2026-11-27); Source: vc-frontend@2.63.0 useWhiteLabeling.ts, useThemeContext.ts, useNavigations.ts + VirtoCommerce/vc-module-white-labeling@3.1008.0 GetWhiteLabelingSettingsQueryHandler; Docs: PlatformUserGuide white-labeling overview, customizing-brand-elements, managing-themes · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: stale preset-file runtime step removed (PRESET_A/PRESET_B data-preset + palette-differ guard)",Draft
 "FWL-032","Verify branding transition is smooth during organization switch (no flash of wrong branding)","Multi-Organization","High","BL-WL-003",,"[PRE:SIGNIN_AS:WL_USER_MULTI]
 User @td(WL_USER_MULTI.email) is member of 2 organizations with distinct branding: Org A = @td(WL_ELECTRONICS.name) (theme @td(WL_ELECTRONICS.theme)) and Org B = @td(WL_FASHION.name) (theme @td(WL_FASHION.theme)); Fast internet connection for accurate performance test","storefront={{FRONT_URL}}, org_user=@td(WL_USER_MULTI.email), org_password=@td(WL_USER_MULTI.password)","[NAV] 1. Sign in with multi-org user (Org A = @td(WL_ELECTRONICS.name))
 [ACT] 2. Open browser DevTools > Network tab
@@ -213,39 +314,67 @@ User @td(WL_USER_MULTI.email) is member of 2 organizations with distinct brandin
 [FORMAT] Branding update completes within 1-2 seconds
 [STATE] No broken images or layout during transition","[CONSOLE] no uncaught JS errors
 [NETWORK] new branding assets load with HTTP 200 within 2 seconds","Flash of wrong branding during org switch; Broken images during transition; Transition takes more than 2 seconds; Layout breaks during switch","none","Multi-Organization Performance","Manual"
-"FWL-061","Verify logo upload validation - accepted file formats (PNG SVG JPEG)","Logo Upload","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Admin access to White Labeling settings; Test image files: logo.png logo.svg logo.jpg","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Test 1: Upload logo.png (valid PNG file)
-[ASSERT] 4. Verify upload succeeds
-[ACT] 5. Save settings
-[ACT] 6. Test 2: Upload logo.svg (valid SVG file)
-[ASSERT] 7. Verify upload succeeds
-[ACT] 8. Save settings
-[ACT] 9. Test 3: Upload logo.jpg (valid JPEG file)
-[ASSERT] 10. Verify upload succeeds
-[ACT] 11. Save settings
-[ASSERT] 12. For each upload, verify logo displays correctly on storefront","[STATE] PNG upload succeeds without error
-[STATE] SVG upload succeeds without error
-[STATE] JPEG upload succeeds without error
-[DOM] Uploaded logos display correctly on storefront","[ADMIN] settings saved successfully for each format
-[CONSOLE] no file upload errors","Upload rejected for valid PNG/SVG/JPEG; Error message shown for valid formats; Logo not displaying on storefront after upload","remove uploaded logos and restore original","Logo Upload","Manual"
-"FWL-062","Verify logo upload validation - rejected file formats (GIF BMP TXT)","Logo Upload","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Admin access to White Labeling settings; Test invalid files: logo.gif logo.bmp logo.txt","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Test 1: Attempt to upload logo.gif (invalid format)
-[ASSERT] 4. Verify upload is REJECTED with validation error
-[ACT] 5. Test 2: Attempt to upload logo.bmp (invalid format)
-[ASSERT] 6. Verify upload is REJECTED
-[ACT] 7. Test 3: Attempt to upload logo.txt (invalid format)
-[ASSERT] 8. Verify upload is REJECTED
-[ASSERT] 9. Verify error messages are clear: e.g. ""Only PNG, SVG, and JPEG formats are allowed""
-[ASSERT] 10. Verify settings do NOT save with invalid file","[STATE] GIF upload is rejected with error message
-[STATE] BMP upload is rejected with error message
-[STATE] TXT upload is rejected with error message
-[DOM] Error messages are clear and user-friendly
-[STATE] Invalid file is NOT uploaded to server
-[STATE] Logo field remains empty or retains previous valid logo","[CONSOLE] no uncaught JS errors","Invalid formats accepted without error; No error message shown; Invalid file saved to server","none","Logo Upload Negative","Manual"
+"FWL-061","Logo widget accepts exactly PNG, GIF and SVG; a JPEG is refused with the Filetype error dialog and uploads nothing","Logo Upload","Medium","BL-WL-001",,"[EXCLUSIVE:white-labeling record of organization @td(WL_DEFAULT.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+The Logo widget accepts exactly PNG, GIF and SVG (BL-WL-006); JPG is a FAVICON type only, so the old expectation ""JPEG accepted for a logo"" was wrong. Test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source)), an SVG (@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source)) and the JPEG test asset (@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file): a 32x32 JPEG that the Logo widget refuses). The upload targets the record of organization @td(WL_DEFAULT.name) and is restored in Cleanup","org_id=@td(WL_DEFAULT_PLATFORM_ID.id), org_name=@td(WL_DEFAULT.name), png_file=@td(white-labeling/organizations, org_id=WL-ORG-A, logo_source), svg_file=@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source), jpeg_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Logo' (opens the 'White labeling logo' sub-blade)
+[WAIT] the widget's blade opens
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{png_file}} in the file dialog
+[WAIT] the preview shows the uploaded image
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{svg_file}} in the file dialog
+[WAIT] the preview shows the uploaded image
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{jpeg_file}} in the file dialog
+[WAIT] a dialog reacts to the pick
+[ACT] close the dialog
+[ACT] click 'Reset' on the sub-blade toolbar
+[WAIT] the preview shows the stored image
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as AFTER","[DOM] after the PNG and after the SVG pick the preview changes and no 'Filetype error' dialog opens
+[DOM] the JPEG pick opens a dialog titled 'Filetype error' that names the allowed logo types PNG, GIF and SVG
+[REL] the preview after the JPEG pick equals the preview before it (the JPEG was not taken)
+[REL] AFTER.logoUrl = BEFORE.logoUrl and AFTER.modifiedDate = BEFORE.modifiedDate (nothing was saved)","[NETWORK] no upload request is sent for the JPEG
+[CONSOLE] no uncaught JS errors",the JPEG is accepted; no Filetype error dialog; a PNG or SVG is refused; an upload request is sent for the JPEG,"none — nothing was saved (the sub-blade was reset); if a Save happened, PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id)",Logo Upload · Behavior:wl.image.upload.logo-allowed · Behavior:wl.image.upload.logo-rejected-type · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json (logo filter); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: JPEG taken from the test assets (WL-ASSET-JPEG),Draft
+"FWL-062","Logo widget — a disallowed type (JPG, WEBP) shows the Filetype error dialog, uploads nothing; GIF is ACCEPTED","Logo Upload","Medium","BL-WL-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+The Logo widget accepts exactly PNG, GIF and SVG, so the old expectation ""GIF rejected"" was wrong (a GIF is accepted). Refused picks upload and save nothing, so the case is read-only in effect. Test files: a WEBP (@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)) and the JPEG test asset (@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file): a 32x32 JPEG that the Logo widget refuses); the GIF acceptance is covered by the logo-upload acceptance case in the admin suite","org_id=@td(WL_DEFAULT_PLATFORM_ID.id), org_name=@td(WL_DEFAULT.name), webp_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source), jpeg_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-JPEG, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl and modifiedDate as BEFORE
+[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Logo'
+[WAIT] the widget's blade opens
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{webp_file}} in the file dialog
+[WAIT] a dialog reacts to the pick
+[ASSERT] note the dialog title and text as DIALOG_1
+[ACT] close the dialog
+[ACT] click 'Choose logo'
+[WAIT] the file dialog opens
+[ACT] select {{jpeg_file}} in the file dialog
+[WAIT] a dialog reacts to the pick
+[ASSERT] note the dialog title and text as DIALOG_2
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] logoUrl and modifiedDate as AFTER","[DOM] each refused pick opens a dialog titled 'Filetype error' and its text names the allowed logo types
+[REL] DIALOG_1 and DIALOG_2 name the same allowed types (the list does not depend on the refused file)
+[REL] the logo preview is unchanged after each refused pick
+[REL] AFTER.logoUrl = BEFORE.logoUrl and AFTER.modifiedDate = BEFORE.modifiedDate (nothing was uploaded or saved)","[NETWORK] no upload request is sent for a refused file
+[CONSOLE] no uncaught JS errors",a WEBP or JPEG is accepted for the logo; no Filetype error dialog; an upload request is sent; an uncaught JS error on the refused pick,none — nothing was uploaded; close the dialog and leave the blade without saving,Logo Upload Negative · Behavior:wl.image.upload.logo-rejected-type · Behavior:wl.image.upload.logo-allowed · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json (logo filter); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: JPEG half unblocked: JPEG taken from the test assets (WL-ASSET-JPEG),Draft
 "FWL-063","Verify logo upload validation - file size limit (max 2MB)","Logo Upload","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Admin access; Test large logo file: logo-large.png (3MB or larger exceeds limit)","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
 [ACT] 2. Open White Labeling settings
@@ -257,20 +386,44 @@ Admin access; Test large logo file: logo-large.png (3MB or larger exceeds limit)
 [DOM] Error message clearly states file size limit
 [STATE] User is NOT able to save with oversized file
 [STATE] Valid-sized files (< 2MB) are accepted","[CONSOLE] no uncaught JS errors","Oversized file accepted without error; No error message for size limit; Valid file rejected as too large","none","Logo Upload Negative","Manual"
-"FWL-064","Verify favicon upload validation - accepted file format (ICO PNG)","Favicon Upload","Medium","BL-WL-001",,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
-Admin access; Test favicon files: favicon.ico favicon.png","admin={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] 1. Navigate to Admin > Organizations > Test Org
-[ACT] 2. Open White Labeling settings
-[ACT] 3. Test 1: Upload favicon.ico (valid ICO file, 32x32)
-[ASSERT] 4. Verify upload succeeds
-[ACT] 5. Save settings
-[ASSERT] 6. Verify favicon displays in storefront browser tab
-[ACT] 7. Test 2: Upload favicon.png (valid PNG file, 32x32)
-[ASSERT] 8. Verify upload succeeds
-[ASSERT] 9. Verify PNG favicon displays correctly","[STATE] ICO format accepted and uploads successfully
-[STATE] PNG format accepted and uploads successfully
-[DOM] Both formats display correctly in browser tab
-[DOM] Favicon is properly generated in multiple sizes (16x16, 32x32, 180x180) if thumbnail job runs","[CONSOLE] no file upload errors
-[NETWORK] favicon loads with HTTP 200 in browser tab","ICO format rejected; PNG format rejected; Favicon not showing in browser tab after upload","remove uploaded favicons and restore original","Favicon Upload","Manual"
+"FWL-064","Favicon widget accepts exactly PNG, JPG/JPEG and WEBP; an ICO or an SVG is refused with the Filetype error dialog","Favicon Upload","Medium","BL-WL-001",,"[EXCLUSIVE:white-labeling record of organization @td(WL_DEFAULT.name)]
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+The Favicon widget accepts exactly PNG, JPG/JPEG and WEBP (BL-WL-006), so the old expectation ""ICO accepted"" was wrong. Test files: a PNG (@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source)), a WEBP (@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source)) and an SVG that the favicon widget must refuse (@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source)); an ICO that the favicon widget must also refuse (the ICO test asset, @td(white-labeling/test-assets, asset_id=WL-ASSET-ICO, file)). The accepted uploads go to the record of organization @td(WL_DEFAULT.name) and are restored in Cleanup","org_id=@td(WL_DEFAULT_PLATFORM_ID.id), org_name=@td(WL_DEFAULT.name), png_file=@td(white-labeling/organizations, org_id=WL-ORG-B, favicon_source), webp_file=@td(white-labeling/organizations, org_id=WL-ORG-A, favicon_source), bad_file=@td(white-labeling/organizations, org_id=WL-ORG-B, logo_source), ico_file=@td(white-labeling/test-assets, asset_id=WL-ASSET-ICO, file)","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password) with the admin account to obtain a Bearer token
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the whole record as BEFORE
+[GRID] click 'Contacts' in the main menu and find the row '{{org_name}}'
+[ACT] open the row's three-dots menu
+[ACT] click 'Manage'
+[WAIT] the organization blade opens
+[ACT] click the widget 'White labeling'
+[WAIT] the 'White labeling' blade shows the record
+[ACT] click the widget 'Favicon' (opens the 'White labeling favicon' sub-blade)
+[WAIT] the widget's blade opens
+[ACT] click the favicon drop zone
+[WAIT] the file dialog opens
+[ACT] select {{png_file}} in the file dialog
+[WAIT] the preview shows the uploaded image
+[ACT] click the favicon drop zone
+[WAIT] the file dialog opens
+[ACT] select {{webp_file}} in the file dialog
+[WAIT] the preview shows the uploaded image
+[ACT] click the favicon drop zone
+[WAIT] the file dialog opens
+[ACT] select {{bad_file}} in the file dialog
+[WAIT] a dialog reacts to the pick
+[ACT] close the dialog
+[ACT] click the favicon drop zone
+[WAIT] the file dialog opens
+[ACT] select {{ico_file}} in the file dialog
+[WAIT] a dialog reacts to the pick
+[ACT] close the dialog
+[ACT] click 'Reset' on the sub-blade toolbar
+[WAIT] the preview shows the stored image
+[HTTP] GET {{BACK_URL}}/api/white-labeling/organization/{{org_id}} - [CAPTURE] the record as AFTER","[DOM] after the PNG and after the WEBP pick the preview changes and no 'Filetype error' dialog opens
+[DOM] the SVG pick and the ICO pick each open a dialog titled 'Filetype error' that names the allowed favicon types PNG, JPG and WEBP
+[REL] the favicon preview after the SVG pick and after the ICO pick equals the preview before them
+[REL] AFTER.faviconUrl = BEFORE.faviconUrl and AFTER.modifiedDate = BEFORE.modifiedDate (nothing was saved)","[NETWORK] no upload request is sent for the refused file
+[CONSOLE] no uncaught JS errors",an SVG or ICO is accepted for the favicon; no Filetype error dialog; a PNG or WEBP is refused; an upload request is sent for the refused file,"none — nothing was saved (the sub-blade was reset); if a Save happened, PUT {{BACK_URL}}/api/white-labeling with the BEFORE record (same id)","Favicon Upload · Behavior:wl.image.upload.favicon-allowed · Behavior:wl.image.upload.favicon-rejected-type · Audited: 2026-11-27 (TCA-2026-11-27); Source: VirtoCommerce/vc-module-white-labeling@3.1008.0 Web/Localizations en.WhiteLabeling.json (favicon filter); Docs: PlatformUserGuide white-labeling customizing-brand-elements; KB-6102AC5A; BL-WL-006 · Synced: qa-suite-sync wl (2026-11-27) · Round 2 2026-11-27: ICO pick added from the test assets (WL-ASSET-ICO), as the title promises",Draft
 FWL-069,Classic storefront loads no soft-design CSS or fonts and declares data-design=classic,Theme > Design (build-time),Medium,,,"[PRE:CLEAR_SESSION]
 - The stand's store bundles design 'classic' (read html[data-design] on the first page; 'soft' = BLOCKED, this case is the classic branch, not FAIL)
 - Read-only: no setting is changed; the design setting is read, never flipped","store={{FRONT_URL}}, guest page=/, signed-in page=/account/orders, user=USER, network filter (regular expression) = designs?/soft|soft[-_.]|[/_.-](Inter|Geologica)[/_.-]|fonts\.(googleapis|gstatic)\.com","--- SCREEN: guest - home page ---
