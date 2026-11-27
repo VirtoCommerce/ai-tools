@@ -7,6 +7,7 @@
  *
  *   npm run crop -- --in frame.png --out step.png [--crop x,y,w,h] [--mask x,y,w,h]... [--color 208,208,208]
  */
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync } from "node:fs";
 import { decodePng } from "./make-gif.mjs";
 import { encodePng } from "./contact-sheet.mjs";

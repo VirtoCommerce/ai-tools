@@ -9,6 +9,7 @@
  * Look for: wrong element clicked, blank/white frame, a dialog missing from the frame, the control hidden
  * under the caption band, a cropped modal, a datum that should have been masked.
  */
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 import { decodePng } from "./make-gif.mjs";
