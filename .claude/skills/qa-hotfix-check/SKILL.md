@@ -194,10 +194,11 @@ affected module from `module-suite-map.md`.)
 
 ## Step 4 — record on the JIRA task (English)
 
-Once **every targeted env** is delivered **and** the fix is verified live, comment on the task (English
-per `feedback-jira-comments-in-english`; markdown, not wiki, per `reference-jira-comment-markdown-not-wiki`; clear/brief/outcome-first per `knowledge/execution/tracker-ops.md` §5a **Comment & body style**):
-the per-env table (env · branch · pinned→target · deploy run link) and one line — *"Hotfix verified on
-stable + regression."* If verification was **provider-limited / inconclusive** (Step 3), say so plainly
+Once **every targeted env** is delivered **and** the fix is verified live, comment on the task (English,
+markdown, per `knowledge/execution/tracker-ops.md` §Comment & body style): the per-env table (env ·
+branch · pinned→target · deploy run) and *"Hotfix verified on stable + regression."* **Every release,
+PR and run is a URL** (`…/releases/tag/<ver>` for edge and each hotfix, bundle PR, fix PR).
+If verification was **provider-limited / inconclusive** (Step 3), say so plainly
 (delivered + no-regression, definitive proof pending) — never claim a clean pass. If an env STOPped, say
 which and why.
 
