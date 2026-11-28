@@ -195,7 +195,7 @@ sequential before the batch confirmation — what runs concurrently, what stays 
   transition below are outward writes to a shared board: show the comment text, the flag and the
   target status, and get one explicit yes before writing any of them. On a no, write nothing and say
   so in the close-out.
-- Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English; Markdown, never Jira wiki markup; clear/brief/outcome-first per `knowledge/execution/tracker-ops.md` §5a **Comment & body style**).
+- Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English; Markdown, never Jira wiki markup; clear/brief/outcome-first per `knowledge/execution/tracker-ops.md` §Comment & body style).
 - **Advance the JIRA status to `Hotfix ready`** (right after the outcome comment) — **only for
   issue type `Bug`.** The `Wait hotfixes` / `Hotfix ready` statuses live only in the Bug workflow;
   a hotfix can also target a **Story** (or any other type), and those have no such statuses — for
