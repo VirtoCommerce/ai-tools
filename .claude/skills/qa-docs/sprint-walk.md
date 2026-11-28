@@ -14,6 +14,7 @@ run behind it, so what §Capture takes from a run is taken from here:
 | a `PASS` row / scenario | the document's *How it works* scenario, or the acceptance criterion, verbatim; a step that does not behave so is `differs` (below), not `Not documented` |
 | `{RUN_DIR}` | the story's frames folder (§Records) |
 | step 3, demo data | already made for the stand before any walk — `sprint.md` §Demo data. The walker uses **only that set**, creates none of its own, and undoes only what the scenario itself does (a cart line, a toggle). The set and its ledger `demo-data.json` belong to the parent: the walker never deletes or restores anything of it, and the parent removes the set only after the slides and film are built and the person said yes (`sprint.md` §Demo data) |
+| `capture-plan.json` (step 4) | ticket mode only: a walker returns the per-frame list below instead, and the parent looks at the frames on a contact sheet (§Capture step 6) before building slides or the film |
 | frames in `docs/<TICKET>/` | `docs/<label>/<ticket>/` (§Records) |
 | the account "the run used" | the account of the role the scenario needs on that stand, from the test-account store (`.claude/knowledge/execution/test-accounts.md`), its password typed by its lane NAME `<NAME>_<ENV>` (`.claude/rules/vc-browser.md`) |
 
