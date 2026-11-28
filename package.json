@@ -15,6 +15,7 @@
     "run:dir": "node scripts/env/run-folder.mjs dir",
     "creds:migrate": "node scripts/maintenance/creds-migrate.mjs",
     "creds:check": "node scripts/maintenance/creds-check.mjs",
+    "lanes:reap": "node plugins/vc-init/scripts/lanes-reap.mjs",
     "creds:verify": "node scripts/maintenance/creds-verify.mjs",
     "creds:forget": "node scripts/maintenance/creds-forget.mjs",
     "gif": "node scripts/lib/make-gif.mjs",

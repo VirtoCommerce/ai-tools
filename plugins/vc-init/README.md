@@ -110,6 +110,8 @@ a file to share. A bridged lane does it in-process: at start, after each
 `browser_close` and at exit. A lane started straight from `.mcp.json` gets the `hooks/scrub-har.mjs` hook
 after `browser_close` and at session start, with values from the store, `.env.playwright.*` and `.env.local`.
 
+**A lane does not outlive its session (0.10.0).** `bridge/lane-watchdog.mjs` ends a lane when a process that was above it at start is gone, or when nothing crossed its stdin/stdout for `VC_LANE_IDLE_HOURS` (default 4, `0` = off) — reconnect it in `/mcp`. `node scripts/lanes-reap.mjs` (dry run; `--apply` stops) lists and stops the lane, chrome-devtools-mcp, serena and vc-secrets stacks whose owner is gone and lanes older than 24 h; the ai-tools repo runs it as `npm run lanes:reap`. Symptom, measurements and the rest: that repo's `.claude/knowledge/execution/browser-lanes.md` §Lanes that pile up.
+
 ## Host-governed projects
 
 Some client projects run their own governance plugin: it injects binding rules, ships the approved MCP

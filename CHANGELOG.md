@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A Playwright lane ends itself when its session is gone or idle — `vc-init` `0.10.0` — 2026-11-27
+
+### Added
+
+- **vc-init: a lane stops by itself.** On one machine 244 lane processes, 208 of them over a day old and the oldest eight days, held ~26 GB: a Claude session keeps its MCP servers while it exists, the desktop app keeps idle sessions for days, and nothing ever closed the lanes of those. `bridge/lane-watchdog.mjs` now ends a lane — closing its browser, as a closed stdin does — when a process that was above it at start no longer exists, or when nothing has crossed its stdin or stdout for `VC_LANE_IDLE_HOURS` (default 4; `0` turns the idle exit off). A lane serving a request writes to stdout as it works and is never stopped. After an idle exit the client shows the lane as disconnected; reconnect it in `/mcp`. Both launchers use it: the vc-init bridge and ai-tools' `scripts/lanes/playwright-lane.mjs`.
+- **`npm run lanes:reap`** (`plugins/vc-init/scripts/lanes-reap.mjs`): lists the MCP stacks — Playwright lane, chrome-devtools-mcp, serena, vc-secrets — whose owner is gone, and lanes older than 24 h (`--older-than`); `--apply` stops each stack whole, browser children first. Dry run by default; never touches a stack younger than `--min-age` minutes (30) or its own process tree. Works on Windows and POSIX. `--quiet` prints nothing when nothing is reapable: the ai-tools repo runs `--quiet` (dry run, never `--apply`) from a `SessionStart` hook in `.claude/settings.json`.
+
+### Verified
+
+- A lane started today uses 0 % CPU idle, with a browser open, and after its HAR folder and `test-results/` are deleted (the fix of #684 holds); stdin traffic on 8 live idle lanes over 120 s: none, so the client does not ping them and an idle limit is meaningful.
+
+---
+
 ## The Windows sign-in is stored in a DPAPI file — `vc-secrets` `0.3.0` — 2026-11-23
 
 ### Fixed

@@ -117,6 +117,11 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-register.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/plugins/vc-init/scripts/lanes-reap.mjs\" --quiet",
+            "timeout": 30
           }
         ]
       }
